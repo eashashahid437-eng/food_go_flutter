@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:food_go/Screens/splash_screen.dart';
 import 'firebase_options.dart'; 
 
 void main() async {
@@ -18,16 +19,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      // Yahan maine ek simple Scaffold daal diya hai 'const ()' ki jagah
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Food Go'),
-        ),
-        body: const Center(
-          child: Text('Firebase Connected Successfully!'),
-        ),
-      ),
+     
+      home: const SplashScreen(),
     );
   }
 }
