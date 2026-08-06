@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:food_go/Constants/image_path.dart';
 import 'home_screen.dart';
 
 const String splashImage = 'assets/images/splash_image.png';
 const String burger1 = 'assets/images/burger1.png';
+const String burger2 = 'assets/images/burger2.png';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -64,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen> {
               bottom: -10,
               left: -20,
               child: Image.asset(
-                splashImage,
+                ImagePath.burger1,
                 width: 230,
                 height: 180,
                 fit: BoxFit.contain,
@@ -76,7 +78,7 @@ class _SplashScreenState extends State<SplashScreen> {
               bottom: -5,
               right: -25,
               child: Image.asset(
-                burger1,
+                ImagePath.burger2,
                 width: 210,
                 height: 170,
                 fit: BoxFit.contain,
