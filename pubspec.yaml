@@ -65,6 +65,10 @@ flutter:
     - assets/images/Burger 1.png
     - assets/images/Burger 2.png
     - assets/images/appbarpic (2).png
+    - assets/images/Burger 3.png
+    - assets/images/burger 4 (2).png
+    - assets/images/Burger 5.png
+    - assets/images/Burger 6.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

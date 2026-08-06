@@ -2,10 +2,10 @@ import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.da
 import 'package:flutter/material.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Controllers/bottomnavbarcontroller.dart';
-import 'package:food_go/Screens/cart_screen.dart';
-import 'package:food_go/Screens/favourite.dart';
-import 'package:food_go/Screens/home_screen.dart';
-import 'package:food_go/Screens/profile_screen.dart';
+import 'package:food_go/Screens/BottomNavbar/favourite_screen.dart';
+import 'package:food_go/Screens/BottomNavbar/home_screen.dart';
+import 'package:food_go/Screens/BottomNavbar/message_screen.dart';
+import 'package:food_go/Screens/BottomNavbar/person_screen.dart';
 import 'package:get/get.dart';
 
 class BottomNavbar extends StatelessWidget {
@@ -15,9 +15,9 @@ class BottomNavbar extends StatelessWidget {
 
   final List<Widget> pages = [
     HomeScreen(),
-    Favourite(),
-    CartScreen(),
-    ProfileScreen(),
+    FavouriteScreen(),
+    MessageScreen(),
+    PersonScreen(),
   ];
 
   @override
@@ -46,7 +46,7 @@ class BottomNavbar extends StatelessWidget {
             return Icon(
               controller.iconList[index],
               size: 25,
-              color: isActive ? Colors.red : Colors.grey,
+              color: isActive ? Colors.white : Colors.grey,
             );
           },
 
