@@ -10,11 +10,6 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
-    return const Scaffold(
-      body: Center(
-        child: Text('Home Screen'),
-=======
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -236,7 +231,6 @@ class HomeScreen extends StatelessWidget {
             
           ],
         ),
->>>>>>> Zainab-jamil
       ),
     );
   }
