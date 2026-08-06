@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-class CartScreen extends StatelessWidget {
-  const CartScreen({super.key});
+class Favourite extends StatelessWidget {
+  const Favourite({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cart'),
+        title: const Text('Favourites'),
       ),
       body: const Center(
-        child: Text('This is the Cart Screen'),
+        child: Text('This is the Favourites Screen'),
       ),
     );
   }
