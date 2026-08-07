@@ -38,6 +38,7 @@ dependencies:
   get: ^4.7.3
   animated_bottom_navigation_bar: ^1.4.1
   cloud_firestore: ^6.8.0
+  font_awesome_flutter: ^11.0.0
 
 dev_dependencies:
   flutter_test:
@@ -70,6 +71,9 @@ flutter:
     - assets/images/burger 4 (2).png
     - assets/images/Burger 5.png
     - assets/images/Burger 6.png
+    - assets/images/Google.png
+    - assets/images/Apple-Logo.png
+    - assets/images/twitter.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

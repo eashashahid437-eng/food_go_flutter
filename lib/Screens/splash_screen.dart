@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:food_go/Auth/Login_Screen.dart';
 import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -18,7 +19,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) =>  BottomNavbar(),
+          builder: (context) =>  LoginScreen(),
         ),
       );
     });
