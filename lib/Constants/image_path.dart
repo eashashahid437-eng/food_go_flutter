@@ -6,4 +6,7 @@ class ImagePath {
   static const String burger4 ="assets/images/burger 4 (2).png";
   static const String burger5 ="assets/images/Burger 5.png";
   static const String burger6 ="assets/images/Burger 6.png";
+  static const String Google ="assets/images/Google.png";
+  static const String applelogo ="assets/images/Apple-Logo.png";
+  static const String twitter ="assets/images/twitter.png";
 }

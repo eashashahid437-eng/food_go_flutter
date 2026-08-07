@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:food_go/Auth/Login_Screen.dart';
 import 'package:food_go/Constants/image_path.dart';
 import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
-import 'home_screen.dart';
 
 const String splashImage = 'assets/images/splash_image.png';
 const String burger1 = 'assets/images/burger1.png';
@@ -24,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) =>  BottomNavbar(),
+          builder: (context) =>  LoginScreen(),
         ),
       );
     });
