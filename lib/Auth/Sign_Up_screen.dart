@@ -78,7 +78,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           hintText: "John Doe",
                           prefixIcon: const Icon(Icons.person),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
@@ -98,7 +98,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           hintText: "john.doe@example.com",
                           prefixIcon: const Icon(Icons.email_outlined),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
@@ -128,10 +128,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             },
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
+
                       SizedBox(
                         height: MediaQuery.of(context).size.height * 0.02,
                       ),
@@ -156,7 +157,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             },
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
@@ -191,23 +192,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         height: MediaQuery.of(context).size.height * 0.02,
                       ),
 
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.darkpink,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+                      Center(
+                        child: SizedBox(
+                          width:MediaQuery.of(context).size.width * 0.7, 
+                          height: 45,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.lightPink,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
                             ),
-                          ),
-                          onPressed: () {
-                            Get.to(() => const LoginScreen());
-                          },
-                          child: const Text(
-                            "Sign Up",
-                            style: TextStyle(fontSize: 20),
+                            onPressed: () {
+                              Get.to(() => const LoginScreen());
+                            },
+                            child: const Text(
+                              "Sign Up",
+                              style: TextStyle(fontSize: 20),
+                            ),
                           ),
                         ),
                       ),

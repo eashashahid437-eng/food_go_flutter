@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_go/Auth/Login_Screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
+import 'package:food_go/utility/responsive.dart';
 import 'package:get/get.dart';
 
 class ForgotPassword extends StatefulWidget {
@@ -62,7 +63,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                 hintText: "john.doe@example.com",
                 prefixIcon: const Icon(Icons.email_outlined),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
             ),
@@ -89,7 +90,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                             },
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
@@ -117,7 +118,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                             },
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
@@ -125,24 +126,28 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         height: MediaQuery.of(context).size.height * 0.03,
                       ),
 
-                       SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.darkpink,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+                       Center(
+                         child: SizedBox(
+                          width: MediaQuery.of(context).size.width*0.7,
+                                               height: 45,
+                          child: ElevatedButton(
+                            
+                            style: ElevatedButton.styleFrom(
+                            
+                              backgroundColor: AppColors.lightPink,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {},
+                            child: const Text(
+                              "Set New Password",
+                              style: TextStyle(fontSize: 20),
                             ),
                           ),
-                          onPressed: () {},
-                          child: const Text(
-                            "Set New Password",
-                            style: TextStyle(fontSize: 20),
-                          ),
-                        ),
-                      ),
+                                               ),
+                       ),
                       SizedBox(
                         height: MediaQuery.of(context).size.height * 0.03,
                       ),

@@ -95,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           hintText: "davidjonson@gmail.com",
                           prefixIcon: const Icon(Icons.email_outlined),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
@@ -166,23 +166,25 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: MediaQuery.of(context).size.height * 0.02,
                       ),
 
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.darkpink,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
+                      Center(
+                        child: SizedBox(
+                          width:MediaQuery.of(context).size.width * 0.7, 
+                          height: 45,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.lightPink,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
                             ),
-                          ),
-                          onPressed: () {
-                          Get.to(() =>  BottomNavbar());
-                          },
-                          child: const Text(
-                            "Log In",
-                            style: TextStyle(fontSize: 20),
+                            onPressed: () {
+                            Get.to(() =>  BottomNavbar());
+                            },
+                            child: const Text(
+                              "Log In",
+                              style: TextStyle(fontSize: 20),
+                            ),
                           ),
                         ),
                       ),
