@@ -24,7 +24,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xffff8995), Color(0xffff172d)],
+            colors: [Color.fromARGB(255, 245, 80, 94), Color(0xffff172d)],
           ),
         ),
         child: SafeArea(
@@ -198,10 +198,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           height: 45,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.lightPink,
+                              backgroundColor: AppColors.Pink,
                               foregroundColor: Colors.black,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
                             onPressed: () {

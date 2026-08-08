@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:food_go/Auth/Login_Screen.dart';
+import 'package:food_go/Auth/SetResetCode.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/utility/responsive.dart';
 import 'package:get/get.dart';
@@ -134,13 +135,15 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                             
                             style: ElevatedButton.styleFrom(
                             
-                              backgroundColor: AppColors.lightPink,
+                              backgroundColor: AppColors.Pink,
                               foregroundColor: Colors.black,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            onPressed: () {},
+                            onPressed: () {
+                              Get.off(() => Setresetcode());
+                            },
                             child: const Text(
                               "Set New Password",
                               style: TextStyle(fontSize: 20),

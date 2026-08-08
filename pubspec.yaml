@@ -38,6 +38,7 @@ dependencies:
   get: ^4.7.3
   animated_bottom_navigation_bar: ^1.4.1
   font_awesome_flutter: ^11.0.0
+  pinput: ^6.0.2
 
 dev_dependencies:
   flutter_test:
