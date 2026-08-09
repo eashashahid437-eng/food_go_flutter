@@ -1,11 +1,13 @@
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Constants/app_colors.dart';
+import 'package:food_go/Screens/topping_screen.dart';
+import 'package:food_go/utility/responsive.dart';
 import 'package:food_go/Controllers/bottomnavbarcontroller.dart';
 import 'package:food_go/Screens/BottomNavbar/favourite_screen.dart';
 import 'package:food_go/Screens/BottomNavbar/home_screen.dart';
 import 'package:food_go/Screens/BottomNavbar/message_screen.dart';
-import 'package:food_go/Screens/BottomNavbar/person_screen.dart';
+import 'package:food_go/Screens/BottomNavbar/person_screen.dart'; // <-- 1. Yahan AddToppingScreen ka import lag gaya hai
 import 'package:get/get.dart';
 
 class BottomNavbar extends StatelessWidget {
@@ -15,13 +17,19 @@ class BottomNavbar extends StatelessWidget {
 
   final List<Widget> pages = [
     HomeScreen(),
-    FavouriteScreen(),
+    FavoriteScreen(),
     MessageScreen(),
     PersonScreen(),
+     // <-- 1. Yahan AddToppingScreen ka instance lag gaya hai
+     // <-- 2. Yahan AddToppingScreen ka instance lag gaya hai
   ];
 
   @override
   Widget build(BuildContext context) {
+    // MediaQueryu utility se screen width & height nikalna
+    final double screenWidth = MediaQueryu.getScreenWidth(context);
+    final double screenHeight = MediaQueryu.getScreenHeight(context);
+
     return Obx(
       () => Scaffold(
         body: pages[controller.currentIndex.value],
@@ -33,10 +41,15 @@ class BottomNavbar extends StatelessWidget {
             border: Border.all(color: Colors.white, width: 4), // Dynamic notch border look
           ),
           child: FloatingActionButton(
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.darkpink,
             elevation: 4,
             shape: const CircleBorder(), // <-- Is se button bilkul GOL (Circle) ho jayega!
-            onPressed: () {},
+            
+            // --- 2. Yahan par Get.to() add kar diya hai ---
+            onPressed: () {
+              Get.to(() => const BurgerCustomizationScreen());
+            },
+            
             child: const Icon(
               Icons.add,
               color: Colors.white,
@@ -53,8 +66,8 @@ class BottomNavbar extends StatelessWidget {
           tabBuilder: (int index, bool isActive) {
             return Icon(
               controller.iconList[index],
-              size: 25,
-              color: isActive ? Colors.white : Colors.white70,
+              size: screenWidth * 0.065,
+              color: isActive ? Colors.white : AppColors.lightwhite.withOpacity(0.7),
             );
           },
 
@@ -69,10 +82,10 @@ class BottomNavbar extends StatelessWidget {
           leftCornerRadius: 28,
           rightCornerRadius: 28,
 
-          splashColor: Colors.red,
+          splashColor: AppColors.darkpink,
           backgroundColor: AppColors.darkpink,
 
-          height: 65,
+          height: screenHeight * 0.08,
           onTap: controller.changeIndex,
         ),
       ),

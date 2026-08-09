@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:food_go/Auth/Login_Screen.dart';
 import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
+import 'package:food_go/Constants/app_colors.dart';
+import 'package:food_go/utility/responsive.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,7 +21,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) =>  LoginScreen(),
+          builder: (context) => const LoginScreen(),
         ),
       );
     });
@@ -27,6 +29,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // MediaQueryu utility se screen width & height nikalna
+    final double screenWidth = MediaQueryu.getScreenWidth(context);
+    final double screenHeight = MediaQueryu.getScreenHeight(context);
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -61,8 +67,8 @@ class _SplashScreenState extends State<SplashScreen> {
               bottom: -10,
               left: -35, // Is se burger screen ke bilkul left corner se chipak jayega
               child: SizedBox(
-                width: 320,
-                height: 200,
+                width: screenWidth * 0.82,
+                height: screenHeight * 0.25,
                 child: Stack(
                   alignment: Alignment.bottomLeft,
                   children: [
@@ -70,22 +76,22 @@ class _SplashScreenState extends State<SplashScreen> {
                     Positioned(
                       left: 0,
                       bottom: 0,
-                      child: Image.network(
-                        "https://res.cloudinary.com/eyncqf0n/image/upload/v1786102755/image_2_vormow.png",
-                        width: 220,
-                        height: 190,
+                      child: Image.asset(
+                        "assets/images/Burger 1.png",
+                        width: screenWidth * 0.56,
+                        height: screenHeight * 0.23,
                         fit: BoxFit.contain,
                       ),
                     ),
 
                     // Chota Burger (Bade Burger ke sath bilkul jura hua)
                     Positioned(
-                      left: 130, // Isko thoda aur pass kar diya hai
+                      left: screenWidth * 0.33, // Responsive spacing
                       bottom: 0,
-                      child: Image.network(
-                        "https://res.cloudinary.com/eyncqf0n/image/upload/f_auto,q_auto/image_1_ixnwqk",
-                        width: 160,
-                        height: 130,
+                      child: Image.asset(
+                        "assets/images/Burger 2.png",
+                        width: screenWidth * 0.41,
+                        height: screenHeight * 0.16,
                         fit: BoxFit.contain,
                       ),
                     ),

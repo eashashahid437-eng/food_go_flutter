@@ -1,24 +1,37 @@
-
-import 'package:flutter/material.dart';
-import 'package:food_go/Screens/Products/Product1.dart';
-import 'package:food_go/Screens/Products/Product4.dart';
-import 'package:food_go/Screens/Products/product2.dart';
-import 'package:food_go/Screens/Products/product3.dart';
+import 'package:flutter/material.dart'; // Dynamic detail screen ka import
+import 'package:food_go/Constants/app_colors.dart';
+import 'package:food_go/utility/responsive.dart';
+import 'package:food_go/productscreen.dart';
 import 'package:get/get.dart';
+
+// Global list jo saare favorite items ko store karegi
+List<FoodModel> globalFavoriteList = [];
 
 class FoodModel {
   final String image;
   final String title;
-  final String name; // <--- Yeh nayi field add kar di hai
+  final String productname;
   final double price;
   final int id;
+  final String description;
+  final double spicyLevel;
+  final double rating;
+  final int reviewCount;
+  final String subtitle;
+  bool isFavorite;
 
   FoodModel({
     required this.image,
     required this.title,
-    required this.name, // <--- Constructor mein bhi add kar diya
+    this.productname = "",
     required this.price,
     required this.id,
+    required this.description,
+    required this.spicyLevel,
+    required this.rating,
+    required this.reviewCount,
+    this.isFavorite = false,
+    this.subtitle = "",
   });
 }
 
@@ -29,29 +42,22 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // MediaQueryu utility se screen width & height nikalna
+    final double screenWidth = MediaQueryu.getScreenWidth(context);
+    final double screenHeight = MediaQueryu.getScreenHeight(context);
+
+    // Yahan check kar rahe hain ke subtitle hai ya productname, jo bhi ho wo display ho jaye
+    String displayName = food.subtitle.isNotEmpty ? food.subtitle : food.productname;
+
     return GestureDetector(
       onTap: () {
         print("Card Clicked Index: ${food.id}");
-        // Firebase indices 0, 1, 2, 3 hotay hain
-        switch (food.id) {
-          case 0:
-            Get.to(() => const Product1());
-            break;
-          case 1:
-            Get.to(() => const Product2());
-            break;
-          case 2:
-            Get.to(() => const Product3());
-            break;
-          case 3:
-            Get.to(() => const Product4());
-            break;
-          default:
-            Get.to(() => const Product1());
-        }
+        
+        // Card ki body par click karne se seedha Detail Screen khulegi
+        Get.to(() => ProductDetailScreen(food: food));
       },
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(screenWidth * 0.03),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -69,28 +75,30 @@ class ProductCard extends StatelessWidget {
             Center(
               child: Image.network(
                 food.image,
-                height: 90,
+                height: screenHeight * 0.11,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   return const Icon(
                     Icons.fastfood,
                     size: 60,
-                    color: Colors.grey,
+                    color: AppColors.lightgrey,
                   );
                 },
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
-                  return const SizedBox(
-                    height: 90,
-                    child: Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                  return SizedBox(
+                    height: screenHeight * 0.11,
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.darkpink,
+                      ),
                     ),
                   );
                 },
               ),
             ),
-            const SizedBox(height: 10),
-            // Yahan par Column laga diya hai taaki title upar aur subtitle neeche aaye
+            SizedBox(height: screenHeight * 0.012),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -98,19 +106,20 @@ class ProductCard extends StatelessWidget {
                   food.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold, // Pehli line Bold
-                    fontSize: 15,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: screenWidth * 0.038,
+                    color: Colors.black,
                   ),
                 ),
-                const SizedBox(height: 2),
+                SizedBox(height: screenHeight * 0.003),
                 Text(
-                  food.name,
+                  displayName, // <-- Yahan update kar diya hai taake subtitle/productname dono show hon
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.grey, // Doosri line Grey aur normal
-                    fontSize: 13,
+                  style: TextStyle(
+                    color: AppColors.lightgrey,
+                    fontSize: screenWidth * 0.032,
                   ),
                 ),
               ],
@@ -119,13 +128,43 @@ class ProductCard extends StatelessWidget {
             Row(
               children: [
                 const Icon(Icons.star, color: Colors.orange, size: 16),
-                const SizedBox(width: 4),
+                SizedBox(width: screenWidth * 0.01),
                 Text(
-                  food.price.toStringAsFixed(2),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  "\$${food.price.toStringAsFixed(2)}",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: screenWidth * 0.035,
+                  ),
                 ),
                 const Spacer(),
-                const Icon(Icons.favorite_border, color: Colors.black54),
+                // Heart Icon ke liye StatefulBuilder taake card click se alag independent kaam kare
+                StatefulBuilder(
+                  builder: (context, setStateCard) {
+                    return GestureDetector(
+                      onTap: () {
+                        setStateCard(() {
+                          food.isFavorite = !food.isFavorite;
+                          
+                          if (food.isFavorite) {
+                            if (!globalFavoriteList.contains(food)) {
+                              globalFavoriteList.add(food); // Favorite list mein add kar diya
+                            }
+                          } else {
+                            globalFavoriteList.remove(food); // List se nikal diya
+                          }
+                        });
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.all(screenWidth * 0.01),
+                        child: Icon(
+                          food.isFavorite ? Icons.favorite : Icons.favorite_border,
+                          color: food.isFavorite ? Colors.red : AppColors.lightgrey,
+                          size: 22,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ],
