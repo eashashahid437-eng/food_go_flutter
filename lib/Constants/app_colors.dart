@@ -6,4 +6,6 @@ class AppColors{
   static const Color lightgrey = Color(0xFF6A6A6A);
   static const Color darkpink = Color(0xFFEF2A39);
   static const Color lightwhite = Color(0xFFF3F4F6);
+  static const Color lightPink=Color(0xffff8995);
+  static const Color Pink=Color(0xFFFF2E51);
 }
