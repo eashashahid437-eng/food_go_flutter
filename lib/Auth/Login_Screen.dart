@@ -1,4 +1,3 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -8,6 +7,7 @@ import 'package:food_go/Auth/Sign_Up_screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Constants/image_path.dart';
 import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
+import 'package:food_go/Screens/BottomNavbar/home_screen.dart';
 import 'package:get/get.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -26,8 +26,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool remember = false;
   bool obscure = true;
   bool isLoading = false;
-
-  // ================= LOGIN =================
 
   Future<void> loginUser() async {
     if (email.text.trim().isEmpty) {
@@ -65,8 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       // Login successful -> Home
-      Get.offAll(() =>  BottomNavbar());
-
+      Get.offAll(() => BottomNavbar());
     } on FirebaseAuthException catch (e) {
       String message = 'Login failed';
 
@@ -103,19 +100,13 @@ class _LoginScreenState extends State<LoginScreen> {
           message = e.message ?? 'Login failed';
       }
 
-      Get.snackbar(
-        'Error',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-
+      Get.snackbar('Error', message, snackPosition: SnackPosition.BOTTOM);
     } catch (e) {
       Get.snackbar(
         'Error',
         'Something went wrong. Please try again',
         snackPosition: SnackPosition.BOTTOM,
       );
-
     } finally {
       if (mounted) {
         setState(() {
@@ -123,6 +114,10 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
+  }
+
+  Future<void> signInWithGoogle() async {
+    throw UnimplementedError('Google sign-in is not implemented.');
   }
 
   @override
@@ -142,10 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color.fromARGB(255, 245, 80, 94),
-              Color(0xffff172d),
-            ],
+            colors: [Color.fromARGB(255, 245, 80, 94), Color(0xffff172d)],
           ),
         ),
 
@@ -153,21 +145,12 @@ class _LoginScreenState extends State<LoginScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.03,
-                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
 
                 // ================= LOGO =================
+                Image.asset("assets/images/Burger 3.png", height: 120),
 
-                Image.asset(
-                  "assets/images/Burger 3.png",
-                  height: 120,
-                ),
-
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.03,
-                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
 
                 const Text(
                   "Welcome Back !",
@@ -178,9 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.03,
-                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
 
                 const Text(
                   "Login to your account",
@@ -191,24 +172,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.03,
-                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
 
                 const Text(
                   "Your world of living colors awaits",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 15,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 15),
                 ),
 
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.02,
-                ),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.02),
 
                 // ================= WHITE CONTAINER =================
-
                 Container(
                   width: MediaQuery.of(context).size.width,
                   padding: const EdgeInsets.all(22),
@@ -225,9 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       // ================= EMAIL =================
-
                       const Text(
                         "Email",
                         style: TextStyle(
@@ -237,8 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
 
                       SizedBox(
-                        height:
-                            MediaQuery.of(context).size.height * 0.02,
+                        height: MediaQuery.of(context).size.height * 0.02,
                       ),
 
                       TextField(
@@ -248,9 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: InputDecoration(
                           hintText: "davidjonson@gmail.com",
 
-                          prefixIcon: const Icon(
-                            Icons.email_outlined,
-                          ),
+                          prefixIcon: const Icon(Icons.email_outlined),
 
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -259,12 +227,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
 
                       SizedBox(
-                        height:
-                            MediaQuery.of(context).size.height * 0.02,
+                        height: MediaQuery.of(context).size.height * 0.02,
                       ),
 
                       // ================= PASSWORD =================
-
                       const Text(
                         "Password",
                         style: TextStyle(
@@ -274,8 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
 
                       SizedBox(
-                        height:
-                            MediaQuery.of(context).size.height * 0.02,
+                        height: MediaQuery.of(context).size.height * 0.02,
                       ),
 
                       TextField(
@@ -285,15 +250,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: InputDecoration(
                           hintText: "xxxxxxxx",
 
-                          prefixIcon: const Icon(
-                            Icons.lock_outline,
-                          ),
+                          prefixIcon: const Icon(Icons.lock_outline),
 
                           suffixIcon: IconButton(
                             icon: Icon(
-                              obscure
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
+                              obscure ? Icons.visibility_off : Icons.visibility,
                             ),
 
                             onPressed: () {
@@ -310,15 +271,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
 
                       SizedBox(
-                        height:
-                            MediaQuery.of(context).size.height * 0.02,
+                        height: MediaQuery.of(context).size.height * 0.02,
                       ),
 
                       // ================= REMEMBER + FORGOT =================
-
                       Row(
                         children: [
-
                           Checkbox(
                             value: remember,
 
@@ -329,40 +287,31 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                           ),
 
-                          const Text(
-                            "Remember me",
-                          ),
+                          const Text("Remember me"),
 
                           const Spacer(),
 
                           TextButton(
                             onPressed: () {
-                              Get.to(
-                                () => ForgotPassword(),
-                              );
+                              Get.to(() => ForgotPassword());
                             },
 
                             child: const Text(
                               "Forgot Password?",
-                              style: TextStyle(
-                                color: Colors.red,
-                              ),
+                              style: TextStyle(color: Colors.red),
                             ),
                           ),
                         ],
                       ),
 
                       SizedBox(
-                        height:
-                            MediaQuery.of(context).size.height * 0.02,
+                        height: MediaQuery.of(context).size.height * 0.02,
                       ),
 
                       // ================= LOGIN BUTTON =================
-
                       Center(
                         child: SizedBox(
-                          width:
-                              MediaQuery.of(context).size.width * 0.7,
+                          width: MediaQuery.of(context).size.width * 0.7,
 
                           height: 45,
 
@@ -372,183 +321,229 @@ class _LoginScreenState extends State<LoginScreen> {
                               foregroundColor: Colors.black,
 
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                             ),
 
-                            onPressed:
-                                isLoading ? null : loginUser,
+                            onPressed: isLoading ? null : loginUser,
 
                             child: isLoading
                                 ? const SizedBox(
                                     height: 22,
                                     width: 22,
 
-                                    child:
-                                        CircularProgressIndicator(
+                                    child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       color: Colors.black,
                                     ),
                                   )
                                 : const Text(
                                     "Log In",
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                    ),
+                                    style: TextStyle(fontSize: 20),
                                   ),
                           ),
                         ),
                       ),
 
                       SizedBox(
-                        height:
-                            MediaQuery.of(context).size.height * 0.03,
+                        height: MediaQuery.of(context).size.height * 0.03,
                       ),
 
                       // ================= OR =================
-
                       Row(
                         children: const [
-
-                          Expanded(
-                            child: Divider(),
-                          ),
+                          Expanded(child: Divider()),
 
                           Padding(
-                            padding:
-                                EdgeInsets.symmetric(horizontal: 10),
+                            padding: EdgeInsets.symmetric(horizontal: 10),
 
-                            child: Text(
-                              "Log in with",
-                            ),
+                            child: Text("Log in with"),
                           ),
 
-                          Expanded(
-                            child: Divider(),
-                          ),
+                          Expanded(child: Divider()),
                         ],
                       ),
 
                       SizedBox(
-                        height:
-                            MediaQuery.of(context).size.height * 0.02,
+                        height: MediaQuery.of(context).size.height * 0.02,
                       ),
-
-                      // ================= SOCIAL ICONS =================
-
                       Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
-
-                        crossAxisAlignment:
-                            CrossAxisAlignment.center,
-
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-
-                          // GOOGLE
-
-                          Container(
-                            padding: const EdgeInsets.all(6),
-
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-
-                              border: Border.all(
-                                color: AppColors.lightgrey,
-                                width: 2,
+                          
+                          InkWell(
+                            onTap: () async {
+                              try {
+                  await signInWithGoogle();
+                  Get.offAll(() => HomeScreen());
+                } catch (e) { 
+                  Get.snackbar("Error", e.toString());
+                }
+                    
+                              print("Google button clicked");
+                            },
+                            borderRadius: BorderRadius.circular(50),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.lightgrey,
+                                  width: 2,
+                                ),
                               ),
-                            ),
-
-                            child: CircleAvatar(
-                              radius: 20,
-
-                              backgroundImage:
-                                  AssetImage(ImagePath.Google),
+                              child: CircleAvatar(
+                                radius: 20,
+                                backgroundImage: AssetImage(ImagePath.Google),
+                              ),
                             ),
                           ),
 
                           SizedBox(
-                            width:
-                                MediaQuery.of(context).size.width *
-                                    0.05,
+                            width: MediaQuery.of(context).size.width * 0.05,
                           ),
 
-                          // APPLE
-
-                          Container(
-                            padding: const EdgeInsets.all(6),
-
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-
-                              border: Border.all(
-                                color: AppColors.lightgrey,
-                                width: 1.5,
+                          // APPLE BUTTON
+                          InkWell(
+                            onTap: () {
+                              print("Apple button clicked");
+                            },
+                            borderRadius: BorderRadius.circular(50),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.lightgrey,
+                                  width: 1.5,
+                                ),
                               ),
-                            ),
-
-                            child: CircleAvatar(
-                              radius: 20,
-
-                              backgroundImage:
-                                  AssetImage(
-                                ImagePath.applelogo,
+                              child: CircleAvatar(
+                                radius: 20,
+                                backgroundImage: AssetImage(
+                                  ImagePath.applelogo,
+                                ),
+                                backgroundColor: Colors.white,
                               ),
-
-                              backgroundColor:
-                                  Colors.white,
                             ),
                           ),
 
                           SizedBox(
-                            width:
-                                MediaQuery.of(context).size.width *
-                                    0.05,
+                            width: MediaQuery.of(context).size.width * 0.05,
                           ),
 
-                          // TWITTER
-
-                          Container(
-                            padding: const EdgeInsets.all(6),
-
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-
-                              border: Border.all(
-                                color: AppColors.lightgrey,
-                                width: 1.5,
+                          // TWITTER BUTTON
+                          InkWell(
+                            onTap: () {
+                              print("Twitter button clicked");
+                            },
+                            borderRadius: BorderRadius.circular(50),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.lightgrey,
+                                  width: 1.5,
+                                ),
                               ),
-                            ),
-
-                            child: CircleAvatar(
-                              radius: 20,
-
-                              backgroundImage:
-                                  AssetImage(
-                                ImagePath.twitter,
+                              child: CircleAvatar(
+                                radius: 20,
+                                backgroundImage: AssetImage(ImagePath.twitter),
+                                backgroundColor: Colors.white,
                               ),
-
-                              backgroundColor:
-                                  Colors.white,
                             ),
                           ),
                         ],
                       ),
 
+                      // Row(
+                      //   mainAxisAlignment: MainAxisAlignment.center,
+
+                      //   crossAxisAlignment: CrossAxisAlignment.center,
+
+                      //   children: [
+                      //     // GOOGLE
+                      //     Container(
+                      //       padding: const EdgeInsets.all(6),
+
+                      //       decoration: BoxDecoration(
+                      //         shape: BoxShape.circle,
+
+                      //         border: Border.all(
+                      //           color: AppColors.lightgrey,
+                      //           width: 2,
+                      //         ),
+                      //       ),
+
+                      //       child: CircleAvatar(
+                      //         radius: 20,
+
+                      //         backgroundImage: AssetImage(ImagePath.Google),
+                      //       ),
+                      //     ),
+
+                      //     SizedBox(
+                      //       width: MediaQuery.of(context).size.width * 0.05,
+                      //     ),
+
+                      //     Container(
+                      //       padding: const EdgeInsets.all(6),
+
+                      //       decoration: BoxDecoration(
+                      //         shape: BoxShape.circle,
+
+                      //         border: Border.all(
+                      //           color: AppColors.lightgrey,
+                      //           width: 1.5,
+                      //         ),
+                      //       ),
+
+                      //       child: CircleAvatar(
+                      //         radius: 20,
+
+                      //         backgroundImage: AssetImage(ImagePath.applelogo),
+
+                      //         backgroundColor: Colors.white,
+                      //       ),
+                      //     ),
+
+                      //     SizedBox(
+                      //       width: MediaQuery.of(context).size.width * 0.05,
+                      //     ),
+
+                      //     // TWITTER
+                      //     Container(
+                      //       padding: const EdgeInsets.all(6),
+
+                      //       decoration: BoxDecoration(
+                      //         shape: BoxShape.circle,
+
+                      //         border: Border.all(
+                      //           color: AppColors.lightgrey,
+                      //           width: 1.5,
+                      //         ),
+                      //       ),
+
+                      //       child: CircleAvatar(
+                      //         radius: 20,
+
+                      //         backgroundImage: AssetImage(ImagePath.twitter),
+
+                      //         backgroundColor: Colors.white,
+                      //       ),
+                      //     ),
+                      //   ],
+                      // ),
                       SizedBox(
-                        height:
-                            MediaQuery.of(context).size.height * 0.02,
+                        height: MediaQuery.of(context).size.height * 0.02,
                       ),
 
-                      // ================= SIGN UP =================
-
                       Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
 
                         children: [
-
                           RichText(
                             text: TextSpan(
                               style: const TextStyle(
@@ -557,29 +552,20 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
 
                               children: [
-
-                                const TextSpan(
-                                  text:
-                                      "Don't have an account? ",
-                                ),
+                                const TextSpan(text: "Don't have an account? "),
 
                                 TextSpan(
                                   text: "Sign Up",
 
                                   style: const TextStyle(
                                     color: AppColors.Pink,
-                                    fontWeight:
-                                        FontWeight.bold,
+                                    fontWeight: FontWeight.bold,
                                   ),
 
-                                  recognizer:
-                                      TapGestureRecognizer()
-                                        ..onTap = () {
-                                          Get.to(
-                                            () =>
-                                                const SignUpScreen(),
-                                          );
-                                        },
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () {
+                                      Get.to(() => const SignUpScreen());
+                                    },
                                 ),
                               ],
                             ),
@@ -588,8 +574,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
 
                       SizedBox(
-                        height:
-                            MediaQuery.of(context).size.height * 0.02,
+                        height: MediaQuery.of(context).size.height * 0.02,
                       ),
                     ],
                   ),

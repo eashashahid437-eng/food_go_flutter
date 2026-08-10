@@ -125,25 +125,23 @@ class _personScreenState extends State<PersonScreen> {
           profileImageUrl = uploadedImageUrl;
           isUploadingImage = false;
         });
-
-        // Image upload hone ke baad foran database mein bhi update kar dein
         _saveUserData();
 
         Get.snackbar("Success", "Profile picture updated successfully!",
-            backgroundColor: Colors.green, colorText: Colors.white);
+            backgroundColor: Colors.white, colorText: Colors.black);
       } else {
         setState(() {
           isUploadingImage = false;
         });
         Get.snackbar("Error", "Failed to upload image to Cloudinary",
-            backgroundColor: Colors.red, colorText: Colors.white);
+            backgroundColor: Colors.white, colorText: Colors.black);
       }
     } catch (e) {
       setState(() {
         isUploadingImage = false;
       });
       Get.snackbar("Error", "Something went wrong: $e",
-          backgroundColor: Colors.red, colorText: Colors.white);
+          backgroundColor: Colors.white, colorText: Colors.black);
     }
   }
 
@@ -154,7 +152,7 @@ class _personScreenState extends State<PersonScreen> {
           ? const Center(child: CircularProgressIndicator(color: Colors.red))
           : Column(
               children: [
-                // --- Header Section ---
+              
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
