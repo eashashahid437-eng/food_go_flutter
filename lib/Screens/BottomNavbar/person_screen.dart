@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_go/Auth/Login_Screen.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -284,8 +285,11 @@ class _personScreenState extends State<PersonScreen> {
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () async {
-                            await FirebaseAuth.instance.signOut();
-                            Get.offAllNamed('/login');
+                            // await FirebaseAuth.instance.signOut();
+                            // Navigator.of(context).pop();
+                            FirebaseAuth.instance.signOut().then((value) {
+  Get.offAll(() => LoginScreen());
+});
                           },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.redAccent,
@@ -306,8 +310,6 @@ class _personScreenState extends State<PersonScreen> {
             ),
     );
   }
-
-  // User ke likhne ke liye editable field (TextField)
   Widget _buildEditableField(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,8 +335,6 @@ class _personScreenState extends State<PersonScreen> {
       ],
     );
   }
-
-  // Email aur Password jaisi cheezon ke liye read-only field
   Widget _buildReadOnlyField(String label, String value) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
