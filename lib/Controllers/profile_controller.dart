@@ -1,3 +1,4 @@
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -13,23 +14,25 @@ class ProfileController extends GetxController {
   // TEXT CONTROLLERS
   // ============================================================
 
-  final TextEditingController nameController = TextEditingController();
+  final TextEditingController nameController =
+      TextEditingController();
 
-  final TextEditingController addressController = TextEditingController();
+  final TextEditingController addressController =
+      TextEditingController();
 
   // ============================================================
   // OBSERVABLE VARIABLES
   // ============================================================
 
-  var email = ''.obs;
+  final RxString email = ''.obs;
 
-  var profileImageUrl = ''.obs;
+  final RxString profileImageUrl = ''.obs;
 
-  var isLoading = true.obs;
+  final RxBool isLoading = true.obs;
 
-  var isSaving = false.obs;
+  final RxBool isSaving = false.obs;
 
-  var isUploadingImage = false.obs;
+  final RxBool isUploadingImage = false.obs;
 
   // ============================================================
   // IMAGE PICKER
@@ -52,8 +55,15 @@ class ProfileController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
     fetchUserData();
+  }
+
+  // ============================================================
+  // GET CURRENT USER
+  // ============================================================
+
+  User? get currentUser {
+    return FirebaseAuth.instance.currentUser;
   }
 
   // ============================================================
@@ -64,36 +74,45 @@ class ProfileController extends GetxController {
     try {
       isLoading.value = true;
 
-      final User? currentUser = FirebaseAuth.instance.currentUser;
+      final User? user = FirebaseAuth.instance.currentUser;
 
-      if (currentUser == null) {
+      // User login nahi hai
+      if (user == null) {
         email.value = '';
+        nameController.clear();
+        addressController.clear();
+        profileImageUrl.value = '';
         return;
       }
 
-      // Firebase Auth email
-      email.value = currentUser.email ?? '';
+      // Firebase Authentication se email
+      email.value = user.email ?? '';
 
-      // Firestore user document
-      final DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .get();
+      // Firestore se user data
+      final DocumentSnapshot userDoc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
 
       if (userDoc.exists && userDoc.data() != null) {
         final Map<String, dynamic> data =
             userDoc.data() as Map<String, dynamic>;
 
-        nameController.text = data['name']?.toString() ?? '';
+        nameController.text =
+            data['name']?.toString() ?? '';
 
-        addressController.text = data['address']?.toString() ?? '';
+        addressController.text =
+            data['address']?.toString() ?? '';
 
-        profileImageUrl.value = data['profileImage']?.toString() ?? '';
+        profileImageUrl.value =
+            data['profileImage']?.toString() ?? '';
       } else {
-        // Agar user ka document nahi hai
-        nameController.text = currentUser.displayName ?? '';
+        // Agar Firestore mein document nahi hai
+        nameController.text =
+            user.displayName ?? '';
 
-        addressController.text = '';
+        addressController.clear();
 
         profileImageUrl.value = '';
       }
@@ -103,6 +122,7 @@ class ProfileController extends GetxController {
         'Unable to load profile data.',
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
       );
     } finally {
       isLoading.value = false;
@@ -110,44 +130,47 @@ class ProfileController extends GetxController {
   }
 
   // ============================================================
-  // SAVE USER DATA TO FIRESTORE
+  // SAVE PROFILE DATA
   // ============================================================
 
   Future<void> saveUserData() async {
     try {
       isSaving.value = true;
 
-      final User? currentUser = FirebaseAuth.instance.currentUser;
+      final User? user =
+          FirebaseAuth.instance.currentUser;
 
-      if (currentUser == null) {
+      // User login nahi hai
+      if (user == null) {
         Get.snackbar(
           'Error',
-          'Please login first.',
+          'User is not logged in.',
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
         );
 
         return;
       }
 
+      // Firestore mein data save
       await FirebaseFirestore.instance
           .collection('users')
-          .doc(currentUser.uid)
-          .set({
-            'uid': currentUser.uid,
+          .doc(user.uid)
+          .set(
+        {
+          'uid': user.uid,
+          'name': nameController.text.trim(),
+          'email': user.email ?? email.value,
+          'address': addressController.text.trim(),
+          'profileImage': profileImageUrl.value,
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
 
-            'name': nameController.text.trim(),
-
-            'email': currentUser.email ?? email.value,
-
-            'address': addressController.text.trim(),
-
-            'profileImage': profileImageUrl.value,
-
-            'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
-
-      email.value = currentUser.email ?? '';
+      // Email update
+      email.value = user.email ?? '';
 
       Get.snackbar(
         'Success',
@@ -159,9 +182,10 @@ class ProfileController extends GetxController {
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Unable to save profile.',
+        'Unable to save profile data.',
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
       );
     } finally {
       isSaving.value = false;
@@ -174,23 +198,26 @@ class ProfileController extends GetxController {
 
   Future<void> pickImage(ImageSource source) async {
     try {
-      final XFile? pickedImage = await _picker.pickImage(
+      // Image picker open
+      final XFile? pickedImage =
+          await _picker.pickImage(
         source: source,
         imageQuality: 80,
         maxWidth: 1200,
       );
 
-      // User ne image select nahi ki
+      // User ne cancel kar diya
       if (pickedImage == null) {
         return;
       }
 
       isUploadingImage.value = true;
 
-      final File imageFile = File(pickedImage.path);
+      final File imageFile =
+          File(pickedImage.path);
 
       // ========================================================
-      // CLOUDINARY UPLOAD
+      // CLOUDINARY URL
       // ========================================================
 
       final Uri uri = Uri.parse(
@@ -198,38 +225,62 @@ class ProfileController extends GetxController {
         '$cloudinaryCloudName/image/upload',
       );
 
-      final http.MultipartRequest request = http.MultipartRequest('POST', uri);
-
-      request.fields['upload_preset'] = cloudinaryUploadPreset;
-
-      request.files.add(
-        await http.MultipartFile.fromPath('file', imageFile.path),
+      // Multipart request
+      final http.MultipartRequest request =
+          http.MultipartRequest(
+        'POST',
+        uri,
       );
 
-      final http.StreamedResponse streamedResponse = await request.send();
+      // Upload preset
+      request.fields['upload_preset'] =
+          cloudinaryUploadPreset;
 
-      final http.Response response = await http.Response.fromStream(
+      // Image file
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          imageFile.path,
+        ),
+      );
+
+      // Cloudinary ko request send
+      final http.StreamedResponse
+          streamedResponse =
+          await request.send();
+
+      final http.Response response =
+          await http.Response.fromStream(
         streamedResponse,
       );
 
       // ========================================================
-      // SUCCESS
+      // CLOUDINARY SUCCESS
       // ========================================================
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        final Map<String, dynamic>
+            jsonResponse =
+            jsonDecode(response.body);
 
-        final String imageUrl = jsonResponse['secure_url']?.toString() ?? '';
+        final String imageUrl =
+            jsonResponse['secure_url']
+                    ?.toString() ??
+                '';
 
         if (imageUrl.isEmpty) {
-          throw Exception('Cloudinary did not return image URL.');
+          throw Exception(
+            'Cloudinary image URL not found.',
+          );
         }
 
-        // Image URL ko observable mein save
+        // Screen par image show
         profileImageUrl.value = imageUrl;
 
-        // Firestore mein image URL save
-        await _saveImageUrlToFirestore(imageUrl);
+        // Firestore mein URL save
+        await saveImageUrlToFirestore(
+          imageUrl,
+        );
 
         Get.snackbar(
           'Success',
@@ -241,17 +292,19 @@ class ProfileController extends GetxController {
       } else {
         Get.snackbar(
           'Upload Error',
-          'Cloudinary upload failed.',
+          'Cloudinary upload failed. Status: ${response.statusCode}',
           backgroundColor: Colors.red,
           colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
         );
       }
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Image upload failed.',
+        'Image upload failed: $e',
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
       );
     } finally {
       isUploadingImage.value = false;
@@ -262,20 +315,33 @@ class ProfileController extends GetxController {
   // SAVE CLOUDINARY IMAGE URL TO FIRESTORE
   // ============================================================
 
-  Future<void> _saveImageUrlToFirestore(String imageUrl) async {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
+  Future<void> saveImageUrlToFirestore(
+      String imageUrl) async {
+    final User? user =
+        FirebaseAuth.instance.currentUser;
 
-    if (currentUser == null) {
+    if (user == null) {
+      Get.snackbar(
+        'Error',
+        'User is not logged in.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+
       return;
     }
 
     await FirebaseFirestore.instance
         .collection('users')
-        .doc(currentUser.uid)
-        .set({
-          'profileImage': imageUrl,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        .doc(user.uid)
+        .set(
+      {
+        'profileImage': imageUrl,
+        'updatedAt':
+            FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
   }
 
   // ============================================================
@@ -284,17 +350,39 @@ class ProfileController extends GetxController {
 
   Future<void> logout() async {
     try {
+      // Firebase account se logout
       await FirebaseAuth.instance.signOut();
 
+      // Login screen par wapas
       Get.offAllNamed('/login');
-    } catch (e) {
+    } on FirebaseAuthException catch (e) {
       Get.snackbar(
-        'Error',
-        'Unable to logout.',
+        'Logout Error',
+        e.message ?? 'Unable to logout.',
         backgroundColor: Colors.red,
         colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Logout Error',
+        'Unable to logout. Please try again.',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.TOP,
       );
     }
+  }
+
+  // ============================================================
+  // CLEAR PROFILE DATA
+  // ============================================================
+
+  void clearProfileData() {
+    nameController.clear();
+    addressController.clear();
+    email.value = '';
+    profileImageUrl.value = '';
   }
 
   // ============================================================

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:food_go/Auth/Login_Screen.dart';
+import 'package:food_go/Auth/login_screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Constants/image_path.dart';
 import 'package:get/get.dart';
