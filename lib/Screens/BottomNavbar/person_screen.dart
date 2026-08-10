@@ -15,7 +15,6 @@ class PersonScreen extends StatefulWidget {
 }
 
 class _personScreenState extends State<PersonScreen> {
-  // Yeh controllers user ke type kiye hue Name aur Address ko sambhalenge
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
 
@@ -26,8 +25,6 @@ class _personScreenState extends State<PersonScreen> {
   bool isUploadingImage = false;
 
   final ImagePicker _picker = ImagePicker();
-
-  // Cloudinary credentials
   final String cloudinaryCloudName = "eyncqf0n"; 
   final String cloudinaryUploadPreset = "ml_default";
 
@@ -37,7 +34,6 @@ class _personScreenState extends State<PersonScreen> {
     _fetchUserData();
   }
 
-  // Firestore se data fetch karke text boxes mein dalna
   void _fetchUserData() async {
     try {
       User? currentUser = FirebaseAuth.instance.currentUser;
@@ -74,7 +70,6 @@ class _personScreenState extends State<PersonScreen> {
     }
   }
 
-  // User ka enter kiya hua data Firestore mein save karne ka function
   Future<void> _saveUserData() async {
     setState(() => isSaving = true);
     try {

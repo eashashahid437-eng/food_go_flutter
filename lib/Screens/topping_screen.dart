@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Constants/app_colors.dart';
+import 'package:food_go/Screens/payment_method.dart';
 import 'package:food_go/utility/responsive.dart';
 import 'package:get/get.dart';
 
@@ -9,7 +10,8 @@ class BurgerCustomizationScreen extends StatefulWidget {
   const BurgerCustomizationScreen({super.key, this.basePrice = 10.0});
 
   @override
-  State<BurgerCustomizationScreen> createState() => _BurgerCustomizationScreenState();
+  State<BurgerCustomizationScreen> createState() =>
+      _BurgerCustomizationScreenState();
 }
 
 class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
@@ -18,13 +20,16 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
   final List<Map<String, dynamic>> _selectedItems = [];
 
   double get _calculatedTotal {
-    double itemsTotal = _selectedItems.fold(0.0, (sum, item) => sum + (item['price'] ?? 0.0));
+    double itemsTotal = _selectedItems.fold(
+      0.0,
+      (sum, item) => sum + (item['price'] ?? 0.0),
+    );
     return (widget.basePrice + itemsTotal) * _portionCount;
   }
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQueryu.getScreenWidth(context);
+    double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -36,7 +41,10 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
           onPressed: () => Get.back(),
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.search_rounded, color: Colors.black87), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.search_rounded, color: Colors.black87),
+            onPressed: () {},
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -61,7 +69,11 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                         errorBuilder: (context, error, stackTrace) => Container(
                           height: 180,
                           color: Colors.grey.shade100,
-                          child: const Icon(Icons.fastfood, color: Colors.orange, size: 80),
+                          child: const Icon(
+                            Icons.fastfood,
+                            color: Colors.orange,
+                            size: 80,
+                          ),
                         ),
                       ),
                     ),
@@ -72,17 +84,35 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Customize Your Burger", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                        const Text("to Your Tastes. Ultimate Experience", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                        const Text(
+                          "Customize Your Burger",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const Text(
+                          "to Your Tastes. Ultimate Experience",
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
                         const SizedBox(height: 15),
-                        const Text("Spicy", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        const Text(
+                          "Spicy",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
                         SliderTheme(
                           data: SliderTheme.of(context).copyWith(
                             activeTrackColor: AppColors.darkpink,
                             inactiveTrackColor: Colors.red.shade100,
                             thumbColor: AppColors.darkpink,
                             trackHeight: 4,
-                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                            thumbShape: const RoundSliderThumbShape(
+                              enabledThumbRadius: 6,
+                            ),
                           ),
                           child: Slider(
                             value: _spicyLevel,
@@ -92,18 +122,58 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: const [
-                            Text("Mild", style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.bold)), // Green for Mild
-                            Text("Hot", style: TextStyle(fontSize: 10, color: Colors.red, fontWeight: FontWeight.bold)), // Red for Hot
+                            Text(
+                              "Mild",
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ), // Green for Mild
+                            Text(
+                              "Hot",
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ), // Red for Hot
                           ],
                         ),
                         const SizedBox(height: 15),
-                        const Text("Portion", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        const Text(
+                          "Portion",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            _buildCounterBtn(Icons.remove, () => setState(() => _portionCount > 1 ? _portionCount-- : null)),
-                            Padding(padding: const EdgeInsets.symmetric(horizontal: 15), child: Text("$_portionCount", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
-                            _buildCounterBtn(Icons.add, () => setState(() => _portionCount++)),
+                            _buildCounterBtn(
+                              Icons.remove,
+                              () => setState(
+                                () =>
+                                    _portionCount > 1 ? _portionCount-- : null,
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 15,
+                              ),
+                              child: Text(
+                                "$_portionCount",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            _buildCounterBtn(
+                              Icons.add,
+                              () => setState(() => _portionCount++),
+                            ),
                           ],
                         ),
                       ],
@@ -133,7 +203,10 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(color: AppColors.darkpink, borderRadius: BorderRadius.circular(8)),
+        decoration: BoxDecoration(
+          color: AppColors.darkpink,
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Icon(icon, color: Colors.white, size: 18),
       ),
     );
@@ -143,10 +216,20 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
         const SizedBox(height: 12),
         StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('toppings').where('category', isEqualTo: category).snapshots(),
+          stream: FirebaseFirestore.instance
+              .collection('toppings')
+              .where('category', isEqualTo: category)
+              .snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -154,7 +237,10 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
               return const Padding(
                 padding: EdgeInsets.only(left: 10),
-                child: Text("No items available yet.", style: TextStyle(color: Colors.grey, fontSize: 11)),
+                child: Text(
+                  "No items available yet.",
+                  style: TextStyle(color: Colors.grey, fontSize: 11),
+                ),
               );
             }
             return SizedBox(
@@ -163,9 +249,15 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                 scrollDirection: Axis.horizontal,
                 itemCount: snapshot.data!.docs.length,
                 itemBuilder: (context, index) {
-                  var data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-                  data['docId'] = snapshot.data!.docs[index].id; // Document ID save kar lein
-                  bool isSelected = _selectedItems.any((i) => i['docId'] == data['docId']);
+                  var data =
+                      snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                  data['docId'] = snapshot
+                      .data!
+                      .docs[index]
+                      .id; // Document ID save kar lein
+                  bool isSelected = _selectedItems.any(
+                    (i) => i['docId'] == data['docId'],
+                  );
                   return _buildItemCard(data, isSelected);
                 },
               ),
@@ -194,10 +286,23 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? AppColors.darkpink : Colors.grey.shade200, width: 2), // Thicker border on selection
+          border: Border.all(
+            color: isSelected ? AppColors.darkpink : Colors.grey.shade200,
+            width: 2,
+          ), // Thicker border on selection
           boxShadow: [
-            if(isSelected) BoxShadow(color: AppColors.darkpink.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4)),
-            if(!isSelected) BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 3)),
+            if (isSelected)
+              BoxShadow(
+                color: AppColors.darkpink.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            if (!isSelected)
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
           ],
         ),
         child: Column(
@@ -211,7 +316,11 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                   child: Image.network(
                     imageUrl,
                     fit: BoxFit.contain,
-                    errorBuilder: (c, e, s) => const Icon(Icons.fastfood_rounded, size: 30, color: Colors.orangeAccent),
+                    errorBuilder: (c, e, s) => const Icon(
+                      Icons.fastfood_rounded,
+                      size: 30,
+                      color: Colors.orangeAccent,
+                    ),
                   ),
                 ),
               ),
@@ -224,7 +333,9 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 6),
                 decoration: const BoxDecoration(
                   color: Colors.black87,
-                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(14)),
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(14),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -234,7 +345,11 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                       child: Text(
                         name,
                         textAlign: TextAlign.left,
-                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -242,13 +357,20 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                     // Red '+' Icon (Figma Style)
                     Container(
                       padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(color: isSelected ? Colors.white : Colors.red, shape: BoxShape.circle), // Icon background changes color
-                      child: Icon(Icons.add, size: 12, color: isSelected ? AppColors.darkpink : Colors.white), // Icon color changes
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.white : Colors.red,
+                        shape: BoxShape.circle,
+                      ), // Icon background changes color
+                      child: Icon(
+                        Icons.add,
+                        size: 12,
+                        color: isSelected ? AppColors.darkpink : Colors.white,
+                      ), // Icon color changes
                     ),
                   ],
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -258,7 +380,16 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
   Widget _buildBottomBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, -5))]),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -267,8 +398,18 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Total", style: TextStyle(color: Colors.grey, fontSize: 11)),
-              Text("\$${_calculatedTotal.toStringAsFixed(2)}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)),
+              const Text(
+                "Total",
+                style: TextStyle(color: Colors.grey, fontSize: 11),
+              ),
+              Text(
+                "\$${_calculatedTotal.toStringAsFixed(2)}",
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
             ],
           ),
           // Order Now Button
@@ -278,19 +419,82 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.darkpink,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 elevation: 2,
               ),
+
               onPressed: () {
                 if (_selectedItems.isEmpty) {
-                  Get.snackbar("Oops!", "Please select at least one topping.", backgroundColor: Colors.orange, colorText: Colors.white);
+                  Get.snackbar(
+                    "Oops!",
+                    "Please select at least one topping.",
+                    backgroundColor: Colors.orange,
+                    colorText: Colors.white,
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
                 } else {
-                  Get.snackbar("Success!", "Order Placed! Total: \$${_calculatedTotal.toStringAsFixed(2)}", backgroundColor: Colors.green, colorText: Colors.white);
+                  Get.snackbar(
+                    "Success!",
+                    "Order placed successfully!",
+                    backgroundColor: Colors.white,
+                    colorText: Colors.black,
+                    snackPosition: SnackPosition.TOP,
+                  );
+
+                  Future.delayed(const Duration(seconds: 1), () {
+                    Get.to(() => PaymentMethod(orderTotal: _calculatedTotal));
+                  });
                 }
               },
-              child: const Text("Order Now", style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+
+              child: const Text(
+                "Order Now",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-          )
+            // child: ElevatedButton(
+            //   style: ElevatedButton.styleFrom(
+            //     backgroundColor: AppColors.darkpink,
+            //     shape: RoundedRectangleBorder(
+            //       borderRadius: BorderRadius.circular(16),
+            //     ),
+            //     elevation: 2,
+            //   ),
+            //   onPressed: () {
+
+            //     if (_selectedItems.isEmpty) {
+            //       Get.snackbar(
+            //         "Oops!",
+            //         "Please select at least one topping.",
+            //         backgroundColor: Colors.orange,
+            //         colorText: Colors.white,
+            //       );
+            //     } else {
+            //       Get.snackbar(
+            //         "Success!",
+            //         "Order Placed! Total: \$${_calculatedTotal.toStringAsFixed(2)}",
+            //         backgroundColor: Colors.green,
+            //         colorText: Colors.white,
+            //       );
+            //     }
+            //     },
+
+            //   child: const Text(
+            //     "Order Now",
+            //     style: TextStyle(
+            //       color: Colors.white,
+            //       fontSize: 16,
+            //       fontWeight: FontWeight.bold,
+            //     ),
+            //   ),
+            // ),
+          ),
         ],
       ),
     );

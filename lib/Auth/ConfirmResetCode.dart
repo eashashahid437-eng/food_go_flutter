@@ -92,7 +92,7 @@ class _ConfirmResetCodeState extends State<ConfirmResetCode> {
 
               // Reset Code Field
               Pinput(
-                length: 6,
+                length: 4,
                 defaultPinTheme: defaultPinTheme,
                 focusedPinTheme: focusedPinTheme,
                 submittedPinTheme: submittedPinTheme,
