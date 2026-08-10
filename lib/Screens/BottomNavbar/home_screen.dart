@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Constants/image_path.dart';
 import 'package:food_go/Screens/profile_screen.dart';
@@ -8,33 +9,6 @@ import 'package:get/get.dart';
 
 class HomeScreen extends StatelessWidget {
   HomeScreen({super.key});
-
-  final List<FoodModel> foodList = [
-    FoodModel(
-      id: 1,
-      image: "assets/images/Burger 6.png",
-      title: "Hamburger\nCheese Burger",
-      rating: 4.9,
-    ),
-    FoodModel(
-      id: 2,
-      image: "assets/images/Burger 3.png",
-      title: "Hamburger\nVeggie Burger",
-      rating: 4.8,
-    ),
-    FoodModel(
-      id: 3,
-      image: "assets/images/burger 4 (2).png",
-      title: "Hamburger\nChicken Burger",
-      rating: 4.6,
-    ),
-    FoodModel(
-      id: 4,
-      image: "assets/images/Burger 5.png",
-      title: "Hamburger\nFried Chicken Burger",
-      rating: 4.5,
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +42,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            Spacer(),
+            const Spacer(),
             GestureDetector(
               onTap: () {
                 Get.to(() => const ProfileScreen());
@@ -89,14 +63,14 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Search field & Filter button
             Row(
               children: [
-                SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.7,
+                Expanded(
                   child: TextField(
                     decoration: InputDecoration(
                       hintText: 'Search for food...',
-                      prefixIcon: Icon(Icons.search),
+                      prefixIcon: const Icon(Icons.search),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -115,11 +89,14 @@ class HomeScreen extends StatelessWidget {
                   onPressed: () {
                     // Handle filter button press
                   },
-                  child: Icon(Icons.tune, size: 22, color: Colors.white),
+                  child: const Icon(Icons.tune, size: 22, color: Colors.white),
                 ),
               ],
             ),
+
             SizedBox(height: MediaQuery.of(context).size.height * 0.05),
+
+            // Horizontal Categories Scroll
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -128,7 +105,6 @@ class HomeScreen extends StatelessWidget {
                   GestureDetector(
                     onTap: () {
                       print("All tapped");
-                      // Get.to(() => NextScreen());
                     },
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -139,7 +115,7 @@ class HomeScreen extends StatelessWidget {
                         color: AppColors.darkpink,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
+                      child: const Text(
                         'All',
                         style: TextStyle(
                           color: Colors.white,
@@ -149,12 +125,10 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   SizedBox(width: MediaQuery.of(context).size.width * 0.06),
                   GestureDetector(
                     onTap: () {
-                      print("All tapped");
-                      // Get.to(() => NextScreen());
+                      print("Combos tapped");
                     },
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -165,7 +139,7 @@ class HomeScreen extends StatelessWidget {
                         color: AppColors.lightwhite,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
+                      child: const Text(
                         'Combos',
                         style: TextStyle(
                           color: AppColors.lightgrey,
@@ -175,12 +149,10 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   SizedBox(width: MediaQuery.of(context).size.width * 0.06),
                   GestureDetector(
                     onTap: () {
-                      print("All tapped");
-                      // Get.to(() => NextScreen());
+                      print("Sliders tapped");
                     },
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -191,7 +163,7 @@ class HomeScreen extends StatelessWidget {
                         color: AppColors.lightwhite,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
+                      child: const Text(
                         'Sliders',
                         style: TextStyle(
                           color: AppColors.lightgrey,
@@ -201,12 +173,10 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   SizedBox(width: MediaQuery.of(context).size.width * 0.06),
                   GestureDetector(
                     onTap: () {
-                      print("All tapped");
-                      // Get.to(() => NextScreen());
+                      print("Classic tapped");
                     },
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -217,7 +187,7 @@ class HomeScreen extends StatelessWidget {
                         color: AppColors.lightwhite,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
+                      child: const Text(
                         'Classic',
                         style: TextStyle(
                           color: AppColors.lightgrey,
@@ -227,12 +197,10 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   SizedBox(width: MediaQuery.of(context).size.width * 0.06),
                   GestureDetector(
                     onTap: () {
-                      print("All tapped");
-                      // Get.to(() => NextScreen());
+                      print("Spicy tapped");
                     },
                     child: Container(
                       padding: EdgeInsets.symmetric(
@@ -243,7 +211,7 @@ class HomeScreen extends StatelessWidget {
                         color: AppColors.lightwhite,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
+                      child: const Text(
                         'Spicy',
                         style: TextStyle(
                           color: AppColors.lightgrey,
@@ -257,41 +225,54 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
+
             SizedBox(height: MediaQuery.of(context).size.height * 0.05),
 
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(top: 15),
-              itemCount: foodList.length,
+            // Firebase Firestore StreamBuilder GridView
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('product').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.darkpink),
+                  );
+                }
 
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                childAspectRatio: 0.72,
-              ),
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Text('Firebase mein koi product nahi milaa!'),
+                  );
+                }
 
-              itemBuilder: (context, index) {
-                return ProductCard(food: foodList[index]);
+                final docs = snapshot.data!.docs;
+
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(top: 15),
+                  itemCount: docs.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 15,
+                    mainAxisSpacing: 15,
+                    childAspectRatio: 0.72,
+                  ),
+                  itemBuilder: (context, index) {
+                    var data = docs[index].data() as Map<String, dynamic>;
+
+                    FoodModel food = FoodModel(
+                      id: index,
+                      image: data['imageUrl'] ?? '',
+                      title: data['title'] ?? '',
+                      name: data['name'] ?? '',
+                      price: (data['price'] ?? 4.5).toDouble(),
+                    );
+
+                    return ProductCard(food: food);
+                  },
+                );
               },
             ),
-
-            //  GridView.builder(
-            //     padding: const EdgeInsets.only(top: 15),
-            //     itemCount: foodList.length,
-
-            //     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            //       crossAxisCount: 2, // 2 columns
-            //       crossAxisSpacing: 15,
-            //       mainAxisSpacing: 15,
-            //       childAspectRatio: 0.72,
-            //     ),
-
-            //     itemBuilder: (context, index) {
-            //       return ProductCard(food: foodList[index]);
-            //     },
-            //   ),
           ],
         ),
       ),

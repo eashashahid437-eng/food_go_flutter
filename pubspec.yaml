@@ -39,6 +39,7 @@ dependencies:
   animated_bottom_navigation_bar: ^1.4.1
   font_awesome_flutter: ^11.0.0
   pinput: ^6.0.2
+  cloud_firestore: ^6.8.0
 
 dev_dependencies:
   flutter_test:

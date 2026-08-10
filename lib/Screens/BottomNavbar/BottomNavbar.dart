@@ -26,18 +26,26 @@ class BottomNavbar extends StatelessWidget {
       () => Scaffold(
         body: pages[controller.currentIndex.value],
 
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.red,
-          elevation: 5,
-          onPressed: () {},
-          child: const Icon(
-            Icons.add,
-            color: Colors.white,
+        // --- Perfect Circular FAB with Border ---
+        floatingActionButton: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 4), // Dynamic notch border look
+          ),
+          child: FloatingActionButton(
+            backgroundColor: Colors.red,
+            elevation: 4,
+            shape: const CircleBorder(), // <-- Is se button bilkul GOL (Circle) ho jayega!
+            onPressed: () {},
+            child: const Icon(
+              Icons.add,
+              color: Colors.white,
+              size: 28,
+            ),
           ),
         ),
 
-        floatingActionButtonLocation:
-            FloatingActionButtonLocation.centerDocked,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
 
         bottomNavigationBar: AnimatedBottomNavigationBar.builder(
           itemCount: controller.iconList.length,
@@ -46,7 +54,7 @@ class BottomNavbar extends StatelessWidget {
             return Icon(
               controller.iconList[index],
               size: 25,
-              color: isActive ? Colors.white : Colors.grey,
+              color: isActive ? Colors.white : Colors.white70,
             );
           },
 
@@ -54,16 +62,17 @@ class BottomNavbar extends StatelessWidget {
 
           gapLocation: GapLocation.center,
 
-          notchSmoothness: NotchSmoothness.verySmoothEdge,
+          // Notch smoothness ko soft border ke sath adjust kiya hai
+          notchSmoothness: NotchSmoothness.smoothEdge, 
+          notchMargin: 8,
 
-          leftCornerRadius: 25,
-
-          rightCornerRadius: 25,
+          leftCornerRadius: 28,
+          rightCornerRadius: 28,
 
           splashColor: Colors.red,
           backgroundColor: AppColors.darkpink,
 
-          height: 60,
+          height: 65,
           onTap: controller.changeIndex,
         ),
       ),

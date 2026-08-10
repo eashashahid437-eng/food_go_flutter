@@ -7,6 +7,7 @@ import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
 const String splashImage = 'assets/images/splash_image.png';
 const String burger1 = 'assets/images/burger1.png';
 const String burger2 = 'assets/images/burger2.png';
+import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -48,7 +49,6 @@ class _SplashScreenState extends State<SplashScreen> {
         ),
         child: Stack(
           children: [
-
             // Foodgo Logo
             const Center(
               child: Text(
@@ -62,27 +62,41 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
 
-            // Bottom burger
+            // Left Bottom Side Par Dono Burgers (Fully Attached to Edge)
             Positioned(
               bottom: -10,
-              left: -20,
-              child: Image.asset(
-                ImagePath.burger1,
-                width: 230,
-                height: 180,
-                fit: BoxFit.contain,
-              ),
-            ),
+              left: -35, // Is se burger screen ke bilkul left corner se chipak jayega
+              child: SizedBox(
+                width: 320,
+                height: 200,
+                child: Stack(
+                  alignment: Alignment.bottomLeft,
+                  children: [
+                    // Bada Burger
+                    Positioned(
+                      left: 0,
+                      bottom: 0,
+                      child: Image.network(
+                        "https://res.cloudinary.com/eyncqf0n/image/upload/v1786102755/image_2_vormow.png",
+                        width: 220,
+                        height: 190,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
 
-            // Bottom right burger
-            Positioned(
-              bottom: -5,
-              right: -25,
-              child: Image.asset(
-                ImagePath.burger2,
-                width: 210,
-                height: 170,
-                fit: BoxFit.contain,
+                    // Chota Burger (Bade Burger ke sath bilkul jura hua)
+                    Positioned(
+                      left: 130, // Isko thoda aur pass kar diya hai
+                      bottom: 0,
+                      child: Image.network(
+                        "https://res.cloudinary.com/eyncqf0n/image/upload/f_auto,q_auto/image_1_ixnwqk",
+                        width: 160,
+                        height: 130,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -90,5 +104,4 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
     );
   }
-
 }
