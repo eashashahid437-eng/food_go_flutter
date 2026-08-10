@@ -155,7 +155,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                               onPressed: () {
                                 setState(() {
                                   food.isFavorite = false;
-                                  globalFavoriteList.remove(food); // List se nikal dega
+                                  globalFavoriteList.remove(food); 
                                 });
                               },
                             );
