@@ -1,8 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Controllers/profile_controller.dart';
+import 'package:food_go/Screens/BottomNavbar/paymentscreen.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+
+// IMPORTANT:
+// In dono files ke import paths apni existing files ke according change karna.
+// Example:
+// import 'package:food_go/Screens/orderhistory.dart';
+// import 'package:food_go/Screens/paymentdetails.dart';
+
+import 'orderhistory.dart';
 
 class PersonScreen extends StatelessWidget {
   const PersonScreen({super.key});
@@ -30,9 +39,9 @@ class PersonScreen extends StatelessWidget {
         return SingleChildScrollView(
           child: Column(
             children: [
-              // ============================
-              // HEADER
-              // ============================
+
+              // ================= HEADER =================
+
               Container(
                 height: 210,
                 width: double.infinity,
@@ -46,9 +55,12 @@ class PersonScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+
                 child: Center(
                   child: Stack(
                     children: [
+
+                      // PROFILE IMAGE
                       Container(
                         width: 110,
                         height: 110,
@@ -56,18 +68,19 @@ class PersonScreen extends StatelessWidget {
                           color: Colors.white,
                           borderRadius:
                               BorderRadius.circular(18),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
                               color: Colors.black26,
                               blurRadius: 10,
-                              offset:
-                                  Offset(0, 5),
+                              offset: Offset(0, 5),
                             ),
                           ],
                         ),
+
                         child: ClipRRect(
                           borderRadius:
                               BorderRadius.circular(18),
+
                           child: controller
                                   .profileImageUrl
                                   .value
@@ -77,13 +90,13 @@ class PersonScreen extends StatelessWidget {
                                       .profileImageUrl
                                       .value,
                                   fit: BoxFit.cover,
+
                                   errorBuilder:
                                       (_, __, ___) {
                                     return const Icon(
                                       Icons.person,
                                       size: 60,
-                                      color:
-                                          Colors.grey,
+                                      color: Colors.grey,
                                     );
                                   },
                                 )
@@ -95,10 +108,12 @@ class PersonScreen extends StatelessWidget {
                         ),
                       ),
 
-                      // CAMERA
+                      // ================= CAMERA =================
+
                       Positioned(
                         right: 0,
                         bottom: 0,
+
                         child: GestureDetector(
                           onTap: controller
                                   .isUploadingImage
@@ -110,14 +125,17 @@ class PersonScreen extends StatelessWidget {
                                     controller,
                                   );
                                 },
+
                           child: Container(
                             width: 38,
                             height: 38,
+
                             decoration:
                                 const BoxDecoration(
                               color: Colors.black,
                               shape: BoxShape.circle,
                             ),
+
                             child: controller
                                     .isUploadingImage
                                     .value
@@ -145,16 +163,18 @@ class PersonScreen extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              // ============================
-              // FORM
-              // ============================
+              // ================= FORM =================
+
               Padding(
                 padding:
                     const EdgeInsets.symmetric(
                   horizontal: 20,
                 ),
+
                 child: Column(
                   children: [
+
+                    // NAME
                     _field(
                       'Name',
                       controller.nameController,
@@ -163,6 +183,7 @@ class PersonScreen extends StatelessWidget {
 
                     const SizedBox(height: 15),
 
+                    // EMAIL
                     _readOnly(
                       'Email',
                       user?.email ??
@@ -172,6 +193,7 @@ class PersonScreen extends StatelessWidget {
 
                     const SizedBox(height: 15),
 
+                    // ADDRESS
                     _field(
                       'Delivery Address',
                       controller.addressController,
@@ -181,6 +203,7 @@ class PersonScreen extends StatelessWidget {
 
                     const SizedBox(height: 15),
 
+                    // PASSWORD
                     _readOnly(
                       'Password',
                       '••••••••',
@@ -191,19 +214,34 @@ class PersonScreen extends StatelessWidget {
 
                     const Divider(),
 
+                    const SizedBox(height: 5),
+
+                    // =================================================
+                    // PAYMENT DETAILS
+                    // =================================================
+
                     ListTile(
+                      contentPadding:
+                          EdgeInsets.zero,
+
                       leading: const Icon(
                         Icons.payment,
-                        color:
-                            Color(0xFFFF5722),
+                        color: Color(0xFFFF5722),
                       ),
+
                       title: const Text(
                         'Payment Details',
+                        style: TextStyle(
+                          fontWeight:
+                              FontWeight.w500,
+                        ),
                       ),
+
                       trailing: const Icon(
                         Icons.arrow_forward_ios,
                         size: 15,
                       ),
+
                       onTap: () {
                         Get.to(
                           () =>
@@ -212,19 +250,32 @@ class PersonScreen extends StatelessWidget {
                       },
                     ),
 
+                    // =================================================
+                    // ORDER HISTORY
+                    // =================================================
+
                     ListTile(
+                      contentPadding:
+                          EdgeInsets.zero,
+
                       leading: const Icon(
                         Icons.history,
-                        color:
-                            Color(0xFFFF5722),
+                        color: Color(0xFFFF5722),
                       ),
+
                       title: const Text(
                         'Order History',
+                        style: TextStyle(
+                          fontWeight:
+                              FontWeight.w500,
+                        ),
                       ),
+
                       trailing: const Icon(
                         Icons.arrow_forward_ios,
                         size: 15,
                       ),
+
                       onTap: () {
                         Get.to(
                           () =>
@@ -238,27 +289,34 @@ class PersonScreen extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              // ============================
-              // BUTTONS
-              // ============================
+              // ================= BUTTONS =================
+
               Container(
                 width: double.infinity,
                 padding:
                     const EdgeInsets.all(18),
                 color: Colors.white,
+
                 child: Row(
                   children: [
+
+                    // SAVE
                     Expanded(
-                      child: ElevatedButton.icon(
+                      child:
+                          ElevatedButton.icon(
                         onPressed:
-                            controller.isSaving.value
+                            controller
+                                    .isSaving
+                                    .value
                                 ? null
-                                : () {
-                                    controller
+                                : () async {
+                                    await controller
                                         .saveUserData();
                                   },
+
                         icon: controller
-                                .isSaving.value
+                                .isSaving
+                                .value
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
@@ -271,11 +329,15 @@ class PersonScreen extends StatelessWidget {
                             : const Icon(
                                 Icons.save,
                               ),
+
                         label: Text(
-                          controller.isSaving.value
+                          controller
+                                  .isSaving
+                                  .value
                               ? 'Saving...'
                               : 'Save Profile',
                         ),
+
                         style:
                             ElevatedButton.styleFrom(
                           backgroundColor:
@@ -292,16 +354,20 @@ class PersonScreen extends StatelessWidget {
 
                     const SizedBox(width: 12),
 
+                    // LOGOUT
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child:
+                          OutlinedButton.icon(
                         onPressed:
                             controller.logout,
+
                         icon: const Icon(
                           Icons.logout,
                         ),
-                        label: const Text(
-                          'Log Out',
-                        ),
+
+                        label:
+                            const Text('Log Out'),
+
                         style:
                             OutlinedButton.styleFrom(
                           foregroundColor:
@@ -329,26 +395,35 @@ class PersonScreen extends StatelessWidget {
   }
 
   // ============================================================
-  // CAMERA / GALLERY OPTIONS
+  // CAMERA + GALLERY BOTTOM SHEET
   // ============================================================
+
   void _showImageOptions(
     BuildContext context,
     ProfileController controller,
   ) {
     showModalBottomSheet(
       context: context,
+
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
+
+      shape:
+          const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(
           top: Radius.circular(20),
         ),
       ),
+
       builder: (context) {
         return SafeArea(
           child: Wrap(
             children: [
+
               const Padding(
-                padding: EdgeInsets.all(18),
+                padding:
+                    EdgeInsets.all(18),
+
                 child: Center(
                   child: Text(
                     'Select Profile Picture',
@@ -361,13 +436,16 @@ class PersonScreen extends StatelessWidget {
                 ),
               ),
 
+              // CAMERA
               ListTile(
                 leading: const Icon(
                   Icons.camera_alt,
                   color: Color(0xFFFF5722),
                 ),
+
                 title:
                     const Text('Camera'),
+
                 onTap: () {
                   Navigator.pop(context);
 
@@ -377,13 +455,16 @@ class PersonScreen extends StatelessWidget {
                 },
               ),
 
+              // GALLERY
               ListTile(
                 leading: const Icon(
                   Icons.photo_library,
                   color: Color(0xFFFF5722),
                 ),
+
                 title:
                     const Text('Gallery'),
+
                 onTap: () {
                   Navigator.pop(context);
 
@@ -393,11 +474,14 @@ class PersonScreen extends StatelessWidget {
                 },
               ),
 
+              // CANCEL
               ListTile(
                 leading:
                     const Icon(Icons.close),
+
                 title:
                     const Text('Cancel'),
+
                 onTap: () {
                   Navigator.pop(context);
                 },
@@ -410,8 +494,9 @@ class PersonScreen extends StatelessWidget {
   }
 
   // ============================================================
-  // FIELD
+  // EDITABLE FIELD
   // ============================================================
+
   Widget _field(
     String title,
     TextEditingController controller,
@@ -421,6 +506,7 @@ class PersonScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment:
           CrossAxisAlignment.start,
+
       children: [
         Text(
           title,
@@ -429,18 +515,30 @@ class PersonScreen extends StatelessWidget {
             fontSize: 12,
           ),
         ),
+
         const SizedBox(height: 5),
+
         TextField(
           controller: controller,
           maxLines: maxLines,
-          decoration: InputDecoration(
-            prefixIcon: Icon(icon),
+
+          decoration:
+              InputDecoration(
+            prefixIcon:
+                Icon(icon),
+
             filled: true,
-            fillColor: Colors.grey[200],
-            border: OutlineInputBorder(
+
+            fillColor:
+                Colors.grey[200],
+
+            border:
+                OutlineInputBorder(
               borderRadius:
                   BorderRadius.circular(10),
-              borderSide: BorderSide.none,
+
+              borderSide:
+                  BorderSide.none,
             ),
           ),
         ),
@@ -449,8 +547,9 @@ class PersonScreen extends StatelessWidget {
   }
 
   // ============================================================
-  // READ ONLY
+  // READ ONLY FIELD
   // ============================================================
+
   Widget _readOnly(
     String title,
     String value,
@@ -459,6 +558,7 @@ class PersonScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment:
           CrossAxisAlignment.start,
+
       children: [
         Text(
           title,
@@ -467,31 +567,42 @@ class PersonScreen extends StatelessWidget {
             fontSize: 12,
           ),
         ),
+
         const SizedBox(height: 5),
+
         Container(
           width: double.infinity,
+
           padding:
               const EdgeInsets.all(15),
-          decoration: BoxDecoration(
+
+          decoration:
+              BoxDecoration(
             color: Colors.grey[200],
+
             borderRadius:
                 BorderRadius.circular(10),
           ),
+
           child: Row(
             children: [
               Icon(
                 icon,
                 color: Colors.grey,
               ),
+
               const SizedBox(width: 10),
+
               Expanded(
                 child: Text(
                   value.isEmpty
                       ? 'Not available'
                       : value,
+
                   style:
                       const TextStyle(
-                    color: Colors.black54,
+                    color:
+                        Colors.black54,
                   ),
                 ),
               ),
@@ -499,96 +610,6 @@ class PersonScreen extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// ============================================================
-// ORDER HISTORY
-// ============================================================
-
-class OrderHistoryScreen
-    extends StatelessWidget {
-  const OrderHistoryScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Order History',
-          style: TextStyle(
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor:
-            const Color(0xFFFF5722),
-        iconTheme:
-            const IconThemeData(
-          color: Colors.white,
-        ),
-      ),
-      body: const Center(
-        child: Text(
-          'No previous orders found.',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 16,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================
-// PAYMENT
-// ============================================================
-
-class PaymentDetailsScreen
-    extends StatelessWidget {
-  const PaymentDetailsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Payment Details',
-          style: TextStyle(
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor:
-            const Color(0xFFFF5722),
-        iconTheme:
-            const IconThemeData(
-          color: Colors.white,
-        ),
-      ),
-      body: Padding(
-        padding:
-            const EdgeInsets.all(16),
-        child: Card(
-          child: ListTile(
-            leading: const Icon(
-              Icons.credit_card,
-              color:
-                  Color(0xFFFF5722),
-            ),
-            title: const Text(
-              'Cash on Delivery',
-            ),
-            subtitle: const Text(
-              'Default payment method',
-            ),
-            trailing: const Icon(
-              Icons.check_circle,
-              color: Colors.green,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
