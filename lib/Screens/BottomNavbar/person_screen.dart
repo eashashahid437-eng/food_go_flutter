@@ -140,14 +140,18 @@ class PersonScreen extends StatelessWidget {
                             width: 145,
                             height: 145,
                             padding: const EdgeInsets.all(6),
+
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(28),
 
-                              // THIN BORDER
+                              // =================================================
+                              // Figma Style THIN RED BORDER
+                              // =================================================
+
                               border: Border.all(
-                                color: Colors.white,
-                                width: 1,
+                                color: redColor,
+                                width: 2,
                               ),
 
                               boxShadow: const [
@@ -161,6 +165,7 @@ class PersonScreen extends StatelessWidget {
 
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(23),
+
                               child: controller
                                       .profileImageUrl
                                       .value
@@ -224,12 +229,6 @@ class PersonScreen extends StatelessWidget {
                               child: InkWell(
                                 customBorder: const CircleBorder(),
 
-                                // =================================================
-                                // IMPORTANT:
-                                // CAMERA BUTTON AB OPTIONS OPEN KAREGA
-                                // DIRECT CAMERA NAHI
-                                // =================================================
-
                                 onTap: controller
                                         .isUploadingImage
                                         .value
@@ -244,11 +243,11 @@ class PersonScreen extends StatelessWidget {
                                 child: Container(
                                   width: 58,
                                   height: 58,
+
                                   decoration: BoxDecoration(
                                     color: Colors.black,
                                     shape: BoxShape.circle,
 
-                                    // THIN WHITE BORDER
                                     border: Border.all(
                                       color: Colors.white,
                                       width: 3,
@@ -356,10 +355,6 @@ class PersonScreen extends StatelessWidget {
                     ),
 
                     const SizedBox(height: 28),
-
-                    // =================================================
-                    // DIVIDER
-                    // =================================================
 
                     const Divider(
                       color: lightBorder,
@@ -643,10 +638,6 @@ class PersonScreen extends StatelessWidget {
               vertical: 16,
             ),
 
-            // =================================================
-            // THIN BORDER
-            // =================================================
-
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(22),
               borderSide: const BorderSide(
@@ -711,10 +702,6 @@ class PersonScreen extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(22),
 
-            // =================================================
-            // THIN BORDER
-            // =================================================
-
             border: Border.all(
               color: lightBorder,
               width: 1,
@@ -776,10 +763,6 @@ class PersonScreen extends StatelessWidget {
 
             child: Wrap(
               children: [
-                // =================================================
-                // HANDLE
-                // =================================================
-
                 Center(
                   child: Container(
                     width: 45,
@@ -792,10 +775,6 @@ class PersonScreen extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 12),
-
-                // =================================================
-                // TITLE
-                // =================================================
 
                 const Center(
                   child: Padding(
@@ -853,7 +832,6 @@ class PersonScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
 
-                    // CAMERA OPEN
                     controller.pickImage(
                       ImageSource.camera,
                     );
@@ -903,7 +881,6 @@ class PersonScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
 
-                    // GALLERY OPEN
                     controller.pickImage(
                       ImageSource.gallery,
                     );
