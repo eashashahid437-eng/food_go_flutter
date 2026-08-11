@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:food_go/widgets/product_card.dart'; // Isme FoodModel mojood hai
+import 'package:get/get.dart';
+import 'package:food_go/screens/payment_method.dart'; // Apni payment_method.dart ka sahi path check kar lein
 
 class ProductDetailScreen extends StatefulWidget {
   final FoodModel food;
@@ -28,6 +30,9 @@ class _ProductDetailScreenState
 
   @override
   Widget build(BuildContext context) {
+    // Real calculated total price
+    double totalPrice = widget.food.price * portionCount;
+
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -455,7 +460,7 @@ class _ProductDetailScreenState
                   ),
 
                   child: Text(
-                    "\$${(widget.food.price * portionCount).toStringAsFixed(2)}",
+                    "\$${totalPrice.toStringAsFixed(2)}",
 
                     style: const TextStyle(
                       fontSize: 22,
@@ -498,7 +503,8 @@ class _ProductDetailScreenState
                       ),
 
                       onPressed: () {
-                        // Order action logic here
+                        // Real calculated price ke sath PaymentMethodScreen par navigate karna
+                        Get.to(() => PaymentMethodScreen(totalPrice: totalPrice));
                       },
 
                       child: const Text(

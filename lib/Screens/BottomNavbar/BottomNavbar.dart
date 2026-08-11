@@ -18,7 +18,7 @@ class BottomNavbar extends StatelessWidget {
   final List<Widget> pages = [
     HomeScreen(),
     FavoriteScreen(),
-    MessageScreen(),
+   UserChatScreen (),
     PersonScreen(),
      // <-- 1. Yahan AddToppingScreen ka instance lag gaya hai
      // <-- 2. Yahan AddToppingScreen ka instance lag gaya hai
