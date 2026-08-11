@@ -5,6 +5,7 @@ import 'package:food_go/Auth/login_screen.dart';
 import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/utility/responsive.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -71,12 +72,12 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
 
             // Foodgo Logo
-            const Center(
+            Center(
               child: Text(
                 "Foodgo",
-                style: TextStyle(
+                style: GoogleFonts.lobster(
                   color: Colors.white,
-                  fontSize: 36,
+                  fontSize: 60,
                   fontWeight: FontWeight.bold,
                   fontStyle: FontStyle.italic,
                 ),

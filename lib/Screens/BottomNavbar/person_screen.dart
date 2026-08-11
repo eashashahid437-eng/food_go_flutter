@@ -15,9 +15,14 @@ import 'package:image_picker/image_picker.dart';
 
 import 'orderhistory.dart';
 
-class PersonScreen extends StatelessWidget {
+class PersonScreen extends StatefulWidget {
   const PersonScreen({super.key});
 
+  @override
+  State<PersonScreen> createState() => _PersonScreenState();
+}
+
+class _PersonScreenState extends State<PersonScreen> {
   // =============================================================
   // COLORS
   // =============================================================

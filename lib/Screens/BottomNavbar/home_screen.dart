@@ -6,6 +6,7 @@ import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/utility/responsive.dart';
 import 'package:food_go/widgets/product_card.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,21 +40,21 @@ class _HomeScreenState extends State<HomeScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Foodgo',
-                  style: TextStyle(
+                  style: GoogleFonts.lobster(
                     color: Colors.black,
-                    fontSize: 24,
+                    fontSize: 40,
                     fontWeight: FontWeight.bold,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
-                SizedBox(height: screenHeight * 0.01),
-                const Text(
+                SizedBox(height: screenHeight * 0.001),
+                Text(
                   'Order Your Favorite Food!',
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     color: AppColors.lightgrey,
-                    fontSize: 14,
+                    fontSize: 18,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -91,6 +92,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                     decoration: InputDecoration(
                       hintText: 'Search for food...',
+                      hintStyle: GoogleFonts.roboto(
+                        fontSize: 16,
+                        
+                      ),
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: searchQuery.isNotEmpty
                           ? IconButton(

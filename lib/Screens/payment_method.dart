@@ -207,8 +207,7 @@ class _PaymentMethodState extends State<PaymentMethod> {
                   //       ),
                   //     ),
                   child: Row(
-
-
+                    children: [
                       SizedBox(width: MediaQuery.of(context).size.width * 0.03),
 
                       const Expanded(
@@ -334,6 +333,7 @@ class _PaymentMethodState extends State<PaymentMethod> {
         ),
       ),
     );
+  
   }
 
   Widget _summaryRow(String title, String value) {
