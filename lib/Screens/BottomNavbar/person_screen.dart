@@ -22,262 +22,176 @@ class PersonScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ProfileController controller = Get.put(ProfileController());
+    final ProfileController controller =
+        Get.put(ProfileController());
 
     return Scaffold(
       backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: redColor,
+              ),
+            );
+          }
 
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(
-            child: CircularProgressIndicator(
-              color: redColor,
-            ),
-          );
-        }
+          final User? user = FirebaseAuth.instance.currentUser;
 
-        final User? user = FirebaseAuth.instance.currentUser;
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final double screenHeight = constraints.maxHeight;
+              final double headerHeight = screenHeight < 700 ? 180 : 200;
+              final double profileSize = screenHeight < 700 ? 110 : 125;
 
-        return SingleChildScrollView(
-          child: Column(
-            children: [
-              // =====================================================
-              // RED HEADER + WHITE SHEET + PROFILE IMAGE
-              // =====================================================
-
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  // =================================================
-                  // RED HEADER
-                  // =================================================
-
-                  Container(
-                    height: 270,
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          redColor,
-                          pinkColor,
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // =================================================
-                  // SETTINGS BUTTON
-                  // =================================================
-
-                  Positioned(
-                    top: 45,
-                    right: 20,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(30),
-                        onTap: () {
-                          Get.to(
-                            () => const SettingsScreen(),
-                          );
-                        },
-                        child: Container(
-                          width: 55,
-                          height: 55,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.18),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.settings_outlined,
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // =================================================
-                  // WHITE SHEET
-                  // =================================================
-
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Container(
-                      height: 135,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(45),
-                          topRight: Radius.circular(45),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // =================================================
-                  // PROFILE IMAGE
-                  // =================================================
-
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 35,
-                    child: Center(
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // =================================================
+                    // HEADER
+                    // =================================================
+                    SizedBox(
+                      height: headerHeight + (profileSize / 2),
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          // =================================================
-                          // PROFILE IMAGE CONTAINER
-                          // =================================================
-
+                          // =============================================
+                          // RED HEADER
+                          // =============================================
                           Container(
-                            width: 145,
-                            height: 145,
-                            padding: const EdgeInsets.all(6),
-
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(28),
-
-                              // =================================================
-                              // Figma Style THIN RED BORDER
-                              // =================================================
-
-                              border: Border.all(
-                                color: redColor,
-                                width: 2,
+                            height: headerHeight,
+                            width: double.infinity,
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  redColor,
+                                  pinkColor,
+                                ],
                               ),
-
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 15,
-                                  offset: Offset(0, 7),
-                                ),
-                              ],
-                            ),
-
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(23),
-
-                              child: controller
-                                      .profileImageUrl
-                                      .value
-                                      .isNotEmpty
-                                  ? Image.network(
-                                      controller.profileImageUrl.value,
-                                      fit: BoxFit.cover,
-
-                                      loadingBuilder: (
-                                        context,
-                                        child,
-                                        loadingProgress,
-                                      ) {
-                                        if (loadingProgress == null) {
-                                          return child;
-                                        }
-
-                                        return const Center(
-                                          child:
-                                              CircularProgressIndicator(
-                                            color: redColor,
-                                          ),
-                                        );
-                                      },
-
-                                      errorBuilder: (
-                                        context,
-                                        error,
-                                        stackTrace,
-                                      ) {
-                                        return Container(
-                                          color: Colors.grey[100],
-                                          child: const Icon(
-                                            Icons.person,
-                                            size: 65,
-                                            color: Colors.grey,
-                                          ),
-                                        );
-                                      },
-                                    )
-                                  : Container(
-                                      color: Colors.grey[100],
-                                      child: const Icon(
-                                        Icons.person,
-                                        size: 65,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
                             ),
                           ),
 
-                          // =================================================
-                          // CAMERA BUTTON
-                          // =================================================
-
+                          // =============================================
+                          // SETTINGS BUTTON (Transparent Background)
+                          // =============================================
                           Positioned(
-                            right: -8,
-                            bottom: -8,
+                            top: 15,
+                            right: 20,
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                customBorder: const CircleBorder(),
+                                borderRadius: BorderRadius.circular(30),
+                                onTap: () {
+                                  Get.to(
+                                    () => const SettingsScreen(),
+                                  );
+                                },
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.transparent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.settings_outlined,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
 
-                                onTap: controller
-                                        .isUploadingImage
-                                        .value
+                          // =============================================
+                          // PROFILE IMAGE (Tap to change, NO camera icon)
+                          // =============================================
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: Center(
+                              child: GestureDetector(
+                                onTap: controller.isUploadingImage.value
                                     ? null
                                     : () {
-                                        _showImageOptions(
-                                          context,
-                                          controller,
-                                        );
+                                        _showImageOptions(context, controller);
                                       },
-
                                 child: Container(
-                                  width: 58,
-                                  height: 58,
-
+                                  width: profileSize,
+                                  height: profileSize,
+                                  padding: EdgeInsets.zero,
                                   decoration: BoxDecoration(
-                                    color: Colors.black,
-                                    shape: BoxShape.circle,
-
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(25),
                                     border: Border.all(
-                                      color: Colors.white,
+                                      color: redColor,
                                       width: 3,
                                     ),
-
                                     boxShadow: const [
                                       BoxShadow(
-                                        color: Colors.black38,
-                                        blurRadius: 8,
-                                        offset: Offset(0, 4),
+                                        color: Colors.black26,
+                                        blurRadius: 10,
+                                        offset: Offset(0, 5),
                                       ),
                                     ],
                                   ),
-
-                                  child: controller
-                                          .isUploadingImage
-                                          .value
-                                      ? const Padding(
-                                          padding: EdgeInsets.all(15),
-                                          child:
-                                              CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2.5,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(22),
+                                    child: controller
+                                            .profileImageUrl
+                                            .value
+                                            .isNotEmpty
+                                        ? Image.network(
+                                            controller.profileImageUrl.value,
+                                            fit: BoxFit.cover,
+                                            loadingBuilder: (context, child,
+                                                loadingProgress) {
+                                              if (loadingProgress == null) {
+                                                return child;
+                                              }
+                                              return const Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  color: redColor,
+                                                  strokeWidth: 2.5,
+                                                ),
+                                              );
+                                            },
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return Container(
+                                                color: Colors.grey[100],
+                                                child: const Icon(
+                                                  Icons.person,
+                                                  size: 50,
+                                                  color: Colors.grey,
+                                                ),
+                                              );
+                                            },
+                                          )
+                                        : Container(
+                                            color: Colors.grey[100],
+                                            child: controller
+                                                    .isUploadingImage.value
+                                                ? const Padding(
+                                                    padding: EdgeInsets.all(30),
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      color: redColor,
+                                                      strokeWidth: 2.5,
+                                                    ),
+                                                  )
+                                                : const Icon(
+                                                    Icons.person,
+                                                    size: 50,
+                                                    color: Colors.grey,
+                                                  ),
                                           ),
-                                        )
-                                      : const Icon(
-                                          Icons.camera_alt,
-                                          color: Colors.white,
-                                          size: 27,
-                                        ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -285,309 +199,218 @@ class PersonScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-
-              // =====================================================
-              // SPACE AFTER HEADER
-              // =====================================================
-
-              const SizedBox(height: 20),
-
-              // =====================================================
-              // PROFILE INFORMATION
-              // =====================================================
-
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                ),
-
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // =================================================
-                    // NAME
-                    // =================================================
-
-                    _field(
-                      'Name',
-                      controller.nameController,
-                      Icons.person_outline,
-                    ),
-
-                    const SizedBox(height: 18),
 
                     // =================================================
-                    // EMAIL
+                    // PROFILE CONTENT
                     // =================================================
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 15),
 
-                    _readOnly(
-                      'Email',
-                      user?.email ?? controller.email.value,
-                      Icons.email_outlined,
-                    ),
+                          // ===========================================
+                          // NAME
+                          // ===========================================
+                          _field(
+                            'Name',
+                            controller.nameController,
+                            Icons.person_outline,
+                            compact: true,
+                          ),
 
-                    const SizedBox(height: 18),
+                          const SizedBox(height: 10),
 
-                    // =================================================
-                    // DELIVERY ADDRESS
-                    // =================================================
+                          // ===========================================
+                          // EMAIL
+                          // ===========================================
+                          _readOnly(
+                            'Email',
+                            user?.email ?? controller.email.value,
+                            Icons.email_outlined,
+                            compact: true,
+                          ),
 
-                    _field(
-                      'Delivery Address',
-                      controller.addressController,
-                      Icons.location_on_outlined,
-                      maxLines: 2,
-                    ),
+                          const SizedBox(height: 10),
 
-                    const SizedBox(height: 18),
+                          // ===========================================
+                          // DELIVERY ADDRESS
+                          // ===========================================
+                          _field(
+                            'Delivery Address',
+                            controller.addressController,
+                            Icons.location_on_outlined,
+                            maxLines: 1,
+                            compact: true,
+                          ),
 
-                    // =================================================
-                    // PASSWORD
-                    // =================================================
+                          const SizedBox(height: 10),
 
-                    _readOnly(
-                      'Password',
-                      '••••••••',
-                      Icons.lock_outline,
-                    ),
+                          // ===========================================
+                          // PASSWORD
+                          // ===========================================
+                          _readOnly(
+                            'Password',
+                            '••••••••',
+                            Icons.lock_outline,
+                            compact: true,
+                          ),
 
-                    const SizedBox(height: 28),
+                          const SizedBox(height: 14),
 
-                    const Divider(
-                      color: lightBorder,
-                      thickness: 1,
-                    ),
+                          const Divider(
+                            color: lightBorder,
+                            thickness: 1,
+                            height: 1,
+                          ),
 
-                    const SizedBox(height: 8),
+                          const SizedBox(height: 4),
 
-                    // =================================================
-                    // PAYMENT DETAILS
-                    // =================================================
+                          // ===========================================
+                          // PAYMENT + ORDER ROWS (Figma Style)
+                          // ===========================================
+                          _figmaStyleAction(
+                            title: 'Payment Details',
+                            onTap: () {
+                              Get.to(() => const PaymentDetailsScreen());
+                            },
+                          ),
 
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
+                          _figmaStyleAction(
+                            title: 'Order history',
+                            onTap: () {
+                              Get.to(() => const OrderHistoryScreen());
+                            },
+                          ),
 
-                      leading: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: redColor.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.credit_card_outlined,
-                          color: redColor,
-                        ),
-                      ),
+                          const Divider(
+                            color: lightBorder,
+                            thickness: 1,
+                            height: 1,
+                          ),
 
-                      title: const Text(
-                        'Payment Details',
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                          const SizedBox(height: 14),
 
-                      subtitle: const Text(
-                        'Manage your payment methods',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-
-                      trailing: const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: Colors.grey,
-                      ),
-
-                      onTap: () {
-                        Get.to(
-                          () => const PaymentDetailsScreen(),
-                        );
-                      },
-                    ),
-
-                    const Divider(
-                      color: lightBorder,
-                      thickness: 1,
-                    ),
-
-                    // =================================================
-                    // ORDER HISTORY
-                    // =================================================
-
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-
-                      leading: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: redColor.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.history,
-                          color: redColor,
-                        ),
-                      ),
-
-                      title: const Text(
-                        'Order History',
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-
-                      subtitle: const Text(
-                        'View your previous orders',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-
-                      trailing: const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: Colors.grey,
-                      ),
-
-                      onTap: () {
-                        Get.to(
-                          () => const OrderHistoryScreen(),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(height: 25),
-                  ],
-                ),
-              ),
-
-              // =====================================================
-              // SAVE + LOGOUT BUTTONS
-              // =====================================================
-
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(
-                  24,
-                  18,
-                  24,
-                  30,
-                ),
-                color: Colors.white,
-
-                child: Row(
-                  children: [
-                    // =================================================
-                    // SAVE PROFILE
-                    // =================================================
-
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: controller.isSaving.value
-                            ? null
-                            : () async {
-                                await controller.saveUserData();
-                              },
-
-                        icon: controller.isSaving.value
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
+                          // ===========================================
+                          // SAVE + LOGOUT BUTTONS
+                          // ===========================================
+                          Row(
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  height: 48,
+                                  child: ElevatedButton.icon(
+                                    onPressed: controller.isSaving.value
+                                        ? null
+                                        : () async {
+                                            await controller.saveUserData();
+                                          },
+                                    icon: controller.isSaving.value
+                                        ? const SizedBox(
+                                            width: 17,
+                                            height: 17,
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.edit_outlined,
+                                            size: 18,
+                                          ),
+                                    label: Text(
+                                      controller.isSaving.value
+                                          ? 'Saving...'
+                                          : 'Edit Profile',
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.black87,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              )
-                            : const Icon(
-                                Icons.edit_outlined,
-                                size: 20,
                               ),
-
-                        label: Text(
-                          controller.isSaving.value
-                              ? 'Saving...'
-                              : 'Edit Profile',
-                        ),
-
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black87,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 15,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: SizedBox(
+                                  height: 48,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      _showLogoutDialog(context, controller);
+                                    },
+                                    icon: const Icon(
+                                      Icons.logout,
+                                      size: 18,
+                                    ),
+                                    label: const Text(
+                                      'Log Out',
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: redColor,
+                                      side: const BorderSide(
+                                        color: redColor,
+                                        width: 1,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
 
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    // =================================================
-                    // LOGOUT
-                    // =================================================
-
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          _showLogoutDialog(
-                            context,
-                            controller,
-                          );
-                        },
-
-                        icon: const Icon(
-                          Icons.logout,
-                          size: 20,
-                        ),
-
-                        label: const Text(
-                          'Log Out',
-                        ),
-
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: redColor,
-
-                          side: const BorderSide(
-                            color: redColor,
-                            width: 1,
-                          ),
-
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 15,
-                          ),
-
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
+                          const SizedBox(height: 30),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
+              );
+            },
+          );
+        }),
+      ),
+    );
+  }
 
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      }),
+  // =============================================================
+  // FIGMA STYLE ROW ACTION (Payment & Order History)
+  // =============================================================
+
+  static Widget _figmaStyleAction({
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                color: textColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 13,
+              color: Colors.grey,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -600,6 +423,7 @@ class PersonScreen extends StatelessWidget {
     TextEditingController controller,
     IconData icon, {
     int maxLines = 1,
+    bool compact = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -608,54 +432,46 @@ class PersonScreen extends StatelessWidget {
           title,
           style: const TextStyle(
             color: textColor,
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
         ),
-
-        const SizedBox(height: 8),
-
+        const SizedBox(height: 3),
         TextField(
           controller: controller,
           maxLines: maxLines,
-
           style: const TextStyle(
             color: textColor,
-            fontSize: 15,
+            fontSize: 14,
           ),
-
           decoration: InputDecoration(
             prefixIcon: Icon(
               icon,
               color: Colors.grey,
+              size: 22,
             ),
-
             filled: true,
             fillColor: Colors.white,
-
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: compact ? 10 : 14,
             ),
-
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(18),
               borderSide: const BorderSide(
                 color: lightBorder,
                 width: 1,
               ),
             ),
-
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(18),
               borderSide: const BorderSide(
                 color: lightBorder,
                 width: 1,
               ),
             ),
-
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(18),
               borderSide: const BorderSide(
                 color: redColor,
                 width: 1,
@@ -674,8 +490,9 @@ class PersonScreen extends StatelessWidget {
   static Widget _readOnly(
     String title,
     String value,
-    IconData icon,
-  ) {
+    IconData icon, {
+    bool compact = false,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -683,47 +500,41 @@ class PersonScreen extends StatelessWidget {
           title,
           style: const TextStyle(
             color: textColor,
-            fontSize: 13,
+            fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
         ),
-
-        const SizedBox(height: 8),
-
+        const SizedBox(height: 3),
         Container(
           width: double.infinity,
-
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
+          padding: EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: compact ? 11 : 14,
           ),
-
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: lightBorder,
               width: 1,
             ),
           ),
-
           child: Row(
             children: [
               Icon(
                 icon,
                 color: Colors.grey[500],
+                size: 22,
               ),
-
               const SizedBox(width: 12),
-
               Expanded(
                 child: Text(
                   value.isEmpty ? 'Not available' : value,
-
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: textColor,
-                    fontSize: 15,
+                    fontSize: 14,
                   ),
                 ),
               ),
@@ -735,7 +546,7 @@ class PersonScreen extends StatelessWidget {
   }
 
   // =============================================================
-  // CAMERA + GALLERY OPTIONS
+  // CAMERA + GALLERY OPTIONS (Triggered by touching profile image)
   // =============================================================
 
   static void _showImageOptions(
@@ -744,15 +555,12 @@ class PersonScreen extends StatelessWidget {
   ) {
     showModalBottomSheet(
       context: context,
-
       backgroundColor: Colors.white,
-
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(25),
         ),
       ),
-
       builder: (context) {
         return SafeArea(
           child: Padding(
@@ -760,7 +568,6 @@ class PersonScreen extends StatelessWidget {
               top: 10,
               bottom: 15,
             ),
-
             child: Wrap(
               children: [
                 Center(
@@ -773,9 +580,7 @@ class PersonScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(15),
@@ -788,126 +593,88 @@ class PersonScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // =================================================
-                // TAKE PHOTO
-                // =================================================
-
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 25,
                   ),
-
                   leading: Container(
                     width: 45,
                     height: 45,
-
                     decoration: BoxDecoration(
                       color: redColor.withOpacity(0.10),
                       shape: BoxShape.circle,
                     ),
-
                     child: const Icon(
                       Icons.camera_alt_outlined,
                       color: redColor,
                     ),
                   ),
-
                   title: const Text(
                     'Take Photo',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-
                   subtitle: const Text(
                     'Use your camera',
                   ),
-
                   trailing: const Icon(
                     Icons.arrow_forward_ios,
                     size: 15,
                   ),
-
                   onTap: () {
                     Navigator.pop(context);
-
-                    controller.pickImage(
-                      ImageSource.camera,
-                    );
+                    controller.pickImage(ImageSource.camera);
                   },
                 ),
-
-                // =================================================
-                // GALLERY
-                // =================================================
-
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 25,
                   ),
-
                   leading: Container(
                     width: 45,
                     height: 45,
-
                     decoration: BoxDecoration(
                       color: redColor.withOpacity(0.10),
                       shape: BoxShape.circle,
                     ),
-
                     child: const Icon(
                       Icons.photo_library_outlined,
                       color: redColor,
                     ),
                   ),
-
                   title: const Text(
                     'Choose from Gallery',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-
                   subtitle: const Text(
                     'Select an existing photo',
                   ),
-
                   trailing: const Icon(
                     Icons.arrow_forward_ios,
                     size: 15,
                   ),
-
                   onTap: () {
                     Navigator.pop(context);
-
-                    controller.pickImage(
-                      ImageSource.gallery,
-                    );
+                    controller.pickImage(ImageSource.gallery);
                   },
                 ),
-
-                // =================================================
-                // CANCEL
-                // =================================================
-
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 25,
                   ),
-
                   leading: const Icon(
                     Icons.close,
                     color: Colors.grey,
                   ),
-
                   title: const Text(
                     'Cancel',
                     style: TextStyle(
                       color: Colors.grey,
                     ),
                   ),
-
                   onTap: () {
                     Navigator.pop(context);
                   },
@@ -933,41 +700,33 @@ class PersonScreen extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),
-
         title: const Text(
           'Logout',
           style: TextStyle(
             fontWeight: FontWeight.bold,
           ),
         ),
-
         content: const Text(
           'Are you sure you want to logout?',
         ),
-
         actions: [
           TextButton(
             onPressed: () {
               Get.back();
             },
-
             child: const Text(
               'Cancel',
             ),
           ),
-
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: redColor,
               foregroundColor: Colors.white,
             ),
-
             onPressed: () async {
               Get.back();
-
               await controller.logout();
             },
-
             child: const Text(
               'Logout',
             ),

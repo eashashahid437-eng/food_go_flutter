@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Screens/payment_method.dart';
-import 'package:food_go/utility/responsive.dart';
 import 'package:get/get.dart';
 
 class BurgerCustomizationScreen extends StatefulWidget {
@@ -444,7 +443,7 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                   );
 
                   Future.delayed(const Duration(seconds: 1), () {
-                    Get.to(() => PaymentMethod(orderTotal: _calculatedTotal));
+                    Get.to(() => PaymentMethodScreen(totalPrice: _calculatedTotal));
                   });
                 }
               },

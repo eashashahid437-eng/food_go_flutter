@@ -1,376 +1,200 @@
 import 'package:flutter/material.dart';
-import 'package:food_go/Screens/Payment_done.dart';
+import 'package:food_go/Controllers/paymentmethodcontroller.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart';
 
-// class PaymentMethod extends StatefulWidget {
-//   const PaymentMethod({super.key});
-class PaymentMethod extends StatefulWidget {
-  final double orderTotal;
-
-  const PaymentMethod({super.key, required this.orderTotal});
-
-  @override
-  State<PaymentMethod> createState() => _PaymentMethodState();
-}
-
-class _PaymentMethodState extends State<PaymentMethod> {
-  int selectedPayment = 0;
-  bool saveCard = true;
-
-  double get taxes {
-    return widget.orderTotal * 0.02;
-  }
-
-  double get deliveryFee {
-    return 1.50;
-  }
-
-  double get grandTotal {
-    return widget.orderTotal + taxes + deliveryFee;
-  }
+class PaymentMethodScreen extends StatelessWidget {
+  final double totalPrice; // Pichli screen se aane wali real price
+  
+  const PaymentMethodScreen({super.key, required this.totalPrice});
 
   @override
   Widget build(BuildContext context) {
+    final PaymentController controller = Get.put(PaymentController(totalPrice));
+
     return Scaffold(
       backgroundColor: Colors.white,
-
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          onPressed: () {
-            Get.back();
-          },
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black, size: 20),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Get.back(),
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 18),
-            child: Icon(Icons.search, color: Colors.black),
-          ),
+        actions: [
+          IconButton(icon: const Icon(Icons.search, color: Colors.black), onPressed: () {}),
         ],
       ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Order summary",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+            ),
+            const SizedBox(height: 15),
+            
+            // Dynamic Order Price Calculation
+            Obx(() => _buildSummaryRow("Order", "\$${controller.orderAmount.value.toStringAsFixed(2)}")),
+            const SizedBox(height: 8),
+            Obx(() => _buildSummaryRow("Taxes", "\$${controller.taxes.value.toStringAsFixed(2)}")),
+            const SizedBox(height: 8),
+            Obx(() => _buildSummaryRow("Delivery fees", "\$${controller.deliveryFees.value.toStringAsFixed(2)}")),
+            
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12.0),
+              child: Divider(color: Colors.grey, thickness: 0.5),
+            ),
 
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18),
+            Obx(() => _buildSummaryRow("Total:", "\$${controller.totalAmount.toStringAsFixed(2)}", isTotal: true)),
+            const SizedBox(height: 10),
+            
+            const Text(
+              "Estimated delivery time:        15 - 30mins",
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            
+            const SizedBox(height: 30),
+            const Text(
+              "Payment methods",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+            ),
+            const SizedBox(height: 15),
 
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 5),
+            // Payment Cards with Assets Images (account.jpg & visa.jpg)
+            Obx(() => Column(
+              children: [
+                _buildPaymentCard(
+                  title: 'Credit card',
+                  subtitle: '5105 **** **** 0505',
+                  imagePath: "assets/images/account.jpg",
+                  isSelected: controller.selectedMethod.value == 'mastercard',
+                  onTap: () => controller.selectedMethod.value = 'mastercard',
+                ),
+                const SizedBox(height: 12),
+                _buildPaymentCard(
+                  title: 'Debit card',
+                  subtitle: '3566 **** **** 0505',
+                  imagePath: "assets/images/visa.jpg",
+                  isSelected: controller.selectedMethod.value == 'visa',
+                  onTap: () => controller.selectedMethod.value = 'visa',
+                ),
+              ],
+            )),
 
-              const Text(
-                "Order summary",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+            const SizedBox(height: 15),
 
-              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+            Obx(() => Row(
+              children: [
+                Checkbox(
+                  value: controller.saveCard.value,
+                  activeColor: Colors.red,
+                  onChanged: (val) => controller.saveCard.value = val ?? true,
+                ),
+                const Text(
+                  "Save card details for future payments",
+                  style: TextStyle(fontSize: 13, color: Colors.black87),
+                ),
+              ],
+            )),
 
-              // Order
-              _summaryRow("Order", "\$16.48"),
+            const Spacer(),
 
-              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-
-              // Taxes
-              _summaryRow("Taxes", "\$0.3"),
-
-              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-
-              // Delivery
-              _summaryRow("Delivery fees", "\$1.5"),
-
-              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-
-              const Divider(),
-
-              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-
-              // Total
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    "Total:",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  ),
-                  Text(
-                    "\$18.19",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text(
-                    "Estimated delivery time:",
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    "15 - 30mins",
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-
-              const Text(
-                "Payment methods",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-
-              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-
-              // Master Card
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    selectedPayment = 0;
-                  });
-                },
-                child: _paymentCard(
-                  isSelected: selectedPayment == 0,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 45,
-                        height: 35,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            "MasterCard",
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(width: MediaQuery.of(context).size.width * 0.03),
-
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Credit card",
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              "5105 **** **** 0505",
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      Radio<int>(
-                        value: 0,
-                        groupValue: selectedPayment,
-                        activeColor: Colors.white,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedPayment = value!;
-                          });
-                        },
-                      ),
-                    ],
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Total price", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(height: 2),
+                    Obx(() => Text(
+                      "\$${controller.totalAmount.toStringAsFixed(2)}",
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red),
+                    )),
+                  ],
+                ),
+                SizedBox(
+                  width: 150,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2C2424),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => controller.processPayment(context),
+                    child: Obx(() => controller.isProcessing.value
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text("Pay Now", style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold))),
                   ),
                 ),
-              ),
-
-              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-
-              // Visa
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    selectedPayment = 1;
-                  });
-                },
-                child: _paymentCard(
-                  isSelected: selectedPayment == 1,
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 45,
-                        child: const Text(
-                          "VISA",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(width: MediaQuery.of(context).size.width * 0.03),
-
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Debit card",
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              "3566 **** **** 0505",
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      Radio<int>(
-                        value: 1,
-                        groupValue: selectedPayment,
-                        activeColor: Colors.red,
-                        onChanged: (value) {
-                          setState(() {
-                            selectedPayment = value!;
-                          });
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-
-              // Save card
-              Row(
-                children: [
-                  Checkbox(
-                    value: saveCard,
-                    activeColor: Colors.red,
-                    onChanged: (value) {
-                      setState(() {
-                        saveCard = value ?? false;
-                      });
-                    },
-                  ),
-
-                  const Text(
-                    "Save card details for future payments",
-                    style: TextStyle(fontSize: 12),
-                  ),
-                ],
-              ),
-
-              SizedBox(width: MediaQuery.of(context).size.width * 0.03),
-
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Total price",
-                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.03,
-                        ),
-
-                        Text(
-                          "\$18.19",
-                          style: TextStyle(
-                            fontSize: 23,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(
-                    width: 130,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Get.to(() => PaymentDone());
-                        // Get.dialog(
-                        //   const PaymentMethod(),
-                        //   barrierDismissible: false,
-                        // );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xff3D3030),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(13),
-                        ),
-                      ),
-                      child: const Text(
-                        "Pay Now",
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-            ],
-          ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
         ),
       ),
     );
   }
 
-  Widget _summaryRow(String title, String value) {
+  Widget _buildSummaryRow(String title, String amount, {bool isTotal = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-        Text(value, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+        Text(title, style: TextStyle(fontSize: isTotal ? 16 : 14, fontWeight: isTotal ? FontWeight.bold : FontWeight.normal, color: isTotal ? Colors.black : Colors.grey[700])),
+        Text(amount, style: TextStyle(fontSize: isTotal ? 18 : 14, fontWeight: FontWeight.bold, color: isTotal ? Colors.black : Colors.black87)),
       ],
     );
   }
 
-  Widget _paymentCard({required bool isSelected, required Widget child}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xff3D3030) : const Color(0xffF5F5F5),
-        borderRadius: BorderRadius.circular(13),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: DefaultTextStyle(
-        style: TextStyle(color: isSelected ? Colors.white : Colors.black),
-        child: child,
+  Widget _buildPaymentCard({
+    required String title,
+    required String subtitle,
+    required String imagePath,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF2C2424) : Colors.grey[100],
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 30,
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Image.asset(
+                imagePath,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.black)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white70 : Colors.grey)),
+                ],
+              ),
+            ),
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: isSelected ? Colors.white : Colors.grey,
+            ),
+          ],
+        ),
       ),
     );
   }
