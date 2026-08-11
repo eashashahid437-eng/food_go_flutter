@@ -9,4 +9,7 @@ class ImagePath {
   static const String Google ="assets/images/Google.png";
   static const String applelogo ="assets/images/Apple-Logo.png";
   static const String twitter ="assets/images/twitter.png";
+  static const String mastercard="assets/images/Master card.png";
+  static const String visa="assets/images/Visa.png";
+
 }

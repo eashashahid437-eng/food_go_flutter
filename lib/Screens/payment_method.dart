@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_go/Constants/image_path.dart';
 import 'package:food_go/Screens/Payment_done.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart';
@@ -144,15 +145,8 @@ class _PaymentMethodState extends State<PaymentMethod> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(5),
                         ),
-                        child: const Center(
-                          child: Text(
-                            "MasterCard",
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+                        child: Center(
+                           child: Image.asset(ImagePath.mastercard)
                         ),
                       ),
 
@@ -204,18 +198,16 @@ class _PaymentMethodState extends State<PaymentMethod> {
                 },
                 child: _paymentCard(
                   isSelected: selectedPayment == 1,
+                  // child: Row(
+                  //   children: [
+                  //     SizedBox(
+                  //       child:Center()
+                        
+                  //       child: Image.asset(ImagePath.visa,
+                  //       ),
+                  //     ),
                   child: Row(
-                    children: [
-                      SizedBox(
-                        width: 45,
-                        child: const Text(
-                          "VISA",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+
 
                       SizedBox(width: MediaQuery.of(context).size.width * 0.03),
 
