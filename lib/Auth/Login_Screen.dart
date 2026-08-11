@@ -360,8 +360,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           InkWell(
                             onTap: signInWithGoogle,
                             borderRadius: BorderRadius.circular(50),
+
                             child: Container(
                               padding: const EdgeInsets.all(6),
+
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
@@ -369,6 +371,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   width: 2,
                                 ),
                               ),
+
                               child: CircleAvatar(
                                 radius: 20,
                                 backgroundImage:
@@ -381,14 +384,20 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: MediaQuery.of(context).size.width * 0.05,
                           ),
 
-                          // APPLE BUTTON
+                          // APPLE
                           InkWell(
                             onTap: () {
-                              print("Apple button clicked");
+                              Get.snackbar(
+                                "Apple Login",
+                                "Apple login is not configured yet.",
+                              );
                             },
+
                             borderRadius: BorderRadius.circular(50),
+
                             child: Container(
                               padding: const EdgeInsets.all(6),
+
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
@@ -396,11 +405,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   width: 1.5,
                                 ),
                               ),
+
                               child: CircleAvatar(
                                 radius: 20,
+
                                 backgroundImage: AssetImage(
                                   ImagePath.applelogo,
                                 ),
+
                                 backgroundColor: Colors.white,
                               ),
                             ),
@@ -410,14 +422,20 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: MediaQuery.of(context).size.width * 0.05,
                           ),
 
-                          // TWITTER BUTTON
+                          // TWITTER
                           InkWell(
                             onTap: () {
-                              print("Twitter button clicked");
+                              Get.snackbar(
+                                "Twitter Login",
+                                "Twitter login is not configured yet.",
+                              );
                             },
+
                             borderRadius: BorderRadius.circular(50),
+
                             child: Container(
                               padding: const EdgeInsets.all(6),
+
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
@@ -425,6 +443,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   width: 1.5,
                                 ),
                               ),
+
                               child: CircleAvatar(
                                 radius: 20,
                                 backgroundImage:

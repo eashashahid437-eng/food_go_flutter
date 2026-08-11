@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:food_go/Auth/Login_Screen.dart';
+import 'package:food_go/Auth/login_screen.dart';
 import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/utility/responsive.dart';

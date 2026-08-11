@@ -10,355 +10,19 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
-class PersonScreen extends StatefulWidget {
+import 'orderhistory.dart';
+
+class PersonScreen extends StatelessWidget {
   const PersonScreen({super.key});
 
-  @override
-  State<PersonScreen> createState() => _PersonScreenState();
-}
-
-class _PersonScreenState extends State<PersonScreen> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
-
-  final ImagePicker _picker = ImagePicker();
-  final String cloudinaryCloudName = "eyncqf0n";
-  final String cloudinaryUploadPreset = "ml_default";
-
-  String email = "Loading...";
-  String profileImageUrl = "";
-
-  bool isLoading = true;
-  bool isSaving = false;
-  bool isUploadingImage = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchUserData();
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _addressController.dispose();
-    super.dispose();
-  }
-
-  // ============================================================
-  // FETCH USER DATA
-  // ============================================================
-
-  Future<void> _fetchUserData() async {
-    try {
-      final User? currentUser = FirebaseAuth.instance.currentUser;
-
-      if (currentUser == null) {
-        if (!mounted) return;
-
-        setState(() {
-          isLoading = false;
-          email = "No user logged in";
-        });
-
-        return;
-      }
-
-      final DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .get();
-
-      if (!mounted) return;
-
-      if (userDoc.exists && userDoc.data() != null) {
-        final data = userDoc.data() as Map<String, dynamic>;
-
-        setState(() {
-          _nameController.text = data['name'] ?? '';
-          email = currentUser.email ?? 'No Email';
-          _addressController.text = data['address'] ?? '';
-          profileImageUrl = data['profileImage'] ?? '';
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          _nameController.text =
-              currentUser.displayName ?? 'Admin User';
-          email = currentUser.email ?? '';
-          _addressController.text = '';
-          profileImageUrl = '';
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-      });
-
-      Get.snackbar(
-        "Error",
-        "Failed to load profile:\n$e",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 4),
-      );
-    }
-  }
-
-  // ============================================================
-  // SAVE USER DATA
-  // ============================================================
-
-  Future<bool> _saveUserData() async {
-    if (isSaving) return false;
-
-    setState(() {
-      isSaving = true;
-    });
-
-    try {
-      final User? currentUser = FirebaseAuth.instance.currentUser;
-
-      if (currentUser == null) {
-        throw Exception("User is not logged in.");
-      }
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .set(
-        {
-          'name': _nameController.text.trim(),
-          'email': email,
-          'address': _addressController.text.trim(),
-          'profileImage': profileImageUrl,
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
-
-      if (!mounted) return true;
-
-      Get.snackbar(
-        "Success",
-        "Profile saved successfully!",
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 2),
-      );
-
-      return true;
-    } catch (e) {
-      if (!mounted) return false;
-
-      Get.snackbar(
-        "Error",
-        "Failed to save profile:\n$e",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 4),
-      );
-
-      return false;
-    } finally {
-      if (mounted) {
-        setState(() {
-          isSaving = false;
-        });
-      }
-    }
-  }
-
-  // ============================================================
-  // PICK IMAGE + UPLOAD TO CLOUDINARY
-  // ============================================================
-
-  Future<void> _pickAndUploadImage() async {
-    if (isUploadingImage) return;
-
-    try {
-      // Pick image
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 85,
-        maxWidth: 1200,
-        maxHeight: 1200,
-      );
-
-      if (image == null) {
-        return;
-      }
-
-      if (!mounted) return;
-
-      setState(() {
-        isUploadingImage = true;
-      });
-
-      final File imageFile = File(image.path);
-
-      // Check file exists
-      if (!await imageFile.exists()) {
-        throw Exception("Selected image file does not exist.");
-      }
-
-      // Cloudinary upload URL
-      final Uri uri = Uri.parse(
-        "https://api.cloudinary.com/v1_1/$cloudinaryCloudName/image/upload",
-      );
-
-      debugPrint("========================================");
-      debugPrint("CLOUDINARY UPLOAD STARTED");
-      debugPrint("Cloud Name: $cloudinaryCloudName");
-      debugPrint("Upload Preset: $cloudinaryUploadPreset");
-      debugPrint("Image Path: ${imageFile.path}");
-      debugPrint("========================================");
-
-      // Create multipart request
-      final http.MultipartRequest request =
-          http.MultipartRequest('POST', uri);
-
-      // Cloudinary unsigned upload preset
-      request.fields['upload_preset'] = cloudinaryUploadPreset;
-
-      // Add image
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'file',
-          imageFile.path,
-        ),
-      );
-
-      // Send request
-      final http.StreamedResponse streamedResponse =
-          await request.send();
-
-      // Convert response
-      final http.Response response =
-          await http.Response.fromStream(streamedResponse);
-
-      debugPrint("Cloudinary Status Code: ${response.statusCode}");
-      debugPrint("Cloudinary Response: ${response.body}");
-
-      // ========================================================
-      // SUCCESS
-      // ========================================================
-
-      if (response.statusCode >= 200 &&
-          response.statusCode < 300) {
-        final dynamic decodedResponse =
-            jsonDecode(response.body);
-
-        if (decodedResponse is! Map<String, dynamic>) {
-          throw Exception(
-            "Invalid response received from Cloudinary.",
-          );
-        }
-
-        final String? uploadedImageUrl =
-            decodedResponse['secure_url']?.toString();
-
-        if (uploadedImageUrl == null ||
-            uploadedImageUrl.isEmpty) {
-          throw Exception(
-            "Cloudinary did not return secure_url.",
-          );
-        }
-
-        debugPrint("Uploaded Image URL:");
-        debugPrint(uploadedImageUrl);
-
-        if (!mounted) return;
-
-        // Update UI
-        setState(() {
-          profileImageUrl = uploadedImageUrl;
-        });
-
-        // Save URL to Firestore
-        final bool saved = await _saveProfileImageToFirestore(
-          uploadedImageUrl,
-        );
-
-        if (!mounted) return;
-
-        if (saved) {
-          Get.snackbar(
-            "Success",
-            "Profile picture updated successfully!",
-            backgroundColor: Colors.green,
-            colorText: Colors.white,
-            duration: const Duration(seconds: 3),
-          );
-        }
-      }
-
-      // ========================================================
-      // ERROR
-      // ========================================================
-
-      else {
-        String errorMessage =
-            "Cloudinary upload failed.";
-
-        try {
-          final dynamic errorJson =
-              jsonDecode(response.body);
-
-          if (errorJson is Map<String, dynamic>) {
-            final dynamic error = errorJson['error'];
-
-            if (error is Map<String, dynamic>) {
-              errorMessage =
-                  error['message']?.toString() ??
-                      errorMessage;
-            } else if (error != null) {
-              errorMessage = error.toString();
-            }
-          }
-        } catch (_) {
-          if (response.body.isNotEmpty) {
-            errorMessage = response.body;
-          }
-        }
-
-        debugPrint(
-          "CLOUDINARY ERROR: $errorMessage",
-        );
-
-        if (!mounted) return;
-
-        Get.snackbar(
-          "Cloudinary Error",
-          errorMessage,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 6),
-        );
-      }
-    } catch (e) {
-      debugPrint("PROFILE IMAGE ERROR: $e");
-
-      if (!mounted) return;
-
-      Get.snackbar(
-        "Upload Error",
-        e.toString(),
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 5),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          isUploadingImage = false;
-        });
-      }
-    }
-  }
+  // =============================================================
+  // COLORS
+  // =============================================================
+
+  static const Color redColor = Color(0xFFFF1744);
+  static const Color pinkColor = Color(0xFFFF006E);
+  static const Color lightBorder = Color(0xFFE0E0E0);
+  static const Color textColor = Color(0xFF252525);
 
   // ============================================================
   // SAVE PROFILE IMAGE URL TO FIRESTORE
@@ -441,355 +105,643 @@ class _PersonScreenState extends State<PersonScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Colors.red,
-              ),
-            )
-          : Column(
-              children: [
-                // ==================================================
-                // HEADER + PROFILE IMAGE
-                // ==================================================
+    final ProfileController controller = Get.put(ProfileController());
 
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      height: 180,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFFFF5722),
-                            Color(0xFFE91E63),
-                          ],
+    return Scaffold(
+      backgroundColor: Colors.white,
+
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(
+            child: CircularProgressIndicator(
+              color: redColor,
+            ),
+          );
+        }
+
+        final User? user = FirebaseAuth.instance.currentUser;
+
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              // =====================================================
+              // RED HEADER + WHITE SHEET + PROFILE IMAGE
+              // =====================================================
+
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // =================================================
+                  // RED HEADER
+                  // =================================================
+
+                  Container(
+                    height: 270,
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          redColor,
+                          pinkColor,
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // =================================================
+                  // SETTINGS BUTTON
+                  // =================================================
+
+                  Positioned(
+                    top: 45,
+                    right: 20,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(30),
+                        onTap: () {
+                          Get.to(
+                            () => const SettingsScreen(),
+                          );
+                        },
+                        child: Container(
+                          width: 55,
+                          height: 55,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.18),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.settings_outlined,
+                            color: Colors.white,
+                            size: 30,
+                          ),
                         ),
                       ),
                     ),
+                  ),
 
-                    const Positioned(
-                      top: 40,
-                      right: 20,
-                      child: Icon(
-                        Icons.settings,
+                  // =================================================
+                  // WHITE SHEET
+                  // =================================================
+
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: Container(
+                      height: 135,
+                      decoration: const BoxDecoration(
                         color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(45),
+                          topRight: Radius.circular(45),
+                        ),
                       ),
                     ),
+                  ),
 
-                    // PROFILE IMAGE
-                    Positioned(
-                      bottom: -60,
-                      left:
-                          MediaQuery.of(context).size.width / 2 -
-                              70,
+                  // =================================================
+                  // PROFILE IMAGE
+                  // =================================================
+
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 35,
+                    child: Center(
                       child: Stack(
+                        clipBehavior: Clip.none,
                         children: [
+                          // =================================================
+                          // PROFILE IMAGE CONTAINER
+                          // =================================================
+
                           Container(
+                            width: 145,
+                            height: 145,
+                            padding: const EdgeInsets.all(6),
+
                             decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(28),
+
+                              // =================================================
+                              // Figma Style THIN RED BORDER
+                              // =================================================
+
+                              border: Border.all(
+                                color: redColor,
+                                width: 2,
+                              ),
+
+                              boxShadow: const [
                                 BoxShadow(
-                                  color: Colors.black
-                                      .withOpacity(0.2),
-                                  blurRadius: 10,
-                                  offset:
-                                      const Offset(0, 5),
+                                  color: Colors.black26,
+                                  blurRadius: 15,
+                                  offset: Offset(0, 7),
                                 ),
                               ],
                             ),
-                            child: CircleAvatar(
-                              radius: 70,
-                              backgroundColor: Colors.white,
-                              child: CircleAvatar(
-                                radius: 65,
-                                backgroundColor:
-                                    Colors.grey[200],
 
-                                // SHOW CLOUDINARY IMAGE
-                                backgroundImage:
-                                    profileImageUrl
-                                            .isNotEmpty
-                                        ? NetworkImage(
-                                            profileImageUrl,
-                                          )
-                                        : const AssetImage(
-                                                'assets/images/admin_avatar.png',
-                                              )
-                                            as ImageProvider,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(23),
 
-                                onBackgroundImageError:
-                                    profileImageUrl
-                                            .isNotEmpty
-                                        ? (_, __) {
-                                            debugPrint(
-                                              "Failed to load profile image:",
-                                            );
-                                            debugPrint(
-                                              profileImageUrl,
-                                            );
-                                          }
-                                        : null,
-                              ),
+                              child: controller
+                                      .profileImageUrl
+                                      .value
+                                      .isNotEmpty
+                                  ? Image.network(
+                                      controller.profileImageUrl.value,
+                                      fit: BoxFit.cover,
+
+                                      loadingBuilder: (
+                                        context,
+                                        child,
+                                        loadingProgress,
+                                      ) {
+                                        if (loadingProgress == null) {
+                                          return child;
+                                        }
+
+                                        return const Center(
+                                          child:
+                                              CircularProgressIndicator(
+                                            color: redColor,
+                                          ),
+                                        );
+                                      },
+
+                                      errorBuilder: (
+                                        context,
+                                        error,
+                                        stackTrace,
+                                      ) {
+                                        return Container(
+                                          color: Colors.grey[100],
+                                          child: const Icon(
+                                            Icons.person,
+                                            size: 65,
+                                            color: Colors.grey,
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : Container(
+                                      color: Colors.grey[100],
+                                      child: const Icon(
+                                        Icons.person,
+                                        size: 65,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
                             ),
                           ),
 
+                          // =================================================
                           // CAMERA BUTTON
+                          // =================================================
+
                           Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: InkWell(
-                              onTap: isUploadingImage
-                                  ? null
-                                  : _pickAndUploadImage,
-                              borderRadius:
-                                  BorderRadius.circular(30),
-                              child: Container(
-                                padding:
-                                    const EdgeInsets.all(8),
-                                decoration:
-                                    const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFF00C0EF),
-                                ),
-                                child: isUploadingImage
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child:
-                                            CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.camera_alt,
-                                        color: Colors.white,
-                                        size: 18,
+                            right: -8,
+                            bottom: -8,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+
+                                onTap: controller
+                                        .isUploadingImage
+                                        .value
+                                    ? null
+                                    : () {
+                                        _showImageOptions(
+                                          context,
+                                          controller,
+                                        );
+                                      },
+
+                                child: Container(
+                                  width: 58,
+                                  height: 58,
+
+                                  decoration: BoxDecoration(
+                                    color: Colors.black,
+                                    shape: BoxShape.circle,
+
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 3,
+                                    ),
+
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Colors.black38,
+                                        blurRadius: 8,
+                                        offset: Offset(0, 4),
                                       ),
+                                    ],
+                                  ),
+
+                                  child: controller
+                                          .isUploadingImage
+                                          .value
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(15),
+                                          child:
+                                              CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2.5,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.camera_alt,
+                                          color: Colors.white,
+                                          size: 27,
+                                        ),
+                                ),
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
+                  ),
+                ],
+              ),
+
+              // =====================================================
+              // SPACE AFTER HEADER
+              // =====================================================
+
+              const SizedBox(height: 20),
+
+              // =====================================================
+              // PROFILE INFORMATION
+              // =====================================================
+
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                ),
+
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // =================================================
+                    // NAME
+                    // =================================================
+
+                    _field(
+                      'Name',
+                      controller.nameController,
+                      Icons.person_outline,
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // =================================================
+                    // EMAIL
+                    // =================================================
+
+                    _readOnly(
+                      'Email',
+                      user?.email ?? controller.email.value,
+                      Icons.email_outlined,
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // =================================================
+                    // DELIVERY ADDRESS
+                    // =================================================
+
+                    _field(
+                      'Delivery Address',
+                      controller.addressController,
+                      Icons.location_on_outlined,
+                      maxLines: 2,
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // =================================================
+                    // PASSWORD
+                    // =================================================
+
+                    _readOnly(
+                      'Password',
+                      '••••••••',
+                      Icons.lock_outline,
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    const Divider(
+                      color: lightBorder,
+                      thickness: 1,
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // =================================================
+                    // PAYMENT DETAILS
+                    // =================================================
+
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+
+                      leading: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: redColor.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.credit_card_outlined,
+                          color: redColor,
+                        ),
+                      ),
+
+                      title: const Text(
+                        'Payment Details',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+
+                      subtitle: const Text(
+                        'Manage your payment methods',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+
+                      trailing: const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
+
+                      onTap: () {
+                        Get.to(
+                          () => const PaymentDetailsScreen(),
+                        );
+                      },
+                    ),
+
+                    const Divider(
+                      color: lightBorder,
+                      thickness: 1,
+                    ),
+
+                    // =================================================
+                    // ORDER HISTORY
+                    // =================================================
+
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+
+                      leading: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: redColor.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.history,
+                          color: redColor,
+                        ),
+                      ),
+
+                      title: const Text(
+                        'Order History',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+
+                      subtitle: const Text(
+                        'View your previous orders',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+
+                      trailing: const Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Colors.grey,
+                      ),
+
+                      onTap: () {
+                        Get.to(
+                          () => const OrderHistoryScreen(),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 25),
                   ],
                 ),
+              ),
 
-                const SizedBox(height: 80),
+              // =====================================================
+              // SAVE + LOGOUT BUTTONS
+              // =====================================================
 
-                // ==================================================
-                // PROFILE DETAILS
-                // ==================================================
-
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 25,
-                      vertical: 10,
-                    ),
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        _buildEditableField(
-                          "Name",
-                          _nameController,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        _buildReadOnlyField(
-                          "Email",
-                          email,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        _buildEditableField(
-                          "Delivery address",
-                          _addressController,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        _buildReadOnlyField(
-                          "Password",
-                          "●●●●●●●●●",
-                        ),
-
-                        const SizedBox(height: 30),
-
-                        const Divider(
-                          color: Colors.grey,
-                          thickness: 0.5,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        _buildNavigationItem(
-                          "Payment Details",
-                          () {},
-                        ),
-
-                        const SizedBox(height: 15),
-
-                        _buildNavigationItem(
-                          "Order history",
-                          () {},
-                        ),
-                      ],
-                    ),
-                  ),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(
+                  24,
+                  18,
+                  24,
+                  30,
                 ),
+                color: Colors.white,
 
-                // ==================================================
-                // ACTION BUTTONS
-                // ==================================================
+                child: Row(
+                  children: [
+                    // =================================================
+                    // SAVE PROFILE
+                    // =================================================
 
-                Container(
-                  padding: const EdgeInsets.all(25),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed:
-                              isSaving || isUploadingImage
-                                  ? null
-                                  : _saveUserData,
-                          style:
-                              ElevatedButton.styleFrom(
-                            backgroundColor:
-                                const Color(0xFFE91E63),
-                            foregroundColor: Colors.white,
-                            padding:
-                                const EdgeInsets.symmetric(
-                              vertical: 15,
-                            ),
-                            shape:
-                                RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(8),
-                            ),
-                          ),
-                          icon: isSaving
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child:
-                                      CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.save,
-                                  size: 18,
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: controller.isSaving.value
+                            ? null
+                            : () async {
+                                await controller.saveUserData();
+                              },
+
+                        icon: controller.isSaving.value
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
                                 ),
-                          label: Text(
-                            isSaving
-                                ? "Saving..."
-                                : "Save Profile",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
+                              )
+                            : const Icon(
+                                Icons.edit_outlined,
+                                size: 20,
+                              ),
+
+                        label: Text(
+                          controller.isSaving.value
+                              ? 'Saving...'
+                              : 'Edit Profile',
+                        ),
+
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black87,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 15,
+                          ),
+
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
                         ),
                       ),
+                    ),
 
-                      const SizedBox(width: 15),
+                    const SizedBox(width: 12),
 
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed:
-                              isUploadingImage
-                                  ? null
-                                  : _logout,
-                          style:
-                              OutlinedButton.styleFrom(
-                            foregroundColor:
-                                Colors.redAccent,
-                            side: const BorderSide(
-                              color: Colors.redAccent,
-                            ),
-                            padding:
-                                const EdgeInsets.symmetric(
-                              vertical: 15,
-                            ),
-                            shape:
-                                RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(8),
-                            ),
+                    // =================================================
+                    // LOGOUT
+                    // =================================================
+
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          _showLogoutDialog(
+                            context,
+                            controller,
+                          );
+                        },
+
+                        icon: const Icon(
+                          Icons.logout,
+                          size: 20,
+                        ),
+
+                        label: const Text(
+                          'Log Out',
+                        ),
+
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: redColor,
+
+                          side: const BorderSide(
+                            color: redColor,
+                            width: 1,
                           ),
-                          icon: const Icon(
-                            Icons.logout,
-                            size: 18,
+
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 15,
                           ),
-                          label: const Text(
-                            "Log out",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
+
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      }),
     );
   }
 
-  // ============================================================
+  // =============================================================
   // EDITABLE FIELD
-  // ============================================================
+  // =============================================================
 
-  Widget _buildEditableField(
-    String label,
+  static Widget _field(
+    String title,
     TextEditingController controller,
-  ) {
+    IconData icon, {
+    int maxLines = 1,
+  }) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-            fontWeight: FontWeight.bold,
+          title,
+          style: const TextStyle(
+            color: textColor,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
           ),
         ),
 
-        const SizedBox(height: 5),
+        const SizedBox(height: 8),
 
         TextField(
           controller: controller,
+          maxLines: maxLines,
+
+          style: const TextStyle(
+            color: textColor,
+            fontSize: 15,
+          ),
+
           decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.grey[100],
-            contentPadding:
-                const EdgeInsets.symmetric(
-              horizontal: 15,
-              vertical: 12,
+            prefixIcon: Icon(
+              icon,
+              color: Colors.grey,
             ),
+
+            filled: true,
+            fillColor: Colors.white,
+
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
+
             border: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: Colors.grey[300]!,
+              borderRadius: BorderRadius.circular(22),
+              borderSide: const BorderSide(
+                color: lightBorder,
+                width: 1,
               ),
             ),
+
             enabledBorder: OutlineInputBorder(
-              borderRadius:
-                  BorderRadius.circular(8),
-              borderSide: BorderSide(
-                color: Colors.grey[300]!,
+              borderRadius: BorderRadius.circular(22),
+              borderSide: const BorderSide(
+                color: lightBorder,
+                width: 1,
+              ),
+            ),
+
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(22),
+              borderSide: const BorderSide(
+                color: redColor,
+                width: 1,
               ),
             ),
           ),
@@ -798,90 +750,312 @@ class _PersonScreenState extends State<PersonScreen> {
     );
   }
 
-  // ============================================================
+  // =============================================================
   // READ ONLY FIELD
-  // ============================================================
+  // =============================================================
 
-  Widget _buildReadOnlyField(
-    String label,
+  static Widget _readOnly(
+    String title,
     String value,
+    IconData icon,
   ) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          title,
+          style: const TextStyle(
+            color: textColor,
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        Container(
+          width: double.infinity,
+
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
+
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+
+            border: Border.all(
+              color: lightBorder,
+              width: 1,
+            ),
+          ),
+
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: Colors.grey[500],
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Text(
+                  value.isEmpty ? 'Not available' : value,
+
+                  style: const TextStyle(
+                    color: textColor,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // =============================================================
+  // CAMERA + GALLERY OPTIONS
+  // =============================================================
+
+  static void _showImageOptions(
+    BuildContext context,
+    ProfileController controller,
+  ) {
+    showModalBottomSheet(
+      context: context,
+
+      backgroundColor: Colors.white,
+
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(25),
+        ),
+      ),
+
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(
+              top: 10,
+              bottom: 15,
+            ),
+
+            child: Wrap(
+              children: [
+                Center(
+                  child: Container(
+                    width: 45,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(15),
+                    child: Text(
+                      'Change Profile Picture',
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // =================================================
+                // TAKE PHOTO
+                // =================================================
+
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 25,
+                  ),
+
+                  leading: Container(
+                    width: 45,
+                    height: 45,
+
+                    decoration: BoxDecoration(
+                      color: redColor.withOpacity(0.10),
+                      shape: BoxShape.circle,
+                    ),
+
+                    child: const Icon(
+                      Icons.camera_alt_outlined,
+                      color: redColor,
+                    ),
+                  ),
+
+                  title: const Text(
+                    'Take Photo',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  subtitle: const Text(
+                    'Use your camera',
+                  ),
+
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 15,
+                  ),
+
+                  onTap: () {
+                    Navigator.pop(context);
+
+                    controller.pickImage(
+                      ImageSource.camera,
+                    );
+                  },
+                ),
+
+                // =================================================
+                // GALLERY
+                // =================================================
+
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 25,
+                  ),
+
+                  leading: Container(
+                    width: 45,
+                    height: 45,
+
+                    decoration: BoxDecoration(
+                      color: redColor.withOpacity(0.10),
+                      shape: BoxShape.circle,
+                    ),
+
+                    child: const Icon(
+                      Icons.photo_library_outlined,
+                      color: redColor,
+                    ),
+                  ),
+
+                  title: const Text(
+                    'Choose from Gallery',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  subtitle: const Text(
+                    'Select an existing photo',
+                  ),
+
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 15,
+                  ),
+
+                  onTap: () {
+                    Navigator.pop(context);
+
+                    controller.pickImage(
+                      ImageSource.gallery,
+                    );
+                  },
+                ),
+
+                // =================================================
+                // CANCEL
+                // =================================================
+
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 25,
+                  ),
+
+                  leading: const Icon(
+                    Icons.close,
+                    color: Colors.grey,
+                  ),
+
+                  title: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // =============================================================
+  // LOGOUT DIALOG
+  // =============================================================
+
+  static void _showLogoutDialog(
+    BuildContext context,
+    ProfileController controller,
+  ) {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+
+        title: const Text(
+          'Logout',
           style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
             fontWeight: FontWeight.bold,
           ),
         ),
 
-        const SizedBox(height: 5),
+        content: const Text(
+          'Are you sure you want to logout?',
+        ),
 
-        Container(
-          width: double.infinity,
-          padding:
-              const EdgeInsets.symmetric(
-            horizontal: 15,
-            vertical: 12,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius:
-                BorderRadius.circular(8),
-            border: Border.all(
-              color: Colors.grey[300]!,
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back();
+            },
+
+            child: const Text(
+              'Cancel',
             ),
           ),
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
+
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: redColor,
+              foregroundColor: Colors.white,
+            ),
+
+            onPressed: () async {
+              Get.back();
+
+              await controller.logout();
+            },
+
+            child: const Text(
+              'Logout',
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  // ============================================================
-  // NAVIGATION ITEM
-  // ============================================================
-
-  Widget _buildNavigationItem(
-    String title,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding:
-            const EdgeInsets.symmetric(
-          vertical: 8.0,
-        ),
-        child: Row(
-          mainAxisAlignment:
-              MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Colors.grey[600],
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
