@@ -5,6 +5,7 @@ import 'package:food_go/Screens/BottomNavbar/person_screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/utility/responsive.dart';
 import 'package:food_go/widgets/product_card.dart';
+import 'package:food_go/Controllers/profile_controller.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -29,6 +30,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final double screenWidth = MediaQueryu.getScreenWidth(context);
     final double screenHeight = MediaQueryu.getScreenHeight(context);
+    
+    // Yahan Get.find ki jagah Get.put use kiya hai taake error na aaye aur controller lazmi initialize ho jaye
+    final ProfileController controller = Get.put(ProfileController());
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -61,13 +65,18 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             const Spacer(),
-            GestureDetector(
-              onTap: () => Get.to(() => const  PersonScreen()),
-              child: CircleAvatar(
-                radius: 20,
-                backgroundImage: AssetImage(ImagePath.appbarpic),
-              ),
-            ),
+            // Obx se wrap kiya taake image change hone par foran yahan bhi update ho jaye
+            Obx(() {
+              return GestureDetector(
+                onTap: () => Get.to(() => const PersonScreen()),
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundImage: controller.profileImageUrl.value.isNotEmpty
+                      ? NetworkImage(controller.profileImageUrl.value) as ImageProvider
+                      : AssetImage(ImagePath.appbarpic),
+                ),
+              );
+            }),
           ],
         ),
       ),

@@ -59,7 +59,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                   ),
                   SizedBox(height: screenHeight * 0.01),
                   const Text(
-                    "Add products to your favorites by tapping the heart icon.",
+                    "Add products to your favorites .",
                     style: TextStyle(color: AppColors.lightgrey, fontSize: 14),
                   ),
                 ],
