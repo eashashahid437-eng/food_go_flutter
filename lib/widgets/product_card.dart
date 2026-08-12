@@ -45,15 +45,13 @@ class ProductCard extends StatelessWidget {
     // MediaQueryu utility se screen width & height nikalna
     final double screenWidth = MediaQueryu.getScreenWidth(context);
     final double screenHeight = MediaQueryu.getScreenHeight(context);
-
-    // Yahan check kar rahe hain ke subtitle hai ya productname, jo bhi ho wo display ho jaye
-    String displayName = food.subtitle.isNotEmpty ? food.subtitle : food.productname;
+    String displayName = food.subtitle.isNotEmpty
+        ? food.subtitle
+        : food.productname;
 
     return GestureDetector(
       onTap: () {
         print("Card Clicked Index: ${food.id}");
-        
-        // Card ki body par click karne se seedha Detail Screen khulegi
         Get.to(() => ProductDetailScreen(food: food));
       },
       child: Container(
@@ -114,7 +112,7 @@ class ProductCard extends StatelessWidget {
                 ),
                 SizedBox(height: screenHeight * 0.003),
                 Text(
-                  displayName, // <-- Yahan update kar diya hai taake subtitle/productname dono show hon
+                  displayName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -137,28 +135,31 @@ class ProductCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                // Heart Icon ke liye StatefulBuilder taake card click se alag independent kaam kare
                 StatefulBuilder(
                   builder: (context, setStateCard) {
                     return GestureDetector(
                       onTap: () {
                         setStateCard(() {
                           food.isFavorite = !food.isFavorite;
-                          
+
                           if (food.isFavorite) {
                             if (!globalFavoriteList.contains(food)) {
-                              globalFavoriteList.add(food); // Favorite list mein add kar diya
+                              globalFavoriteList.add(food);
                             }
                           } else {
-                            globalFavoriteList.remove(food); // List se nikal diya
+                            globalFavoriteList.remove(food);
                           }
                         });
                       },
                       child: Padding(
                         padding: EdgeInsets.all(screenWidth * 0.01),
                         child: Icon(
-                          food.isFavorite ? Icons.favorite : Icons.favorite_border,
-                          color: food.isFavorite ? Colors.red : AppColors.lightgrey,
+                          food.isFavorite
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                          color: food.isFavorite
+                              ? Colors.red
+                              : AppColors.lightgrey,
                           size: 22,
                         ),
                       ),
