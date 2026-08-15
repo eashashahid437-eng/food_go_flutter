@@ -1,6 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Constants/image_path.dart';
+import 'package:food_go/Controllers/homescreencontroller.dart';
 import 'package:food_go/Screens/BottomNavbar/person_screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/utility/responsive.dart';
@@ -17,27 +17,34 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String selectedCategory = 'All';
-  final List<String> categories = ['All', 'Combos', 'Sliders', 'Classic', 'Spicy'];
+  late final HomeController controller;
+  late final ProfileController profileController;
 
   final TextEditingController searchController = TextEditingController();
-  String searchQuery = '';
-  
-  // Filter state variable ('none', 'low', 'high', 'rating')
-  String selectedFilter = 'none'; 
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.put(HomeController());
+    profileController = Get.put(ProfileController());
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQueryu.getScreenWidth(context);
     final double screenHeight = MediaQueryu.getScreenHeight(context);
-    
-    // Yahan Get.find ki jagah Get.put use kiya hai taake error na aaye aur controller lazmi initialize ho jaye
-    final ProfileController controller = Get.put(ProfileController());
+    final bool isDark = Get.isDarkMode;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         elevation: 0,
         title: Row(
           children: [
@@ -46,9 +53,9 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   'Foodgo',
-                  style: GoogleFonts.lobster(
-                    color: Colors.black,
-                    fontSize: 40,
+                  style: TextStyle(
+                    color: isDark ? AppColors.lightwhite : Colors.black,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     fontStyle: FontStyle.italic,
                   ),
@@ -65,15 +72,17 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             const Spacer(),
-            // Obx se wrap kiya taake image change hone par foran yahan bhi update ho jaye
             Obx(() {
               return GestureDetector(
-                onTap: () => Get.to(() => const PersonScreen()),
+                onTap: () {
+                  Get.to(() => const PersonScreen());
+                },
                 child: CircleAvatar(
                   radius: 20,
-                  backgroundImage: controller.profileImageUrl.value.isNotEmpty
-                      ? NetworkImage(controller.profileImageUrl.value) as ImageProvider
-                      : AssetImage(ImagePath.appbarpic),
+                  backgroundImage:
+                      profileController.profileImageUrl.value.isNotEmpty
+                          ? NetworkImage(profileController.profileImageUrl.value)
+                          : AssetImage(ImagePath.appbarpic) as ImageProvider,
                 ),
               );
             }),
@@ -88,17 +97,19 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search Field & Filter Icon Button
+            // Search Bar with Red Focus Border & Cursor
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: searchController,
+                    cursorColor: AppColors.darkpink,
                     onChanged: (value) {
-                      setState(() {
-                        searchQuery = value.toLowerCase().trim();
-                      });
+                      controller.setSearchQuery(value);
                     },
+                    style: TextStyle(
+                      color: isDark ? AppColors.lightwhite : Colors.black,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Search for food...',
                       hintStyle: GoogleFonts.roboto(
@@ -112,13 +123,21 @@ class _HomeScreenState extends State<HomeScreen> {
                               onPressed: () {
                                 setState(() {
                                   searchController.clear();
-                                  searchQuery = '';
-                                });
-                              },
-                            )
-                          : null,
+                                  controller.clearSearch();
+                                },
+                              )
+                            : const SizedBox.shrink();
+                      }),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(
+                          color: AppColors.darkpink,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                   ),
@@ -133,113 +152,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                      ),
-                      builder: (context) {
-                        return StatefulBuilder(
-                          builder: (context, setModalState) {
-                            return Padding(
-                              padding: EdgeInsets.only(
-                                left: 20,
-                                right: 20,
-                                top: 20,
-                                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      const Text(
-                                        "Filter Products",
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(Icons.close),
-                                        onPressed: () => Navigator.pop(context),
-                                      ),
-                                    ],
-                                  ),
-                                  const Divider(),
-                                  const SizedBox(height: 10),
-                                  const Text(
-                                    "Sort By",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Wrap(
-                                      spacing: 10,
-                                      children: [
-                                        ChoiceChip(
-                                          label: const Text("Price: Low to High"),
-                                          selected: selectedFilter == 'low',
-                                          onSelected: (selected) {
-                                            setModalState(() {
-                                              selectedFilter = 'low';
-                                            });
-                                          },
-                                        ),
-                                        ChoiceChip(
-                                          label: const Text("Price: High to Low"),
-                                          selected: selectedFilter == 'high',
-                                          onSelected: (selected) {
-                                            setModalState(() {
-                                              selectedFilter = 'high';
-                                            });
-                                          },
-                                        ),
-                                        ChoiceChip(
-                                          label: const Text("Top Rated"),
-                                          selected: selectedFilter == 'rating',
-                                          onSelected: (selected) {
-                                            setModalState(() {
-                                              selectedFilter = 'rating';
-                                            });
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  const SizedBox(height: 20),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 50,
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.darkpink,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                      ),
-                                      onPressed: () {
-                                        setState(() {}); 
-                                        Navigator.pop(context); 
-                                      },
-                                      child: const Text(
-                                        "Apply Filters",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    );
+                    _showFilterSheet(context, isDark);
                   },
                   child: const Icon(Icons.tune, size: 22, color: Colors.white),
                 ),
@@ -248,43 +161,49 @@ class _HomeScreenState extends State<HomeScreen> {
 
             SizedBox(height: screenHeight * 0.04),
 
-            // Horizontal Categories Scroll
+            // Categories List (Fixed with Obx outside GestureDetector for instant response)
             SizedBox(
               height: 45,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: categories.length,
+                itemCount: controller.categories.length,
                 itemBuilder: (context, index) {
-                  String category = categories[index];
-                  bool isSelected = selectedCategory == category;
+                  final String category = controller.categories[index];
 
                   return Padding(
                     padding: const EdgeInsets.only(right: 15),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedCategory = category;
-                        });
-                      },
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: screenWidth * 0.07,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.darkpink : AppColors.lightwhite,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          category,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : AppColors.lightgrey,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                    child: Obx(() {
+                      final bool isSelected =
+                          controller.selectedCategory.value == category;
+
+                      return GestureDetector(
+                        onTap: () {
+                          controller.selectCategory(category);
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: screenWidth * 0.07,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.darkpink
+                                : (isDark ? AppColors.surfaceDark : AppColors.lightwhite),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            category,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? Colors.white
+                                  : (isDark ? AppColors.lightwhite : AppColors.lightgrey),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    }),
                   );
                 },
               ),
@@ -292,121 +211,261 @@ class _HomeScreenState extends State<HomeScreen> {
 
             SizedBox(height: screenHeight * 0.04),
 
-            // StreamBuilder for Firebase Data with Flexible Filtering & Sorting
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('product').snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(50.0),
-                      child: CircularProgressIndicator(color: AppColors.darkpink),
-                    ),
-                  );
-                }
+            // Products StreamBuilder wrapped inside Obx for instant filtering response
+            Obx(() {
+              // Yeh line ensure karegi ke selectedCategory change hote hi StreamBuilder trigger ho
+              final String currentCategory = controller.selectedCategory.value;
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(50.0),
-                      child: Text(
-                        'Koi product nahi mila!',
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
+              return StreamBuilder(
+                stream: controller.productsStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(50.0),
+                        child: CircularProgressIndicator(
+                          color: AppColors.darkpink,
+                        ),
                       ),
-                    ),
-                  );
-                }
-
-                var docs = snapshot.data!.docs;
-
-                // 1. Flexible Category Filtering (Handles singular/plural mismatch like Combo / Combos automatically)
-                if (selectedCategory != 'All') {
-                  docs = docs.where((doc) {
-                    var data = doc.data() as Map<String, dynamic>;
-                    String dbCategory = (data['category'] ?? '').toString().toLowerCase().trim();
-                    String currentCategory = selectedCategory.toLowerCase().trim();
-                    
-                    if (currentCategory.endsWith('s') && currentCategory.substring(0, currentCategory.length - 1) == dbCategory) {
-                      return true;
-                    }
-                    if (dbCategory.endsWith('s') && dbCategory.substring(0, dbCategory.length - 1) == currentCategory) {
-                      return true;
-                    }
-                    
-                    return dbCategory == currentCategory;
-                  }).toList();
-                }
-
-                // 2. Search Query Filtering
-                if (searchQuery.isNotEmpty) {
-                  docs = docs.where((doc) {
-                    var data = doc.data() as Map<String, dynamic>;
-                    String title = (data['title'] ?? '').toString().toLowerCase();
-                    String productName = (data['productname'] ?? '').toString().toLowerCase();
-                    return title.contains(searchQuery) || productName.contains(searchQuery);
-                  }).toList();
-                }
-
-                // 3. Sorting (Low to High, High to Low, Top Rated)
-                if (selectedFilter == 'low') {
-                  docs.sort((a, b) => ((a.data() as Map<String, dynamic>)['price'] ?? 0)
-                      .compareTo((b.data() as Map<String, dynamic>)['price'] ?? 0));
-                } else if (selectedFilter == 'high') {
-                  docs.sort((a, b) => ((b.data() as Map<String, dynamic>)['price'] ?? 0)
-                      .compareTo((a.data() as Map<String, dynamic>)['price'] ?? 0));
-                } else if (selectedFilter == 'rating') {
-                  docs.sort((a, b) => ((b.data() as Map<String, dynamic>)['rating'] ?? 0)
-                      .compareTo((a.data() as Map<String, dynamic>)['rating'] ?? 0));
-                }
-
-                if (docs.isEmpty) {
-                  return const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(50.0),
-                      child: Text(
-                        'no food found!',
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
-                      ),
-                    ),
-                  );
-                }
-
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(top: 10),
-                  itemCount: docs.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 15,
-                    mainAxisSpacing: 15,
-                    childAspectRatio: 0.70,
-                  ),
-                  itemBuilder: (context, index) {
-                    var data = docs[index].data() as Map<String, dynamic>;
-
-                    FoodModel food = FoodModel(
-                      id: index,
-                      image: data['image'] ?? data['imageUrl'] ?? '',
-                      title: data['title'] ?? '',
-                      subtitle: data['subtitle'] ?? '',
-                      productname: data['productname'] ?? '',
-                      price: (data['price'] ?? 4.5).toDouble(),
-                      description: data['description'] ?? 'No description available.',
-                      spicyLevel: (data['spicyLevel'] ?? 2.0).toDouble(),
-                      rating: (data['rating'] ?? 4.5).toDouble(),
-                      reviewCount: (data['reviewCount'] ?? 10).toInt(),
-                      isFavorite: data['isFavorite'] ?? false,
                     );
+                  }
 
-                    return ProductCard(food: food);
-                  },
-                );
-              },
-            ),
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(50),
+                        child: Text(
+                          'Something went wrong:\n${snapshot.error}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(50.0),
+                        child: Text(
+                          'Koi product nahi mila!',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ),
+                    );
+                  }
+
+                  final docs = controller.getFilteredProducts(snapshot.data!);
+
+                  if (docs.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(50.0),
+                        child: Text(
+                          'no food found!',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(top: 10),
+                    itemCount: docs.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 15,
+                      mainAxisSpacing: 15,
+                      childAspectRatio: 0.70,
+                    ),
+                    itemBuilder: (context, index) {
+                      final data = docs[index].data() as Map<String, dynamic>;
+
+                      final FoodModel food = FoodModel(
+                        id: index,
+                        image: (data['image'] ?? data['imageUrl'] ?? '')
+                            .toString(),
+                        title: (data['title'] ?? '').toString(),
+                        subtitle: (data['subtitle'] ?? '').toString(),
+                        productname: (data['productname'] ?? '').toString(),
+                        price: _toDouble(data['price'], 4.5),
+                        description:
+                            (data['description'] ?? 'No description available.')
+                                .toString(),
+                        spicyLevel: _toDouble(data['spicyLevel'], 2.0),
+                        rating: _toDouble(data['rating'], 4.5),
+                        reviewCount: _toInt(data['reviewCount'], 10),
+                        isFavorite: data['isFavorite'] ?? false,
+                      );
+
+                      return ProductCard(food: food);
+                    },
+                  );
+                },
+              );
+            }),
           ],
         ),
       ),
     );
+  }
+
+  void _showFilterSheet(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Filter Products",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppColors.lightwhite : Colors.black,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: isDark ? AppColors.lightwhite : Colors.black,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+              Divider(color: isDark ? Colors.grey[800] : Colors.grey[300]),
+              const SizedBox(height: 10),
+              Text(
+                "Sort By",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: isDark ? AppColors.lightwhite : Colors.black,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 10,
+                children: [
+                  Obx(() {
+                    return ChoiceChip(
+                      label: const Text("Price: Low to High"),
+                      selected: controller.selectedFilter.value == 'low',
+                      selectedColor: AppColors.darkpink.withOpacity(0.2),
+                      backgroundColor: isDark ? AppColors.backgroundDark : Colors.grey[100],
+                      labelStyle: TextStyle(
+                        color: controller.selectedFilter.value == 'low'
+                            ? AppColors.darkpink
+                            : (isDark ? AppColors.lightwhite : Colors.black87),
+                      ),
+                      onSelected: (selected) {
+                        if (selected) {
+                          controller.selectFilter('low');
+                        }
+                      },
+                    );
+                  }),
+                  Obx(() {
+                    return ChoiceChip(
+                      label: const Text("Price: High to Low"),
+                      selected: controller.selectedFilter.value == 'high',
+                      selectedColor: AppColors.darkpink.withOpacity(0.2),
+                      backgroundColor: isDark ? AppColors.backgroundDark : Colors.grey[100],
+                      labelStyle: TextStyle(
+                        color: controller.selectedFilter.value == 'high'
+                            ? AppColors.darkpink
+                            : (isDark ? AppColors.lightwhite : Colors.black87),
+                      ),
+                      onSelected: (selected) {
+                        if (selected) {
+                          controller.selectFilter('high');
+                        }
+                      },
+                    );
+                  }),
+                  Obx(() {
+                    return ChoiceChip(
+                      label: const Text("Top Rated"),
+                      selected: controller.selectedFilter.value == 'rating',
+                      selectedColor: AppColors.darkpink.withOpacity(0.2),
+                      backgroundColor: isDark ? AppColors.backgroundDark : Colors.grey[100],
+                      labelStyle: TextStyle(
+                        color: controller.selectedFilter.value == 'rating'
+                            ? AppColors.darkpink
+                            : (isDark ? AppColors.lightwhite : Colors.black87),
+                      ),
+                      onSelected: (selected) {
+                        if (selected) {
+                          controller.selectFilter('rating');
+                        }
+                      },
+                    );
+                  }),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.darkpink,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    "Apply Filters",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  double _toDouble(dynamic value, double defaultValue) {
+    if (value is num) {
+      return value.toDouble();
+    }
+    return double.tryParse(value?.toString() ?? '') ?? defaultValue;
+  }
+
+  int _toInt(dynamic value, int defaultValue) {
+    if (value is num) {
+      return value.toInt();
+    }
+    return int.tryParse(value?.toString() ?? '') ?? defaultValue;
   }
 }

@@ -1,7 +1,18 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:food_go/Constants/app_colors.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+
+import 'package:food_go/Auth/Login_Screen.dart';
+// NOTE: Agar AppColors kisi aur file mein hain toh sahi import path dein:
+// import 'package:food_go/Constants/AppColors.dart';
 
 class UserChatScreen extends StatefulWidget {
   const UserChatScreen({super.key});
@@ -12,232 +23,1182 @@ class UserChatScreen extends StatefulWidget {
 
 class _UserChatScreenState extends State<UserChatScreen> {
   final TextEditingController _messageController = TextEditingController();
+
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
-  // Message Send karne ka function
-  void _sendMessage() async {
-    if (_messageController.text.trim().isEmpty || currentUser == null) return;
+  final ImagePicker _picker = ImagePicker();
 
-    String msg = _messageController.text.trim();
-    _messageController.clear();
+  bool isDarkMode = false;
+  bool notificationsEnabled = true;
+  bool isUploadingImage = false;
 
-    String uid = currentUser!.uid;
+  String? selectedOrderId;
+  Map<String, dynamic>? selectedOrder;
 
-    // 1. Messages sub-collection mein message add karna
-    await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(uid)
-        .collection('messages')
-        .add({
-      'text': msg,
-      'sender': 'user',
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+  @override
+  void initState() {
+    super.initState();
 
-    // 2. Chat room ka last message update karna taake admin ko inbox mein nazar aaye
-    await FirebaseFirestore.instance.collection('chats').doc(uid).set({
-      'lastMessage': msg,
-      'userName': currentUser!.displayName ?? 'App User',
-      'userEmail': currentUser!.email ?? '',
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    if (currentUser != null) {
+      _loadUserSettings();
+      _loadSelectedOrder();
+    }
   }
 
-  // Database se sari chat clear karne ka function
-  void _clearChat(String uid) async {
-    Get.back(); // Menu close karne ke liye
-    Get.defaultDialog(
-      title: "Clear Chat",
-      middleText: "Kya aap waqai saari chat history delete karna chahte hain?",
-      textConfirm: "Yes, Delete",
-      confirmTextColor: Colors.white,
-      buttonColor: const Color(0xFFFF2442),
-      textCancel: "Cancel",
-      onConfirm: () async {
-        Get.back(); // Dialog band karein
-        var messagesRef = FirebaseFirestore.instance
-            .collection('chats')
-            .doc(uid)
-            .collection('messages');
-        
-        var snapshots = await messagesRef.get();
-        for (var doc in snapshots.docs) {
-          await doc.reference.delete();
-        }
-
-        // Last message bhi chat document se clear kar dein
-        await FirebaseFirestore.instance.collection('chats').doc(uid).update({
-          'lastMessage': 'Chat cleared',
-        });
-
-        Get.snackbar("Success", "Chat history cleared successfully.",
-            backgroundColor: Colors.green, colorText: Colors.white);
-      },
-    );
-  }
-
-  // Real Database se Order details fetch karne ka function
-  void _showOrderDetails() async {
-    Get.back(); // Menu close karein
-
-    // Loading indicator dikhayein jab tak data fetch ho raha ho
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(color: Color(0xFFFF2442)),
-      ),
-    );
+  Future<void> _loadUserSettings() async {
+    if (currentUser == null) return;
 
     try {
-      // Firestore se is user ka sab se latest order fetch kar rahe hain
-      var orderSnapshot = await FirebaseFirestore.instance
-          .collection('orders') // Apne orders collection ka naam yahan check kar lein
-          .where('userId', isEqualTo: currentUser!.uid)
-          .orderBy('timestamp', descending: true)
-          .limit(1)
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser!.uid)
           .get();
 
-      Navigator.pop(context); // Loading dialog band karein
+      if (!doc.exists) return;
 
-      if (orderSnapshot.docs.isEmpty) {
-        Get.snackbar(
-          "No Order Found",
-          "Aapka koi active order mojood nahi hai.",
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+      final data = doc.data();
+
+      if (data == null || !mounted) return;
+
+      setState(() {
+        isDarkMode = data['darkMode'] ?? false;
+        notificationsEnabled = data['notificationsEnabled'] ?? true;
+      });
+    } catch (e) {
+      debugPrint("Settings Error: $e");
+    }
+  }
+
+  Future<void> _saveUserSettings() async {
+    if (currentUser == null) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser!.uid)
+          .set({
+            'darkMode': isDarkMode,
+            'notificationsEnabled': notificationsEnabled,
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+    } catch (e) {
+      debugPrint("Save Settings Error: $e");
+    }
+  }
+
+  Future<void> _loadSelectedOrder() async {
+    final uid = currentUser?.uid;
+
+    if (uid == null) return;
+
+    try {
+      final chatDoc = await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(uid)
+          .get();
+
+      if (!chatDoc.exists) return;
+
+      final data = chatDoc.data();
+
+      if (data == null) return;
+
+      final orderId = data['activeOrderId'];
+
+      if (orderId == null || orderId.toString().isEmpty) {
         return;
       }
 
-      var orderData = orderSnapshot.docs.first.data();
-      String orderId = orderSnapshot.docs.first.id;
-      
-      // Database fields (aap apne database ke field names ke mutabiq inhein adjust kar sakti hain)
-      String items = orderData['itemsName'] ?? orderData['productName'] ?? 'Burger / Food Item';
-      String status = orderData['status'] ?? 'Pending';
-      String total = orderData['totalPrice']?.toString() ?? '0';
-      String address = orderData['deliveryAddress'] ?? 'N/A';
+      final orderDoc = await FirebaseFirestore.instance
+          .collection('orders')
+          .doc(orderId)
+          .get();
 
-      // Real Data Dialog Box
-      Get.defaultDialog(
-        title: "Order Details",
-        content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("Order ID: #$orderId", style: const TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text("Items: $items"),
-            const SizedBox(height: 8),
-            Text("Status: $status", style: const TextStyle(color: Colors.pink, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text("Total Amount: Rs $total"),
-            const SizedBox(height: 8),
-            Text("Address: $address"),
-          ],
-        ),
-        textConfirm: "Close",
-        confirmTextColor: Colors.white,
-        buttonColor: const Color(0xFFFF2442),
-        onConfirm: () => Get.back(),
-      );
+      if (!orderDoc.exists) return;
+
+      if (mounted) {
+        setState(() {
+          selectedOrderId = orderDoc.id;
+          selectedOrder = orderDoc.data() as Map<String, dynamic>;
+        });
+      }
     } catch (e) {
-      Navigator.pop(context); // Agar error aaye toh loading band kar dein
+      debugPrint("Order Load Error: $e");
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    if (currentUser == null) return;
+
+    final text = _messageController.text.trim();
+
+    if (text.isEmpty) return;
+
+    final uid = currentUser!.uid;
+
+    _messageController.clear();
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(uid)
+          .collection('messages')
+          .add({
+            'text': text,
+            'sender': 'user',
+            'orderId': selectedOrderId,
+            'orderTitle':
+                selectedOrder?['orderTitle'] ??
+                selectedOrder?['productName'] ??
+                selectedOrder?['title'] ??
+                'Order',
+            'orderTotal': selectedOrder?['totalAmount'] ?? 0,
+            'timestamp': FieldValue.serverTimestamp(),
+          });
+
+      await _updateChatDocument(uid: uid, lastMessage: text);
+    } catch (e) {
       Get.snackbar(
         "Error",
-        "No Order Found",
-        backgroundColor: Colors.red,
+        "Message could not be sent.",
+        backgroundColor: AppColors.Pink,
         colorText: Colors.white,
       );
     }
   }
 
-  // Issue report karne ka function
-  void _reportIssue(String uid) async {
+  Future<void> _updateChatDocument({
+    required String uid,
+    required String lastMessage,
+  }) async {
+    await FirebaseFirestore.instance.collection('chats').doc(uid).set({
+      'userId': uid,
+      'lastMessage': lastMessage,
+      'updatedAt': FieldValue.serverTimestamp(),
+      'activeOrderId': selectedOrderId,
+      'activeOrderTitle':
+          selectedOrder?['orderTitle'] ??
+          selectedOrder?['productName'] ??
+          selectedOrder?['title'] ??
+          'Order',
+      'activeOrderTotal': selectedOrder?['totalAmount'] ?? 0,
+      'customerEmail': currentUser?.email ?? '',
+      'unreadAdminCount': FieldValue.increment(1),
+    }, SetOptions(merge: true));
+  }
+
+  Stream<QuerySnapshot> _ordersStream() {
+    return FirebaseFirestore.instance
+        .collection('orders')
+        .where('userId', isEqualTo: currentUser!.uid)
+        .snapshots();
+  }
+
+  Future<void> _selectOrder(String orderId, Map<String, dynamic> data) async {
+    if (currentUser == null) return;
+
+    setState(() {
+      selectedOrderId = orderId;
+      selectedOrder = data;
+    });
+
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(currentUser!.uid)
+        .set({
+          'activeOrderId': orderId,
+          'activeOrderTitle':
+              data['orderTitle'] ??
+              data['productName'] ??
+              data['title'] ??
+              'Order',
+          'activeOrderTotal': data['totalAmount'] ?? 0,
+          'customerEmail': currentUser!.email ?? '',
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
     Get.back();
+
+    Get.snackbar(
+      "Order Selected",
+      "This order is now selected for support.",
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+      snackPosition: SnackPosition.BOTTOM,
+    );
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
+
+      if (photo == null) return;
+
+      if (mounted) {
+        setState(() {
+          isUploadingImage = true;
+        });
+      }
+
+      final File imageFile = File(photo.path);
+
+      final uri = Uri.parse(
+        'https://api.cloudinary.com/v1_1/eyncqf0n/image/upload',
+      );
+
+      final request = http.MultipartRequest('POST', uri);
+
+      request.fields['upload_preset'] = 'ml_default';
+
+      request.files.add(
+        await http.MultipartFile.fromPath('file', imageFile.path),
+      );
+
+      final streamedResponse = await request.send();
+
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode != 200) {
+        throw Exception("Cloudinary upload failed");
+      }
+
+      final responseData = jsonDecode(response.body);
+
+      final String imageUrl = responseData['secure_url'];
+
+      await _sendImageMessage(imageUrl);
+
+      if (mounted) {
+        setState(() {
+          isUploadingImage = false;
+        });
+      }
+
+      Get.snackbar(
+        "Sent",
+        "Photo sent successfully.",
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isUploadingImage = false;
+        });
+      }
+
+      Get.snackbar(
+        "Camera Error",
+        e.toString(),
+        backgroundColor: AppColors.Pink,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  Future<void> _sendImageMessage(String imageUrl) async {
+    if (currentUser == null) return;
+
+    final uid = currentUser!.uid;
+
     await FirebaseFirestore.instance
         .collection('chats')
         .doc(uid)
         .collection('messages')
         .add({
-      'text': '[System Notification]: User reported an issue with this order.',
-      'sender': 'user',
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-    Get.snackbar("Reported", "System Notification: User reported an issue with this order.",
-        backgroundColor: Colors.black38, colorText: Colors.white);
+          'text': '',
+          'imageUrl': imageUrl,
+          'messageType': 'image',
+          'sender': 'user',
+          'orderId': selectedOrderId,
+          'orderTitle':
+              selectedOrder?['orderTitle'] ??
+              selectedOrder?['productName'] ??
+              selectedOrder?['title'] ??
+              'Order',
+          'orderTotal': selectedOrder?['totalAmount'] ?? 0,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+    await _updateChatDocument(uid: uid, lastMessage: '📷 Image');
+  }
+
+  Future<void> _deleteMessage(String messageId) async {
+    if (currentUser == null) return;
+
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(currentUser!.uid)
+        .collection('messages')
+        .doc(messageId)
+        .delete();
+  }
+
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      Get.offAll(() => const LoginScreen());
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Logout failed.",
+        backgroundColor: AppColors.Pink,
+        colorText: Colors.white,
+      );
+    }
+  }
+
+  Widget _drawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool danger = false,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+      leading: Container(
+        width: 42,
+        height: 42,
+        decoration: BoxDecoration(
+          color: AppColors.Pink.withOpacity(0.08),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: AppColors.Pink, size: 21),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: danger
+              ? AppColors.Pink
+              : isDarkMode
+              ? AppColors.lightwhite
+              : Colors.black87,
+        ),
+      ),
+      trailing: danger
+          ? null
+          : Icon(
+              Icons.chevron_right,
+              color: isDarkMode ? Colors.white54 : AppColors.lightgrey,
+            ),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildDrawer() {
+    final bool dark = isDarkMode;
+
+    return Drawer(
+      width: MediaQuery.of(context).size.width * 0.82,
+      backgroundColor: dark ? AppColors.backgroundDark : AppColors.lightwhite,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(25),
+          bottomLeft: Radius.circular(25),
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(currentUser!.uid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                String? profileImg;
+                if (snapshot.hasData && snapshot.data!.exists) {
+                  var data = snapshot.data!.data() as Map<String, dynamic>?;
+                  profileImg = data?['profileImage'] ?? data?['image'];
+                }
+
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 25),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.darkpink, AppColors.Pink],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(25),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 82,
+                        height: 82,
+                        decoration: const BoxDecoration(
+                          color: Colors.white24,
+                          shape: BoxShape.circle,
+                        ),
+                        child: ClipOval(
+                          child: profileImg != null && profileImg.isNotEmpty
+                              ? Image.network(
+                                  profileImg,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 48,
+                                      ),
+                                )
+                              : const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 48,
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        currentUser?.email ?? "Food Go User",
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Food Go Customer",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                          SizedBox(width: 5),
+                          Text("👑", style: TextStyle(fontSize: 15)),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.only(top: 12, bottom: 10),
+                children: [
+                  _drawerItem(
+                    icon: Icons.bookmark_border,
+                    title: "Orders",
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showOrderHistory();
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.location_on_outlined,
+                    title: "Addresses",
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showAddresses();
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.credit_card,
+                    title: "Payment Details",
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showPaymentDetails();
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.headset_mic_outlined,
+                    title: "Live Support",
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Divider(color: dark ? AppColors.surfaceDark : AppColors.lightgrey),
+                  ),
+                  _drawerItem(
+                    icon: Icons.camera_alt_outlined,
+                    title: "Camera",
+                    onTap: () {
+                      Navigator.pop(context);
+                      _takePhoto();
+                    },
+                  ),
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 2,
+                    ),
+                    leading: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: AppColors.Pink.withOpacity(0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        dark ? Icons.dark_mode : Icons.nightlight_outlined,
+                        color: AppColors.Pink,
+                        size: 21,
+                      ),
+                    ),
+                    title: Text(
+                      "Dark Mode",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: dark ? AppColors.lightwhite : Colors.black87,
+                      ),
+                    ),
+                    trailing: Switch(
+                      value: isDarkMode,
+                      activeColor: AppColors.Pink,
+                      onChanged: (value) async {
+                        setState(() {
+                          isDarkMode = value;
+                        });
+                        
+                        // Yeh line foran theme ko switch kar degi!
+                        Get.changeThemeMode(value ? ThemeMode.dark : ThemeMode.light);
+
+                        await _saveUserSettings();
+                      },
+                    ),
+                  ),
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 2,
+                    ),
+                    leading: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: AppColors.Pink.withOpacity(0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.notifications_none,
+                        color: AppColors.Pink,
+                        size: 21,
+                      ),
+                    ),
+                    title: Text(
+                      "Notifications",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: dark ? AppColors.lightwhite : Colors.black87,
+                      ),
+                    ),
+                    trailing: Switch(
+                      value: notificationsEnabled,
+                      activeColor: AppColors.Pink,
+                      onChanged: (value) async {
+                        setState(() {
+                          notificationsEnabled = value;
+                        });
+                        await _saveUserSettings();
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Divider(color: dark ? AppColors.surfaceDark : AppColors.lightgrey),
+                  ),
+                  _drawerItem(
+                    icon: Icons.shield_outlined,
+                    title: "Privacy Policy",
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showPrivacyPolicy();
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.description_outlined,
+                    title: "Terms & Conditions",
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showTerms();
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Divider(color: dark ? AppColors.surfaceDark : AppColors.lightgrey),
+                  ),
+                  _drawerItem(
+                    icon: Icons.logout,
+                    title: "Logout",
+                    danger: true,
+                    onTap: () {
+                      Navigator.pop(context);
+                      _logout();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showOrderHistory() {
+    Get.bottomSheet(
+      Container(
+        height: MediaQuery.of(context).size.height * 0.78,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: darkColorThemeCheck(AppColors.surfaceDark, AppColors.lightwhite),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 45,
+              height: 5,
+              decoration: BoxDecoration(
+                color: AppColors.lightgrey,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              "Orders",
+              style: TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? AppColors.lightwhite : Colors.black,
+              ),
+            ),
+            const SizedBox(height: 15),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _ordersStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(
+                      child: CircularProgressIndicator(color: AppColors.Pink),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        "Unable to load orders.",
+                        style: TextStyle(
+                          color: isDarkMode ? AppColors.lightwhite : Colors.black,
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: Text(
+                        "No orders found.",
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white70 : Colors.black54,
+                        ),
+                      ),
+                    );
+                  }
+
+                  final orders = snapshot.data!.docs;
+
+                  return ListView.builder(
+                    itemCount: orders.length,
+                    itemBuilder: (context, index) {
+                      final doc = orders[index];
+                      final data = doc.data() as Map<String, dynamic>;
+
+                      final title =
+                          data['orderTitle'] ??
+                          data['productName'] ??
+                          data['title'] ??
+                          'Food Order';
+
+                      final total = data['totalAmount'] ?? 0;
+                      final status = data['status'] ?? 'Pending';
+
+                      String formattedDateTime = '';
+                      if (data['timestamp'] != null) {
+                        Timestamp timestamp = data['timestamp'];
+                        DateTime dateTime = timestamp.toDate();
+                        formattedDateTime = DateFormat('dd MMM yyyy, hh:mm a').format(dateTime);
+                      }
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: isDarkMode ? AppColors.surfaceDark : AppColors.surfaceLight,
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(
+                            color: AppColors.lightgrey.withOpacity(0.3),
+                          ),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.all(10),
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.Pink,
+                            child: const Icon(Icons.fastfood, color: Colors.white),
+                          ),
+                          title: Text(
+                            title.toString(),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: isDarkMode ? AppColors.lightwhite : Colors.black,
+                            ),
+                          ),
+                          subtitle: Text(
+                            "Total: \$${_formatNumber(total)}\n"
+                            "Status: $status"
+                            "${formattedDateTime.isNotEmpty ? '\nDate: $formattedDateTime' : ''}",
+                            style: TextStyle(
+                              color: isDarkMode ? Colors.white70 : Colors.black54,
+                            ),
+                          ),
+                          trailing: ElevatedButton(
+                            onPressed: () {
+                              _selectOrder(doc.id, data);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.Pink,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              "Chat",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Color darkColorThemeCheck(Color darkColor, Color lightColor) {
+    return isDarkMode ? darkColor : lightColor;
+  }
+
+  void _showAddresses() {
+    if (currentUser == null) return;
+
+    Get.bottomSheet(
+      Container(
+        height: MediaQuery.of(context).size.height * 0.65,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: darkColorThemeCheck(AppColors.surfaceDark, AppColors.lightwhite),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+        ),
+        child: Column(
+          children: [
+            Icon(Icons.location_on, color: AppColors.Pink, size: 32),
+            const SizedBox(height: 8),
+            Text(
+              "Addresses",
+              style: TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.bold,
+                color: isDarkMode ? AppColors.lightwhite : Colors.black,
+              ),
+            ),
+            const SizedBox(height: 15),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(currentUser!.uid)
+                    .collection('addresses')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(
+                      child: CircularProgressIndicator(color: AppColors.Pink),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        "Unable to load addresses.",
+                        style: TextStyle(color: isDarkMode ? AppColors.lightwhite : Colors.black),
+                      ),
+                    );
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: Text(
+                        "No saved addresses.",
+                        style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: snapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      final data =
+                          snapshot.data!.docs[index].data()
+                              as Map<String, dynamic>;
+
+                      return Card(
+                        color: darkColorThemeCheck(AppColors.surfaceDark, AppColors.lightwhite),
+                        child: ListTile(
+                          leading: Icon(
+                            Icons.location_on,
+                            color: AppColors.Pink,
+                          ),
+                          title: Text(
+                            data['title'] ?? data['address'] ?? 'Address',
+                            style: TextStyle(color: isDarkMode ? AppColors.lightwhite : Colors.black),
+                          ),
+                          subtitle: Text(
+                            data['address'] ?? data['location'] ?? '',
+                            style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black54),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Future<void> _showPaymentDetails() async {
+    if (currentUser == null) return;
+
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(25),
+        decoration: BoxDecoration(
+          color: darkColorThemeCheck(AppColors.surfaceDark, AppColors.lightwhite),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+        ),
+        child: FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser!.uid)
+              .get(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return SizedBox(
+                height: 180,
+                child: Center(
+                  child: CircularProgressIndicator(color: AppColors.Pink),
+                ),
+              );
+            }
+
+            final data = snapshot.data?.data() as Map<String, dynamic>?;
+
+            final payment =
+                data?['paymentMethod'] ??
+                data?['paymentDetails'] ??
+                'No payment method saved';
+
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.credit_card, color: AppColors.Pink, size: 38),
+                const SizedBox(height: 10),
+                Text(
+                  "Payment Details",
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? AppColors.lightwhite : Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppColors.Pink.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Text(
+                    payment.toString(),
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: isDarkMode ? AppColors.lightwhite : Colors.black87,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showPrivacyPolicy() {
+    _showInfoDialog(
+      "Privacy Policy",
+      "Your Food Go account information and order data are stored securely in Firebase and are used to provide ordering and support services.",
+    );
+  }
+
+  void _showTerms() {
+    _showInfoDialog(
+      "Terms & Conditions",
+      "By using Food Go, you agree to use the application responsibly and provide accurate information for orders and delivery.",
+    );
+  }
+
+  void _showInfoDialog(String title, String text) {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: darkColorThemeCheck(AppColors.surfaceDark, AppColors.lightwhite),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: isDarkMode ? AppColors.lightwhite : Colors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          text,
+          style: TextStyle(color: isDarkMode ? Colors.white70 : Colors.black87),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text("Close", style: TextStyle(color: AppColors.Pink)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatNumber(dynamic value) {
+    if (value is num) {
+      return value.toStringAsFixed(2);
+    }
+
+    return double.tryParse(value.toString())?.toStringAsFixed(2) ?? "0.00";
+  }
+
+  Widget _buildMessage(DocumentSnapshot message) {
+    final data = message.data() as Map<String, dynamic>;
+
+    final bool isMe = data['sender'] == 'user';
+
+    final String? imageUrl = data['imageUrl'];
+
+    return GestureDetector(
+      onLongPress: isMe ? () => _deleteMessage(message.id) : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        child: Row(
+          mainAxisAlignment: isMe
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!isMe) ...[
+              const CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.grey,
+                child: Icon(Icons.support_agent, size: 18, color: Colors.white),
+              ),
+              const SizedBox(width: 8),
+            ],
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                ),
+                decoration: BoxDecoration(
+                  color: isMe
+                      ? AppColors.Pink
+                      : isDarkMode
+                      ? AppColors.surfaceDark
+                      : AppColors.lightgrey.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (data['orderId'] != null)
+                      Container(
+                        padding: const EdgeInsets.all(7),
+                        margin: const EdgeInsets.only(bottom: 7),
+                        decoration: BoxDecoration(
+                          color: isMe
+                              ? Colors.white.withOpacity(0.15)
+                              : Colors.black.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          "Order: ${data['orderTitle'] ?? 'Order'}\n"
+                          "ID: ${data['orderId']}",
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isMe ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ),
+                    if (imageUrl != null && imageUrl.isNotEmpty)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          imageUrl,
+                          width: 220,
+                          height: 180,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.broken_image, size: 60);
+                          },
+                        ),
+                      ),
+                    if ((data['text'] ?? '').toString().isNotEmpty)
+                      Text(
+                        data['text'] ?? '',
+                        style: TextStyle(
+                          color: isMe
+                              ? Colors.white
+                              : isDarkMode
+                              ? AppColors.lightwhite
+                              : Colors.black,
+                          fontSize: 15,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            if (isMe) ...[
+              const SizedBox(width: 8),
+              StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(currentUser!.uid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  String? profileImg;
+                  if (snapshot.hasData && snapshot.data!.exists) {
+                    var userData =
+                        snapshot.data!.data() as Map<String, dynamic>?;
+                    profileImg =
+                        userData?['profileImage'] ?? userData?['image'];
+                  }
+
+                  return CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppColors.lightgrey,
+                    child: ClipOval(
+                      child: profileImg != null && profileImg.isNotEmpty
+                          ? Image.network(
+                              profileImg,
+                              width: 32,
+                              height: 32,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(
+                                    Icons.person,
+                                    size: 18,
+                                    color: AppColors.Pink,
+                                  ),
+                            )
+                          : Icon(
+                              Icons.person,
+                              size: 18,
+                              color: AppColors.Pink,
+                            ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     if (currentUser == null) {
-      return const Scaffold(
-        body: Center(child: Text("Please login first to chat.")),
-      );
+      return const Scaffold(body: Center(child: Text("Please login first.")));
     }
 
-    String uid = currentUser!.uid;
+    final uid = currentUser!.uid;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: darkColorThemeCheck(AppColors.backgroundDark, AppColors.lightwhite),
+
+      endDrawer: _buildDrawer(),
+
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: darkColorThemeCheck(AppColors.backgroundDark, AppColors.lightwhite),
+        foregroundColor: isDarkMode ? AppColors.lightwhite : Colors.black,
         elevation: 0,
+        automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Get.back(),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 23),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          },
         ),
+        title: const SizedBox(),
         actions: [
-          // Professional Popup Menu (WhatsApp Style)
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.menu, color: Colors.black),
-            onSelected: (value) {
-              if (value == 'clear') {
-                _clearChat(uid);
-              } else if (value == 'order') {
-                _showOrderDetails();
-              } else if (value == 'report') {
-                _reportIssue(uid);
-              }
+          Builder(
+            builder: (context) {
+              return IconButton(
+                icon: const Icon(Icons.menu, size: 30),
+                onPressed: () {
+                  Scaffold.of(context).openEndDrawer();
+                },
+              );
             },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'order',
-                child: Row(
-                  children: [
-                    Icon(Icons.shopping_bag_outlined, color: Colors.black54, size: 20),
-                    SizedBox(width: 10),
-                    Text('View Order Details'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'report',
-                child: Row(
-                  children: [
-                    Icon(Icons.report_problem_outlined, color: Colors.orange, size: 20),
-                    SizedBox(width: 10),
-                    Text('Report Issue'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'clear',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                    SizedBox(width: 10),
-                    Text('Clear Chat', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ],
           ),
+          const SizedBox(width: 8),
         ],
       ),
+
       body: Column(
         children: [
-          // Messages ListView with Live StreamBuilder
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -248,129 +1209,130 @@ class _UserChatScreenState extends State<UserChatScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Center(
+                    child: CircularProgressIndicator(color: AppColors.Pink),
+                  );
                 }
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
+                if (snapshot.hasError) {
+                  return Center(
                     child: Text(
-                      "Hi, how can I help you?",
-                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                      "Chat error: ${snapshot.error}",
+                      style: TextStyle(color: isDarkMode ? AppColors.lightwhite : Colors.black),
                     ),
                   );
                 }
 
-                var messages = snapshot.data!.docs;
+                if (!snapshot.hasData) {
+                  return const SizedBox();
+                }
+
+                final messages = snapshot.data!.docs;
+
+                if (messages.isEmpty) {
+                  return Center(
+                    child: Text(
+                      "Start chatting with support.",
+                      style: TextStyle(color: isDarkMode ? Colors.white54 : Colors.grey),
+                    ),
+                  );
+                }
 
                 return ListView.builder(
                   reverse: true,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.only(top: 10, bottom: 10),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    var data = messages[index].data() as Map<String, dynamic>;
-                    bool isMe = data['sender'] == 'user';
-
-                    return StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
-                      builder: (context, userSnapshot) {
-                        String? profilePic;
-                        if (userSnapshot.hasData && userSnapshot.data!.exists) {
-                          var userData = userSnapshot.data!.data() as Map<String, dynamic>;
-                          profilePic = userData['profileImage'] ?? currentUser?.photoURL;
-                        } else {
-                          profilePic = currentUser?.photoURL;
-                        }
-
-                        return Align(
-                          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              if (!isMe) ...[
-                                const CircleAvatar(
-                                  radius: 15,
-                                  backgroundColor: Colors.grey,
-                                  child: Icon(Icons.person, size: 18, color: Colors.white),
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                              Flexible(
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(vertical: 6),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: isMe ? const Color(0xFFFF2442) : const Color(0xFFF5F5F5),
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  child: Text(
-                                    data['text'] ?? '',
-                                    style: TextStyle(
-                                      color: isMe ? Colors.white : Colors.black87,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              if (isMe) ...[
-                                const SizedBox(width: 8),
-                                CircleAvatar(
-                                  radius: 15,
-                                  backgroundColor: Colors.grey.shade300,
-                                  backgroundImage: profilePic != null && profilePic.isNotEmpty
-                                      ? NetworkImage(profilePic)
-                                      : const AssetImage('assets/images/appbarpic.png') as ImageProvider,
-                                ),
-                              ],
-                            ],
-                          ),
-                        );
-                      },
-                    );
+                    return _buildMessage(messages[index]);
                   },
                 );
               },
             ),
           ),
 
-          // Bottom Typing Input Field & Send Button
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: Colors.white,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Type here...',
-                      filled: true,
-                      fillColor: const Color(0xFFF9F9F9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: _sendMessage,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFF2442),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 5, 12, 10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 45,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: AppColors.Pink,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.send, color: Colors.white, size: 18),
+                    child: IconButton(
+                      icon: isUploadingImage
+                          ? const SizedBox(
+                              width: 19,
+                              height: 19,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 21,
+                            ),
+                      onPressed: isUploadingImage ? null : _takePhoto,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: darkColorThemeCheck(AppColors.surfaceDark, AppColors.surfaceLight),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: TextField(
+                        controller: _messageController,
+                        style: TextStyle(
+                          color: isDarkMode ? AppColors.lightwhite : Colors.black,
+                        ),
+                        decoration: const InputDecoration(
+                          hintText: "Type here...",
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 13,
+                          ),
+                        ),
+                        onSubmitted: (_) => _sendMessage(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: AppColors.Pink,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.send,
+                        color: Colors.white,
+                        size: 23,
+                      ),
+                      onPressed: _sendMessage,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
   }
 }
