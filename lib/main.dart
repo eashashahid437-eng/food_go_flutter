@@ -11,42 +11,25 @@ import 'package:food_go/Auth/Login_Screen.dart';
 import 'package:food_go/Screens/splash_screen.dart';
 import 'package:food_go/Controllers/cartcontroller.dart';
 
-// Background notification handler
-Future<void> _firebaseMessagingBackgroundHandler(
-  RemoteMessage message,
-) async {
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // GetStorage initialize karein
   await GetStorage.init();
 
-  // Firebase initialize
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // Background notifications
-  FirebaseMessaging.onBackgroundMessage(
-    _firebaseMessagingBackgroundHandler,
-  );
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // CartController register
-  Get.put<CartController>(
-    CartController(),
-    permanent: true,
-  );
+  Get.put<CartController>(CartController(), permanent: true);
 
-  // FCM Token save karne ka logic
   try {
     String? token = await FirebaseMessaging.instance.getToken();
     print("===== MY FCM TOKEN IS: $token =====");
-    
+
     if (token != null) {
       User? currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
@@ -54,9 +37,9 @@ void main() async {
             .collection('users')
             .doc(currentUser.uid)
             .set({
-          'fcmToken': token,
-          'tokenUpdatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+              'fcmToken': token,
+              'tokenUpdatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
       }
     }
   } catch (e) {
@@ -85,30 +68,23 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Colors.black,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red, brightness: Brightness.dark),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.red,
+          brightness: Brightness.dark,
+        ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
         ),
       ),
 
-      
       themeMode: ThemeMode.light,
 
-      // Starting screen
       home: const SplashScreen(),
-
-      // Login route
-      getPages: [
-        GetPage(
-          name: '/login',
-          page: () => const LoginScreen(),
-        ),
-      ],
+      getPages: [GetPage(name: '/login', page: () => const LoginScreen())],
     );
   }
 }
