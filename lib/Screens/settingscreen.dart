@@ -161,7 +161,7 @@ class SettingsScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.grey),
               ),
               value: controller.notificationsEnabled.value,
-              activeColor: Colors.red,
+              activeThumbColor: Colors.red,
               onChanged: controller.toggleNotifications,
             ),
           ),
@@ -184,7 +184,7 @@ class SettingsScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.grey),
               ),
               value: controller.orderNotifications.value,
-              activeColor: Colors.red,
+              activeThumbColor: Colors.red,
               onChanged: controller.notificationsEnabled.value
                   ? controller.toggleOrderNotifications
                   : null,
@@ -209,7 +209,7 @@ class SettingsScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.grey),
               ),
               value: controller.promotionalNotifications.value,
-              activeColor: Colors.red,
+              activeThumbColor: Colors.red,
               onChanged: controller.notificationsEnabled.value
                   ? controller.togglePromotionalNotifications
                   : null,

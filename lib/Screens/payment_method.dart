@@ -327,7 +327,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               child: Image.asset(
                 imagePath,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) {
+                errorBuilder: (_, _, _) {
                   return const Icon(
                     Icons.credit_card,
                     color: Colors.grey,

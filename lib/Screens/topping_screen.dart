@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Controllers/cartcontroller.dart';
 import 'package:food_go/Screens/cartscreen.dart';
-import 'package:food_go/utility/responsive.dart';
 import 'package:food_go/widgets/customized.dart';
 import 'package:food_go/widgets/toppingscreen.dart';
 import 'package:get/get.dart';
@@ -115,8 +114,8 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQueryu.getScreenWidth(context);
-    final double screenHeight = MediaQueryu.getScreenHeight(context);
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
     final bool isDark = Get.isDarkMode;
 
     return Scaffold(
@@ -373,7 +372,7 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
           ),
           SizedBox(
             width: screenWidth * 0.4,
-            height: screenHeight * 0.062,
+            // height: screenHeight * 0.062,
             child: ElevatedButton(
               onPressed: addToCart,
               style: ElevatedButton.styleFrom(

@@ -1,8 +1,5 @@
 
-import 'dart:convert';
-import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Constants/app_colors.dart';
@@ -10,7 +7,6 @@ import 'package:food_go/Controllers/profile_controller.dart';
 import 'package:food_go/Screens/BottomNavbar/paymentscreen.dart';
 import 'package:food_go/Screens/settingscreen.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -19,6 +15,11 @@ import 'orderhistory.dart';
 class PersonScreen extends StatefulWidget {
   const PersonScreen({super.key});
 
+  @override
+  State<PersonScreen> createState() => _PersonScreenState();
+}
+
+class _PersonScreenState extends State<PersonScreen> {
   @override
   Widget build(BuildContext context) {
     final ProfileController controller = Get.put(ProfileController());

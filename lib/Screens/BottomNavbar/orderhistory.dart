@@ -398,7 +398,7 @@ class OrderHistoryScreen extends StatelessWidget {
         width: 65,
         height: 65,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) {
+        errorBuilder: (_, _, _) {
           return _defaultFoodIcon(isDark);
         },
       );
@@ -411,7 +411,7 @@ class OrderHistoryScreen extends StatelessWidget {
         width: 65,
         height: 65,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) {
+        errorBuilder: (_, _, _) {
           return _defaultFoodIcon(isDark);
         },
       );

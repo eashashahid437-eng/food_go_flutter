@@ -117,17 +117,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         
                       ),
                       prefixIcon: const Icon(Icons.search),
-                      suffixIcon: searchQuery.isNotEmpty
+                      suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear),
                               onPressed: () {
                                 setState(() {
                                   searchController.clear();
                                   controller.clearSearch();
-                                },
-                              )
-                            : const SizedBox.shrink();
-                      }),
+                                });
+                              },
+                            )
+                          : const SizedBox.shrink()),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: BorderSide.none,

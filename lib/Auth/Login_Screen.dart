@@ -1,7 +1,7 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:food_go/Auth/Forgot_password.dart';
 import 'package:food_go/Auth/Sign_Up_screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
@@ -33,6 +33,38 @@ class _LoginScreenState extends State<LoginScreen> {
     email.dispose();
     password.dispose();
     super.dispose();
+  }
+
+  Future<void> signInWithFacebook() async {
+    try {
+      final LoginResult result = await FacebookAuth.instance.login(
+        permissions: ['email', 'public_profile'],
+      );
+
+      if (result.status == LoginStatus.success) {
+        final AccessToken accessToken = result.accessToken!;
+
+        final OAuthCredential credential = FacebookAuthProvider.credential(
+          accessToken.tokenString,
+        );
+
+        final UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithCredential(credential);
+
+        print("Facebook Login Successful");
+        print("Name: ${userCredential.user?.displayName}");
+        print("Email: ${userCredential.user?.email}");
+
+        Get.off(() => BottomNavbar());
+      } else if (result.status == LoginStatus.cancelled) {
+        print("Facebook Login Cancelled");
+      } else {
+        print("Facebook Login Failed");
+        print(result.message);
+      }
+    } catch (e) {
+      print("Facebook Login Error: $e");
+    }
   }
 
   Future<void> signInWithGoogle() async {
@@ -158,9 +190,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               children: [
                 SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-                Image.asset("assets/images/Burger 3.png", height: 120),
+                Image.asset("assets/images/auth burger login.png", height: 170),
 
-                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
 
                 Text(
                   "Welcome Back !",
@@ -246,9 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              obscure
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
+                              obscure ? Icons.visibility_off : Icons.visibility,
                             ),
                             onPressed: () {
                               setState(() {
@@ -342,7 +372,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                        
                           InkWell(
                             onTap: signInWithGoogle,
                             borderRadius: BorderRadius.circular(50),
@@ -360,8 +389,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                               child: CircleAvatar(
                                 radius: 20,
-                                backgroundImage:
-                                    AssetImage(ImagePath.Google),
+                                backgroundImage: AssetImage(ImagePath.Google),
                               ),
                             ),
                           ),
@@ -370,12 +398,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: MediaQuery.of(context).size.width * 0.05,
                           ),
 
-                          
                           InkWell(
                             onTap: () {
                               Get.snackbar(
                                 "Apple Login",
-                                "Apple login is not configured yet.",
+                                "Apple login is currently unavailable.",
                               );
                             },
 
@@ -395,9 +422,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: CircleAvatar(
                                 radius: 20,
 
-                                backgroundImage: AssetImage(
-                                  ImagePath.applelogo,
-                                ),
+                                backgroundImage: AssetImage(ImagePath.applelogo),
 
                                 backgroundColor: Colors.white,
                               ),
@@ -409,13 +434,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           InkWell(
                             onTap: () {
+                              signInWithFacebook();
                               Get.snackbar(
-                                "Twitter Login",
-                                "Twitter login is not configured yet.",
+                                "Facebook Login",
+                                "Facebook login is not configured yet.",
                               );
                             },
 
-                            borderRadius: BorderRadius.circular(50),
+             borderRadius: BorderRadius.circular(50),
 
                             child: Container(
                               padding: const EdgeInsets.all(6),
@@ -430,8 +456,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                               child: CircleAvatar(
                                 radius: 20,
-                                backgroundImage:
-                                    AssetImage(ImagePath.twitter),
+                                backgroundImage: AssetImage(ImagePath.Fb),
                                 backgroundColor: Colors.white,
                               ),
                             ),
@@ -452,8 +477,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: Colors.black,
                               ),
                               children: [
-                                const TextSpan(
-                                    text: "Don't have an account? "),
+                                const TextSpan(text: "Don't have an account? "),
                                 TextSpan(
                                   text: "Sign Up",
                                   style: const TextStyle(
@@ -485,5 +509,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
-

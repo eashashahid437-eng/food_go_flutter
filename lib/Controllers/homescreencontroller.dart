@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
-import 'package:cached_network_image/cached_network_image.dart'; // Cached Network Image package import kiya gaya hai
+// Cached Network Image package import kiya gaya hai
 
 class HomeController extends GetxController {
   final RxString searchQuery = ''.obs;

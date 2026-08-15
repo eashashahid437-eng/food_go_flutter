@@ -48,7 +48,7 @@ class CustomOptionCard extends StatelessWidget {
                 child: Image.network(
                   imageUrl,
                   fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) {
+                  errorBuilder: (_, _, _) {
                     return const Icon(
                       Icons.fastfood,
                       color: Colors.orange,
