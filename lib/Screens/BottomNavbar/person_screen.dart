@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Auth/Login_Screen.dart';
+import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Controllers/profile_controller.dart';
 import 'package:food_go/Screens/BottomNavbar/paymentscreen.dart';
 import 'package:food_go/Screens/settingscreen.dart';
@@ -24,69 +25,9 @@ class PersonScreen extends StatefulWidget {
 }
 
 class _PersonScreenState extends State<PersonScreen> {
-  // =============================================================
-  // COLORS
-  // =============================================================
-
-  static const Color redColor = Color(0xFFFF1744);
-  static const Color pinkColor = Color(0xFFFF006E);
-  static const Color lightBorder = Color(0xFFE0E0E0);
-  static const Color textColor = Color(0xFF252525);
-
-  // ============================================================
-  // SAVE PROFILE IMAGE URL TO FIRESTORE
-  // ============================================================
-
-  Future<bool> _saveProfileImageToFirestore(
-    String imageUrl,
-  ) async {
-    try {
-      final User? currentUser =
-          FirebaseAuth.instance.currentUser;
-
-      if (currentUser == null) {
-        throw Exception("User is not logged in.");
-      }
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(currentUser.uid)
-          .set(
-        {
-          'profileImage': imageUrl,
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
-
-      debugPrint(
-        "Profile image URL saved to Firestore.",
-      );
-
-      return true;
-    } catch (e) {
-      debugPrint(
-        "Failed to save image URL to Firestore: $e",
-      );
-
-      if (mounted) {
-        Get.snackbar(
-          "Firestore Error",
-          "Image uploaded but could not be saved:\n$e",
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 5),
-        );
-      }
-
-      return false;
-    }
-  }
-
-  // ============================================================
-  // LOGOUT
-  // ============================================================
-
+  
+ 
+ 
   Future<void> _logout() async {
     try {
       await FirebaseAuth.instance.signOut();
@@ -108,10 +49,8 @@ class _PersonScreenState extends State<PersonScreen> {
     }
   }
 
-  // ============================================================
-  // BUILD
-  // ============================================================
-
+ 
+ 
   @override
   Widget build(BuildContext context) {
     final ProfileController controller = Get.put(ProfileController());

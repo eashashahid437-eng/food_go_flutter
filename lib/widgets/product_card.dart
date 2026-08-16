@@ -4,7 +4,7 @@ import 'package:food_go/Controllers/favouritescreencontroller.dart';
 import 'package:food_go/utility/responsive.dart';
 import 'package:food_go/Screens/productscreen.dart';
 import 'package:get/get.dart';
-import 'package:cached_network_image/cached_network_image.dart'; // Cached Network Image package import kiya gaya hai
+import 'package:cached_network_image/cached_network_image.dart';
 
 List<FoodModel> globalFavoriteList = [];
 
@@ -62,21 +62,13 @@ class _ProductCardState extends State<ProductCard> {
     );
   }
 
-  Future<void> _toggleFavorite() async {
-    await favoriteController.toggleFavorite(widget.food);
-
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQueryu.getScreenWidth(context);
-    final double screenHeight = MediaQueryu.getScreenHeight(context);
-    String displayName = food.subtitle.isNotEmpty
-        ? food.subtitle
-        : food.productname;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final food = widget.food;
+    final String displayName =
+        food.subtitle.isNotEmpty ? food.subtitle : food.productname;
 
     return GestureDetector(
       onTap: () {
@@ -94,58 +86,45 @@ class _ProductCardState extends State<ProductCard> {
               blurRadius: 8,
               offset: Offset(0, 4),
             ),
-          );
-        },
-
-        child: Container(
-          padding: EdgeInsets.all(screenWidth * 0.03),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 8,
-                offset: Offset(0, 4),
-              ),
-            ],
-          ),
-
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: CachedNetworkImage(
-                  imageUrl: food.image,
-                  height: screenHeight * 0.11,
-                  fit: BoxFit.contain,
-                  placeholder: (context, url) => SizedBox(
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Column(
+                children: [
+                  CachedNetworkImage(
+                    imageUrl: food.image,
                     height: screenHeight * 0.11,
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.darkpink,
+                    fit: BoxFit.contain,
+                    placeholder: (context, url) => SizedBox(
+                      height: screenHeight * 0.11,
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.darkpink,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                SizedBox(height: screenHeight * 0.003),
-                Text(
-                  displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: AppColors.lightgrey,
-                  ),
-                ),
-              ),
-
-              SizedBox(height: screenHeight * 0.012),
-
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                  SizedBox(height: screenHeight * 0.003),
                   Text(
+                    displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: AppColors.lightgrey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: screenHeight * 0.012),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
                     food.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -156,7 +135,6 @@ class _ProductCardState extends State<ProductCard> {
                     ),
                   ),
                 ),
-                const Spacer(),
                 StatefulBuilder(
                   builder: (context, setStateCard) {
                     return GestureDetector(
@@ -185,14 +163,14 @@ class _ProductCardState extends State<ProductCard> {
                           size: 22,
                         ),
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
         ),
-      );
-    });
+      ),
+    );
   }
 }
