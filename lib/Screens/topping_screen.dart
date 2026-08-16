@@ -1,26 +1,29 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Constants/app_colors.dart';
-import 'package:food_go/Controllers/cartcontroller.dart';
-import 'package:food_go/Screens/cartscreen.dart';
+import 'package:food_go/Screens/payment_method.dart';
 import 'package:food_go/utility/responsive.dart';
-import 'package:food_go/widgets/customized.dart';
-import 'package:food_go/widgets/toppingscreen.dart';
 import 'package:get/get.dart';
 
 class BurgerCustomizationScreen extends StatefulWidget {
   final double basePrice;
 
-  const BurgerCustomizationScreen({super.key, this.basePrice = 10.0});
+  const BurgerCustomizationScreen({
+    super.key,
+    this.basePrice = 10.0,
+  });
 
   @override
   State<BurgerCustomizationScreen> createState() =>
       _BurgerCustomizationScreenState();
 }
 
-class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
-  double spicyLevel = 0.2;
-  int portionCount = 1;
+class _BurgerCustomizationScreenState
+    extends State<BurgerCustomizationScreen> {
+  double _spicyLevel = 0.2;
+  int _portionCount = 1;
+  final List<Map<String, dynamic>> _selectedItems = [];
 
   final List<Map<String, dynamic>> selectedItems = [];
 
@@ -33,90 +36,14 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
       0.0,
       (sum, item) => sum + ((item['price'] ?? 0) as num).toDouble(),
     );
-  }
 
-  double get totalPrice {
-    return (widget.basePrice + itemsTotal) * portionCount;
-  }
-
-  void toggleItem(Map<String, dynamic> item) {
-    final id = item['docId'];
-
-    setState(() {
-      final exists = selectedItems.any((element) => element['docId'] == id);
-
-      if (exists) {
-        selectedItems.removeWhere((element) => element['docId'] == id);
-      } else {
-        selectedItems.add(item);
-      }
-    });
-  }
-
-  bool isSelected(String id) {
-    return selectedItems.any((item) => item['docId'] == id);
-  }
-
-  void addToCart() {
-    final bool isDark = Get.isDarkMode;
-
-    if (selectedItems.isEmpty) {
-      Get.snackbar(
-        "Select toppings",
-        "Please select at least one topping.",
-        backgroundColor: Colors.orange,
-        colorText: AppColors.lightwhite,
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
-
-    final String toppingsString = selectedItems
-        .map((item) => item['name']?.toString() ?? '')
-        .where((name) => name.isNotEmpty)
-        .join(', ');
-
-    final cartItem = {
-      'cartId': 'custom_burger_${DateTime.now().millisecondsSinceEpoch}',
-      'productId': 'custom_burger',
-      'productName': 'Customized Burger',
-      'subtitle': toppingsString.isNotEmpty
-          ? "Toppings: $toppingsString"
-          : "Custom Burger",
-      'image': 'assets/images/topping.jpg',
-      'price': widget.basePrice,
-      'quantity': portionCount,
-      'spicyLevel': spicyLevel,
-      'isCustomized': true,
-      'toppings': selectedItems.map((item) {
-        return {
-          'id': item['docId'],
-          'name': item['name'],
-          'price': item['price'] ?? 0,
-        };
-      }).toList(),
-      'itemTotal': totalPrice,
-    };
-
-    cartController.addToCart(cartItem);
-
-    Get.snackbar(
-      "Added to Cart",
-      "Customized burger added to your cart.",
-      backgroundColor: isDark ? Colors.grey[800] : const Color(0xFF30252F),
-      colorText: AppColors.lightwhite,
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 2),
-    );
-
-    Get.to(() => CartScreen());
+    return (widget.basePrice + itemsTotal) * _portionCount;
   }
 
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQueryu.getScreenWidth(context);
-    final double screenHeight = MediaQueryu.getScreenHeight(context);
-    final bool isDark = Get.isDarkMode;
+    final screenWidth = MediaQueryu.getScreenWidth(context);
+    final screenHeight = MediaQueryu.getScreenHeight(context);
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white, // Yahan background white kar diya hai
@@ -124,9 +51,19 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
         backgroundColor: isDark ? Colors.black : Colors.white, // AppBar bhi white kar di hai
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: isDark ? AppColors.lightwhite : Colors.black,
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: Colors.black87,
+          ),
+          onPressed: () => Get.back(),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.search_rounded,
+              color: Colors.black87,
+            ),
+            onPressed: () {},
           ),
           onPressed: Get.back,
         ),
@@ -140,70 +77,97 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-          horizontal: screenWidth * 0.05,
-          vertical: screenHeight * 0.02,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Image.asset(
-                    "assets/images/topping.jpg",
-                    height: screenHeight * 0.22,
-                    fit: BoxFit.contain,
+        child: Padding(
+          padding: EdgeInsets.all(screenWidth * 0.05),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: screenWidth * 0.04,
+                      ),
+                      child: Image.asset(
+                        "assets/images/topping.jpg",
+                        height: screenHeight * 0.22,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: screenHeight * 0.22,
+                            color: Colors.grey.shade100,
+                            child: const Icon(
+                              Icons.fastfood,
+                              color: Colors.orange,
+                              size: 80,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
-                ),
-                SizedBox(width: screenWidth * 0.04),
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Customize Your Burger",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.lightwhite : Colors.black,
+
+                  Expanded(
+                    flex: 3,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Customize Your Burger",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: screenHeight * 0.02),
-                      Text(
-                        "Spicy",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.lightwhite : Colors.black,
+                        const Text(
+                          "to Your Tastes. Ultimate Experience",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
                         ),
-                      ),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: AppColors.darkpink,
-                          inactiveTrackColor:
-                              isDark ? Colors.grey[800] : AppColors.lightPink,
-                          thumbColor: AppColors.darkpink,
-                          overlayColor: AppColors.darkpink.withOpacity(0.10),
+
+                        SizedBox(
+                          height: screenHeight * 0.018,
                         ),
-                        child: Slider(
-                          value: spicyLevel,
-                          min: 0,
-                          max: 1,
-                          onChanged: (value) {
-                            setState(() {
-                              spicyLevel = value;
-                            });
-                          },
+
+                        const Text(
+                          "Spicy",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 5),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
+
+                        SliderTheme(
+                          data: SliderTheme.of(context).copyWith(
+                            activeTrackColor: AppColors.darkpink,
+                            inactiveTrackColor: Colors.red.shade100,
+                            thumbColor: AppColors.darkpink,
+                            trackHeight: 4,
+                            thumbShape:
+                                const RoundSliderThumbShape(
+                              enabledThumbRadius: 6,
+                            ),
+                          ),
+                          child: Slider(
+                            value: _spicyLevel,
+                            onChanged: (v) {
+                              setState(() {
+                                _spicyLevel = v;
+                              });
+                            },
+                          ),
+                        ),
+
+                        Row(
+                          mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                          children: const [
                             Text(
                               "Mild",
                               style: TextStyle(
@@ -218,6 +182,57 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                                 color: AppColors.darkpink,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(
+                          height: screenHeight * 0.018,
+                        ),
+
+                        const Text(
+                          "Portion",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+
+                        SizedBox(
+                          height: screenHeight * 0.007,
+                        ),
+
+                        Row(
+                          children: [
+                            _buildCounterBtn(
+                              Icons.remove,
+                              () => setState(
+                                () {
+                                  if (_portionCount > 1) {
+                                    _portionCount--;
+                                  }
+                                },
+                              ),
+                            ),
+
+                            Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: screenWidth * 0.04,
+                              ),
+                              child: Text(
+                                "$_portionCount",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+
+                            _buildCounterBtn(
+                              Icons.add,
+                              () => setState(
+                                () => _portionCount++,
                               ),
                             ),
                           ],
@@ -249,26 +264,65 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: screenHeight * 0.03),
-            _buildOptions(title: "Toppings", category: "topping", isDark: isDark),
-            SizedBox(height: screenHeight * 0.03),
-            _buildOptions(title: "Side options", category: "side", isDark: isDark),
-            SizedBox(height: screenHeight * 0.1),
-          ],
+                ],
+              ),
+
+              SizedBox(
+                height: screenHeight * 0.04,
+              ),
+
+              _buildStreamSection(
+                "Toppings",
+                'topping',
+              ),
+
+              SizedBox(
+                height: screenHeight * 0.03,
+              ),
+
+              _buildStreamSection(
+                "Side options",
+                'side',
+              ),
+
+              SizedBox(
+                height: screenHeight * 0.025,
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: _buildBottomBar(isDark, screenWidth),
     );
   }
 
-  Widget _buildOptions({
-    required String title,
-    required String category,
-    required bool isDark,
-  }) {
+  Widget _buildCounterBtn(
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: AppColors.darkpink,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          color: Colors.white,
+          size: 18,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStreamSection(
+    String title,
+    String category,
+  ) {
+    final screenHeight = MediaQueryu.getScreenHeight(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -280,45 +334,60 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
             color: isDark ? AppColors.lightwhite : Colors.black,
           ),
         ),
-        const SizedBox(height: 12),
+
         SizedBox(
-          height: 110,
-          child: StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('toppings')
-                .where('category', isEqualTo: category)
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.darkpink,
+          height: screenHeight * 0.015,
+        ),
+
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('toppings')
+              .where(
+                'category',
+                isEqualTo: category,
+              )
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState ==
+                ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            if (!snapshot.hasData ||
+                snapshot.data!.docs.isEmpty) {
+              return const Padding(
+                padding: EdgeInsets.only(left: 10),
+                child: Text(
+                  "No items available yet.",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 11,
                   ),
-                );
-              }
+                ),
+              );
+            }
 
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const Text(
-                  "No items available.",
-                  style: TextStyle(color: AppColors.lightgrey),
-                );
-              }
-
-              return ListView.builder(
+            return SizedBox(
+              height: screenHeight * 0.135,
+              child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: snapshot.data!.docs.length,
                 itemBuilder: (context, index) {
-                  final doc = snapshot.data!.docs[index];
-                  final data = doc.data() as Map<String, dynamic>;
-                  final item = {...data, 'docId': doc.id};
+                  var data = snapshot.data!.docs[index]
+                      .data() as Map<String, dynamic>;
 
-                  return CustomOptionCard(
-                    name: data['name'] ?? 'Item',
-                    imageUrl: data['imageUrl'] ?? '',
-                    isSelected: isSelected(doc.id),
-                    onTap: () {
-                      toggleItem(item);
-                    },
+                  data['docId'] =
+                      snapshot.data!.docs[index].id;
+
+                  bool isSelected = _selectedItems.any(
+                    (i) => i['docId'] == data['docId'],
+                  );
+
+                  return _buildItemCard(
+                    data,
+                    isSelected,
                   );
                 },
               );
@@ -329,9 +398,148 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
     );
   }
 
-  Widget _buildBottomBar(bool isDark, double screenWidth) {
+  Widget _buildItemCard(
+    Map<String, dynamic> data,
+    bool isSelected,
+  ) {
+    final screenWidth = MediaQueryu.getScreenWidth(context);
+
+    String name = data['name'] ?? 'Item';
+    String imageUrl = data['imageUrl'] ?? '';
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            _selectedItems.removeWhere(
+              (i) => i['docId'] == data['docId'],
+            );
+          } else {
+            _selectedItems.add(data);
+          }
+        });
+      },
+      child: Container(
+        width: screenWidth * 0.25,
+        margin: EdgeInsets.only(
+          right: screenWidth * 0.04,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.darkpink
+                : Colors.grey.shade200,
+            width: 2,
+          ),
+          boxShadow: [
+            if (isSelected)
+              BoxShadow(
+                color:
+                    AppColors.darkpink.withOpacity(0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            if (!isSelected)
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: EdgeInsets.all(
+                  screenWidth * 0.02,
+                ),
+                child: Center(
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                    errorBuilder: (c, e, s) {
+                      return const Icon(
+                        Icons.fastfood_rounded,
+                        size: 30,
+                        color: Colors.orangeAccent,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+
+            Expanded(
+              flex: 1,
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenWidth * 0.015,
+                ),
+                decoration: const BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(14),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment:
+                      MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        name,
+                        textAlign: TextAlign.left,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.white
+                            : Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.add,
+                        size: 12,
+                        color: isSelected
+                            ? AppColors.darkpink
+                            : Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomBar() {
+    final screenWidth = MediaQueryu.getScreenWidth(context);
+    final screenHeight =
+        MediaQueryu.getScreenHeight(context);
+
     return Container(
-      padding: EdgeInsets.all(screenWidth * 0.045),
+      padding: EdgeInsets.symmetric(
+        horizontal: screenWidth * 0.05,
+        vertical: screenHeight * 0.018,
+      ),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[900] : Colors.white,
         boxShadow: [
@@ -344,19 +552,22 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment:
+            MainAxisAlignment.spaceBetween,
         children: [
           Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
             children: [
               const Text(
                 "Total",
                 style: TextStyle(
-                  color: AppColors.lightgrey,
-                  fontSize: 12,
+                  color: Colors.grey,
+                  fontSize: 11,
                 ),
               ),
+
               Text(
                 "\$${totalPrice.toStringAsFixed(2)}",
                 style: TextStyle(
@@ -368,8 +579,8 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
             ],
           ),
           SizedBox(
-            width: 160,
-            height: 50,
+            width: screenWidth * 0.4,
+            height: screenHeight * 0.062,
             child: ElevatedButton(
               onPressed: addToCart,
               style: ElevatedButton.styleFrom(
@@ -378,6 +589,38 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
+              onPressed: () {
+                if (_selectedItems.isEmpty) {
+                  Get.snackbar(
+                    "Oops!",
+                    "Please select at least one topping.",
+                    backgroundColor: Colors.white,
+                    colorText: Colors.white,
+                    snackPosition:
+                        SnackPosition.BOTTOM,
+                  );
+                } else {
+                  Get.snackbar(
+                    "Success!",
+                    "Order placed successfully!",
+                    backgroundColor: Colors.white,
+                    colorText: Colors.white,
+                    snackPosition: SnackPosition.TOP,
+                  );
+
+                  Future.delayed(
+                    const Duration(seconds: 1),
+                    () {
+                      Get.to(
+                        () => PaymentMethodScreen(
+                          totalPrice:
+                              _calculatedTotal,
+                        ),
+                      );
+                    },
+                  );
+                }
+              },
               child: const Text(
                 "ADD TO CART",
                 style: TextStyle(
@@ -392,3 +635,470 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
     );
   }
 }
+
+//  import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:flutter/material.dart';
+// import 'package:food_go/Constants/app_colors.dart';
+// import 'package:food_go/Screens/payment_method.dart';
+// import 'package:get/get.dart';
+
+// class BurgerCustomizationScreen extends StatefulWidget {
+//   final double basePrice;
+//   const BurgerCustomizationScreen({super.key, this.basePrice = 10.0});
+
+//   @override
+//   State<BurgerCustomizationScreen> createState() =>
+//       _BurgerCustomizationScreenState();
+// }
+
+// class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
+//   double _spicyLevel = 0.2; // 0.0 (Mild) to 1.0 (Hot)
+//   int _portionCount = 1;
+//   final List<Map<String, dynamic>> _selectedItems = [];
+
+//   double get _calculatedTotal {
+//     double itemsTotal = _selectedItems.fold(
+//       0.0,
+//       (sum, item) => sum + (item['price'] ?? 0.0),
+//     );
+//     return (widget.basePrice + itemsTotal) * _portionCount;
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     double screenWidth = MediaQuery.of(context).size.width;
+
+//     return Scaffold(
+//       backgroundColor: Colors.white,
+//       appBar: AppBar(
+//         backgroundColor: Colors.white,
+//         elevation: 0,
+//         leading: IconButton(
+//           icon: const Icon(Icons.arrow_back_rounded, color: Colors.black87),
+//           onPressed: () => Get.back(),
+//         ),
+//         actions: [
+//           IconButton(
+//             icon: const Icon(Icons.search_rounded, color: Colors.black87),
+//             onPressed: () {},
+//           ),
+//         ],
+//       ),
+//       body: SingleChildScrollView(
+//         child: Padding(
+//           padding: EdgeInsets.all(screenWidth * 0.05),
+//           child: Column(
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               Row(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   // Burger Image (Cleaner)
+//                   Expanded(
+//                     flex: 2,
+//                     child: Padding(
+//                       padding: const EdgeInsets.only(right: 20),
+//                       child: Image.asset(
+//                         "assets/images/topping.jpg", // Asset path should be correct
+//                         height: 180,
+//                         fit: BoxFit.contain,
+//                         errorBuilder: (context, error, stackTrace) => Container(
+//                           height: 180,
+//                           color: Colors.grey.shade100,
+//                           child: const Icon(
+//                             Icons.fastfood,
+//                             color: Colors.orange,
+//                             size: 80,
+//                           ),
+//                         ),
+//                       ),
+//                     ),
+//                   ),
+//                   // Controls Section
+//                   Expanded(
+//                     flex: 3,
+//                     child: Column(
+//                       crossAxisAlignment: CrossAxisAlignment.start,
+//                       children: [
+//                         const Text(
+//                           "Customize Your Burger",
+//                           style: TextStyle(
+//                             fontSize: 18,
+//                             fontWeight: FontWeight.bold,
+//                             color: Colors.black87,
+//                           ),
+//                         ),
+//                         const Text(
+//                           "to Your Tastes. Ultimate Experience",
+//                           style: TextStyle(fontSize: 11, color: Colors.grey),
+//                         ),
+//                         const SizedBox(height: 15),
+//                         const Text(
+//                           "Spicy",
+//                           style: TextStyle(
+//                             fontWeight: FontWeight.bold,
+//                             fontSize: 12,
+//                           ),
+//                         ),
+//                         SliderTheme(
+//                           data: SliderTheme.of(context).copyWith(
+//                             activeTrackColor: AppColors.darkpink,
+//                             inactiveTrackColor: Colors.red.shade100,
+//                             thumbColor: AppColors.darkpink,
+//                             trackHeight: 4,
+//                             thumbShape: const RoundSliderThumbShape(
+//                               enabledThumbRadius: 6,
+//                             ),
+//                           ),
+//                           child: Slider(
+//                             value: _spicyLevel,
+//                             onChanged: (v) => setState(() => _spicyLevel = v),
+//                           ),
+//                         ),
+//                         Row(
+//                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                           children: const [
+//                             Text(
+//                               "Mild",
+//                               style: TextStyle(
+//                                 fontSize: 10,
+//                                 color: Colors.green,
+//                                 fontWeight: FontWeight.bold,
+//                               ),
+//                             ), // Green for Mild
+//                             Text(
+//                               "Hot",
+//                               style: TextStyle(
+//                                 fontSize: 10,
+//                                 color: Colors.red,
+//                                 fontWeight: FontWeight.bold,
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                         const SizedBox(height: 15),
+//                         const Text(
+//                           "Portion",
+//                           style: TextStyle(
+//                             fontWeight: FontWeight.bold,
+//                             fontSize: 12,
+//                           ),
+//                         ),
+//                         const SizedBox(height: 6),
+//                         Row(
+//                           children: [
+//                             _buildCounterBtn(
+//                               Icons.remove,
+//                               () => setState(
+//                                 () =>
+//                                     _portionCount > 1 ? _portionCount-- : null,
+//                               ),
+//                             ),
+//                             Padding(
+//                               padding: const EdgeInsets.symmetric(
+//                                 horizontal: 15,
+//                               ),
+//                               child: Text(
+//                                 "$_portionCount",
+//                                 style: const TextStyle(
+//                                   fontWeight: FontWeight.bold,
+//                                   fontSize: 18,
+//                                 ),
+//                               ),
+//                             ),
+//                             _buildCounterBtn(
+//                               Icons.add,
+//                               () => setState(() => _portionCount++),
+//                             ),
+//                           ],
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//               const SizedBox(height: 35),
+
+//               // --- TOPPINGS SECTION ---
+//               _buildStreamSection("Toppings", 'topping'),
+//               const SizedBox(height: 25),
+
+//               // --- SIDE OPTIONS SECTION ---
+//               _buildStreamSection("Side options", 'side'),
+//               const SizedBox(height: 20),
+//             ],
+//           ),
+//         ),
+//       ),
+//       bottomNavigationBar: _buildBottomBar(),
+//     );
+//   }
+
+//   Widget _buildCounterBtn(IconData icon, VoidCallback onTap) {
+//     return InkWell(
+//       onTap: onTap,
+//       child: Container(
+//         padding: const EdgeInsets.all(6),
+//         decoration: BoxDecoration(
+//           color: AppColors.darkpink,
+//           borderRadius: BorderRadius.circular(8),
+//         ),
+//         child: Icon(icon, color: Colors.white, size: 18),
+//       ),
+//     );
+//   }
+
+//   Widget _buildStreamSection(String title, String category) {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Text(
+//           title,
+//           style: const TextStyle(
+//             fontSize: 16,
+//             fontWeight: FontWeight.bold,
+//             color: Colors.black87,
+//           ),
+//         ),
+//         const SizedBox(height: 12),
+//         StreamBuilder<QuerySnapshot>(
+//           stream: FirebaseFirestore.instance
+//               .collection('toppings')
+//               .where('category', isEqualTo: category)
+//               .snapshots(),
+//           builder: (context, snapshot) {
+//             if (snapshot.connectionState == ConnectionState.waiting) {
+//               return const Center(child: CircularProgressIndicator());
+//             }
+//             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+//               return const Padding(
+//                 padding: EdgeInsets.only(left: 10),
+//                 child: Text(
+//                   "No items available yet.",
+//                   style: TextStyle(color: Colors.grey, fontSize: 11),
+//                 ),
+//               );
+//             }
+//             return SizedBox(
+//               height: 110,
+//               child: ListView.builder(
+//                 scrollDirection: Axis.horizontal,
+//                 itemCount: snapshot.data!.docs.length,
+//                 itemBuilder: (context, index) {
+//                   var data =
+//                       snapshot.data!.docs[index].data() as Map<String, dynamic>;
+//                   data['docId'] = snapshot
+//                       .data!
+//                       .docs[index]
+//                       .id; // Document ID save kar lein
+//                   bool isSelected = _selectedItems.any(
+//                     (i) => i['docId'] == data['docId'],
+//                   );
+//                   return _buildItemCard(data, isSelected);
+//                 },
+//               ),
+//             );
+//           },
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _buildItemCard(Map<String, dynamic> data, bool isSelected) {
+//     String name = data['name'] ?? 'Item';
+//     String imageUrl = data['imageUrl'] ?? '';
+
+//     return GestureDetector(
+//       onTap: () => setState(() {
+//         if (isSelected) {
+//           _selectedItems.removeWhere((i) => i['docId'] == data['docId']);
+//         } else {
+//           _selectedItems.add(data);
+//         }
+//       }),
+//       child: Container(
+//         width: 95,
+//         margin: const EdgeInsets.only(right: 16),
+//         decoration: BoxDecoration(
+//           color: Colors.white,
+//           borderRadius: BorderRadius.circular(16),
+//           border: Border.all(
+//             color: isSelected ? AppColors.darkpink : Colors.grey.shade200,
+//             width: 2,
+//           ), // Thicker border on selection
+//           boxShadow: [
+//             if (isSelected)
+//               BoxShadow(
+//                 color: AppColors.darkpink.withOpacity(0.3),
+//                 blurRadius: 8,
+//                 offset: const Offset(0, 4),
+//               ),
+//             if (!isSelected)
+//               BoxShadow(
+//                 color: Colors.black.withOpacity(0.03),
+//                 blurRadius: 6,
+//                 offset: const Offset(0, 3),
+//               ),
+//           ],
+//         ),
+//         child: Column(
+//           children: [
+//             // Image Container
+//             Expanded(
+//               flex: 3,
+//               child: Padding(
+//                 padding: const EdgeInsets.all(8.0),
+//                 child: Center(
+//                   child: Image.network(
+//                     imageUrl,
+//                     fit: BoxFit.contain,
+//                     errorBuilder: (c, e, s) => const Icon(
+//                       Icons.fastfood_rounded,
+//                       size: 30,
+//                       color: Colors.orangeAccent,
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//             // Dark Label Container with '+' Icon
+//             Expanded(
+//               flex: 1,
+//               child: Container(
+//                 width: double.infinity,
+//                 padding: const EdgeInsets.symmetric(horizontal: 6),
+//                 decoration: const BoxDecoration(
+//                   color: Colors.black87,
+//                   borderRadius: BorderRadius.vertical(
+//                     bottom: Radius.circular(14),
+//                   ),
+//                 ),
+//                 child: Row(
+//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                   children: [
+//                     // Item Name
+//                     Flexible(
+//                       child: Text(
+//                         name,
+//                         textAlign: TextAlign.left,
+//                         style: const TextStyle(
+//                           color: Colors.white,
+//                           fontSize: 9,
+//                           fontWeight: FontWeight.w600,
+//                         ),
+//                         maxLines: 2,
+//                         overflow: TextOverflow.ellipsis,
+//                       ),
+//                     ),
+//                     // Red '+' Icon (Figma Style)
+//                     Container(
+//                       padding: const EdgeInsets.all(2),
+//                       decoration: BoxDecoration(
+//                         color: isSelected ? Colors.white : Colors.red,
+//                         shape: BoxShape.circle,
+//                       ), // Icon background changes color
+//                       child: Icon(
+//                         Icons.add,
+//                         size: 12,
+//                         color: isSelected ? AppColors.darkpink : Colors.white,
+//                       ), // Icon color changes
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildBottomBar() {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+//       decoration: BoxDecoration(
+//         color: Colors.white,
+//         boxShadow: [
+//           BoxShadow(
+//             color: Colors.black.withOpacity(0.08),
+//             blurRadius: 10,
+//             offset: const Offset(0, -5),
+//           ),
+//         ],
+//       ),
+//       child: Row(
+//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//         children: [
+//           // Total Price
+//           Column(
+//             mainAxisSize: MainAxisSize.min,
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               const Text(
+//                 "Total",
+//                 style: TextStyle(color: Colors.grey, fontSize: 11),
+//               ),
+//               Text(
+//                 "\$${_calculatedTotal.toStringAsFixed(2)}",
+//                 style: const TextStyle(
+//                   fontSize: 24,
+//                   fontWeight: FontWeight.bold,
+//                   color: Colors.black87,
+//                 ),
+//               ),
+//             ],
+//           ),
+
+//           SizedBox(
+//             width: 160,
+//             height: 50,
+//             child: ElevatedButton(
+//               style: ElevatedButton.styleFrom(
+//                 backgroundColor: AppColors.darkpink,
+//                 shape: RoundedRectangleBorder(
+//                   borderRadius: BorderRadius.circular(16),
+//                 ),
+//                 elevation: 2,
+//               ),
+
+//               onPressed: () {
+//                 if (_selectedItems.isEmpty) {
+//                   Get.snackbar(
+//                     "Oops!",
+//                     "Please select at least one topping.",
+//                     backgroundColor: Colors.orange,
+//                     colorText: Colors.white,
+//                     snackPosition: SnackPosition.BOTTOM,
+//                   );
+//                 } else {
+//                   Get.snackbar(
+//                     "Success!",
+//                     "Order placed successfully!",
+//                     backgroundColor: Colors.white,
+//                     colorText: Colors.black,
+//                     snackPosition: SnackPosition.TOP,
+//                   );
+
+//                   Future.delayed(const Duration(seconds: 1), () {
+//                     Get.to(
+//                       () => PaymentMethodScreen(totalPrice: _calculatedTotal),
+//                     );
+//                   });
+//                 }
+//               },
+
+//               child: const Text(
+//                 "Order Now",
+//                 style: TextStyle(
+//                   color: Colors.white,
+//                   fontSize: 16,
+//                   fontWeight: FontWeight.bold,
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }

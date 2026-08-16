@@ -7,6 +7,7 @@ import 'package:food_go/utility/responsive.dart';
 import 'package:food_go/widgets/product_card.dart';
 import 'package:food_go/Controllers/profile_controller.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,19 +53,19 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   'Foodgo',
-                  style: TextStyle(
-                    color: isDark ? AppColors.lightwhite : Colors.black,
-                    fontSize: 24,
+                  style: GoogleFonts.lobster(
+                    color: Colors.black,
+                    fontSize: 40,
                     fontWeight: FontWeight.bold,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
-                SizedBox(height: screenHeight * 0.01),
-                const Text(
+                SizedBox(height: screenHeight * 0.001),
+                Text(
                   'Order Your Favorite Food!',
-                  style: TextStyle(
+                  style: GoogleFonts.poppins(
                     color: AppColors.lightgrey,
-                    fontSize: 14,
+                    fontSize: 18,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -111,23 +112,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     decoration: InputDecoration(
                       hintText: 'Search for food...',
-                      hintStyle: TextStyle(
-                        color: isDark ? Colors.grey[400] : AppColors.lightgrey,
+                      hintStyle: GoogleFonts.roboto(
+                        fontSize: 16,
+                        
                       ),
-                      filled: true,
-                      fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: isDark ? Colors.grey[400] : AppColors.lightgrey,
-                      ),
-                      suffixIcon: Obx(() {
-                        return controller.searchQuery.value.isNotEmpty
-                            ? IconButton(
-                                icon: Icon(
-                                  Icons.clear,
-                                  color: isDark ? Colors.grey[400] : AppColors.lightgrey,
-                                ),
-                                onPressed: () {
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                setState(() {
                                   searchController.clear();
                                   controller.clearSearch();
                                 },

@@ -5,7 +5,7 @@ import 'package:food_go/Auth/login_screen.dart';
 import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/utility/responsive.dart';
-import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,16 +25,12 @@ class _SplashScreenState extends State<SplashScreen> {
       if (user != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) =>  BottomNavbar(),
-          ),
+          MaterialPageRoute(builder: (context) => BottomNavbar()),
         );
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (context) => const LoginScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
     });
@@ -42,9 +38,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // MediaQuery utility se screen width & height nikalna
     final double screenWidth = MediaQueryu.getScreenWidth(context);
+
     final double screenHeight = MediaQueryu.getScreenHeight(context);
-    final bool isDark = Get.isDarkMode;
 
     return Scaffold(
       body: Container(
@@ -54,30 +51,24 @@ class _SplashScreenState extends State<SplashScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: isDark
-                ? [Colors.grey[900]!, Colors.black]
-                : const [
-                    Color(0xffff8995),
-                    AppColors.darkpink,
-                  ],
+            colors: [Color(0xffff8995), Color(0xffff172d)],
           ),
         ),
         child: Stack(
           children: [
             // Foodgo Logo
-            const Center(
+            Center(
               child: Text(
                 "Foodgo",
-                style: TextStyle(
-                  color: AppColors.lightwhite,
-                  fontSize: 36,
+                style: GoogleFonts.lobster(
+                  color: Colors.white,
+                  fontSize: 60,
                   fontWeight: FontWeight.bold,
                   fontStyle: FontStyle.italic,
                 ),
               ),
             ),
 
-            // Left Bottom Side Par Dono Burgers
             Positioned(
               bottom: -10,
               left: -35,
@@ -87,7 +78,6 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Stack(
                   alignment: Alignment.bottomLeft,
                   children: [
-                    // Bada Burger
                     Positioned(
                       left: 0,
                       bottom: 0,
@@ -99,7 +89,6 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                     ),
 
-                    // Chota Burger
                     Positioned(
                       left: screenWidth * 0.33,
                       bottom: 0,

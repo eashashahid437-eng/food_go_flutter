@@ -262,6 +262,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         ),
       ),
     );
+  
   }
 
   Widget _summaryRow(
