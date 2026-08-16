@@ -13,5 +13,6 @@ class ImagePath {
   static const String visa="assets/images/Visa.png";
   static const String Authburger="assets/images/auth burger login.png";
   static const String Fb="assets/images/facebook.webp";
+  static const String logoapp="assets/images/app logo food app.png";
 
 }

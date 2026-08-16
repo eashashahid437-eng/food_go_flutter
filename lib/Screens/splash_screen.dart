@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:food_go/Auth/login_screen.dart';
+import 'package:food_go/Constants/app_fonts.dart';
 import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/utility/responsive.dart';
@@ -52,24 +53,18 @@ class _SplashScreenState extends State<SplashScreen> {
             end: Alignment.bottomCenter,
             colors: isDark
                 ? [Colors.grey[900]!, Colors.black]
-                : const [
-                    Color(0xffff8995),
-                    AppColors.darkpink,
-                  ],
+                : const [Color(0xffff8995), AppColors.darkpink],
           ),
         ),
         child: Stack(
           children: [
-            // Foodgo Logo
             Center(
               child: Text(
                 "Foodgo",
-                style: TextStyle(
-                  color: AppColors.lightwhite,
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  fontStyle: FontStyle.italic,
-                ),
+                style: AppFonts.lobster(
+                  fontSize: 40,
+                  fontWeight: FontWeight.w400,
+                ).copyWith(color: AppColors.lightwhite),
               ),
             ),
 

@@ -10,19 +10,13 @@ import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
 class ProfileController extends GetxController {
-  // ============================================================
-  // TEXT CONTROLLERS
-  // ============================================================
+
 
   final TextEditingController nameController =
       TextEditingController();
 
   final TextEditingController addressController =
       TextEditingController();
-
-  // ============================================================
-  // OBSERVABLE VARIABLES
-  // ============================================================
 
   final RxString email = ''.obs;
 
@@ -34,23 +28,17 @@ class ProfileController extends GetxController {
 
   final RxBool isUploadingImage = false.obs;
 
-  // ============================================================
-  // IMAGE PICKER
-  // ============================================================
+
 
   final ImagePicker _picker = ImagePicker();
 
-  // ============================================================
-  // CLOUDINARY
-  // ============================================================
+
 
   final String cloudinaryCloudName = 'eyncqf0n';
 
   final String cloudinaryUploadPreset = 'ml_default';
 
-  // ============================================================
-  // INIT
-  // ============================================================
+
 
   @override
   void onInit() {
@@ -58,17 +46,13 @@ class ProfileController extends GetxController {
     fetchUserData();
   }
 
-  // ============================================================
-  // GET CURRENT USER
-  // ============================================================
+
 
   User? get currentUser {
     return FirebaseAuth.instance.currentUser;
   }
 
-  // ============================================================
-  // FETCH USER DATA FROM FIRESTORE
-  // ============================================================
+
 
   Future<void> fetchUserData() async {
     try {
@@ -76,7 +60,7 @@ class ProfileController extends GetxController {
 
       final User? user = FirebaseAuth.instance.currentUser;
 
-      // User login nahi hai
+    
       if (user == null) {
         email.value = '';
         nameController.clear();
@@ -85,10 +69,10 @@ class ProfileController extends GetxController {
         return;
       }
 
-      // Firebase Authentication se email
+    
       email.value = user.email ?? '';
 
-      // Firestore se user data
+    
       final DocumentSnapshot userDoc =
           await FirebaseFirestore.instance
               .collection('users')
@@ -108,7 +92,7 @@ class ProfileController extends GetxController {
         profileImageUrl.value =
             data['profileImage']?.toString() ?? '';
       } else {
-        // Agar Firestore mein document nahi hai
+        
         nameController.text =
             user.displayName ?? '';
 
@@ -129,9 +113,7 @@ class ProfileController extends GetxController {
     }
   }
 
-  // ============================================================
-  // SAVE PROFILE DATA
-  // ============================================================
+
 
   Future<void> saveUserData() async {
     try {
@@ -140,7 +122,7 @@ class ProfileController extends GetxController {
       final User? user =
           FirebaseAuth.instance.currentUser;
 
-      // User login nahi hai
+    
       if (user == null) {
         Get.snackbar(
           'Error',
@@ -153,7 +135,7 @@ class ProfileController extends GetxController {
         return;
       }
 
-      // Firestore mein data save
+    
       await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -169,7 +151,7 @@ class ProfileController extends GetxController {
         SetOptions(merge: true),
       );
 
-      // Email update
+    
       email.value = user.email ?? '';
 
       Get.snackbar(
@@ -192,13 +174,11 @@ class ProfileController extends GetxController {
     }
   }
 
-  // ============================================================
-  // CAMERA / GALLERY
-  // ============================================================
+
 
   Future<void> pickImage(ImageSource source) async {
     try {
-      // Image picker open
+      
       final XFile? pickedImage =
           await _picker.pickImage(
         source: source,
@@ -206,7 +186,7 @@ class ProfileController extends GetxController {
         maxWidth: 1200,
       );
 
-      // User ne cancel kar diya
+  
       if (pickedImage == null) {
         return;
       }
@@ -216,27 +196,25 @@ class ProfileController extends GetxController {
       final File imageFile =
           File(pickedImage.path);
 
-      // ========================================================
-      // CLOUDINARY URL
-      // ========================================================
+
 
       final Uri uri = Uri.parse(
         'https://api.cloudinary.com/v1_1/'
         '$cloudinaryCloudName/image/upload',
       );
 
-      // Multipart request
+    
       final http.MultipartRequest request =
           http.MultipartRequest(
         'POST',
         uri,
       );
 
-      // Upload preset
+      
       request.fields['upload_preset'] =
           cloudinaryUploadPreset;
 
-      // Image file
+      
       request.files.add(
         await http.MultipartFile.fromPath(
           'file',
@@ -244,7 +222,7 @@ class ProfileController extends GetxController {
         ),
       );
 
-      // Cloudinary ko request send
+    
       final http.StreamedResponse
           streamedResponse =
           await request.send();
@@ -254,9 +232,7 @@ class ProfileController extends GetxController {
         streamedResponse,
       );
 
-      // ========================================================
-      // CLOUDINARY SUCCESS
-      // ========================================================
+
 
       if (response.statusCode == 200) {
         final Map<String, dynamic>

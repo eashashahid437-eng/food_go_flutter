@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:food_go/Constants/app_fonts.dart';
 import 'package:food_go/Constants/image_path.dart';
 import 'package:food_go/Controllers/homescreencontroller.dart';
 import 'package:food_go/Screens/BottomNavbar/person_screen.dart';
@@ -53,11 +54,10 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   'Foodgo',
-                  style: TextStyle(
-                    color: isDark ? AppColors.lightwhite : Colors.black,
-                    fontSize: 24,
+                  style: AppFonts.lobster(
+                    fontSize: 40,
                     fontWeight: FontWeight.bold,
-                    fontStyle: FontStyle.italic,
+                    
                   ),
                 ),
                 SizedBox(height: screenHeight * 0.001),

@@ -5,10 +5,10 @@ import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:food_go/Auth/Forgot_password.dart';
 import 'package:food_go/Auth/Sign_Up_screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
+import 'package:food_go/Constants/app_fonts.dart';
 import 'package:food_go/Constants/image_path.dart';
 import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -48,14 +48,15 @@ class _LoginScreenState extends State<LoginScreen> {
           accessToken.tokenString,
         );
 
-        final UserCredential userCredential = await FirebaseAuth.instance
-            .signInWithCredential(credential);
+        final UserCredential userCredential = await auth.signInWithCredential(
+          credential,
+        );
 
         print("Facebook Login Successful");
         print("Name: ${userCredential.user?.displayName}");
         print("Email: ${userCredential.user?.email}");
 
-        Get.off(() => BottomNavbar());
+        Get.offAll(() => BottomNavbar());
       } else if (result.status == LoginStatus.cancelled) {
         print("Facebook Login Cancelled");
       } else {
@@ -64,6 +65,12 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       print("Facebook Login Error: $e");
+
+      Get.snackbar(
+        "Facebook Login Failed",
+        "Unable to login with Facebook.",
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
@@ -72,13 +79,13 @@ class _LoginScreenState extends State<LoginScreen> {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
       if (googleUser == null) {
-        return; // User canceled the sign-in
+        return;
       }
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
-      final credential = GoogleAuthProvider.credential(
+      final OAuthCredential credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
         accessToken: googleAuth.accessToken,
       );
@@ -88,24 +95,41 @@ class _LoginScreenState extends State<LoginScreen> {
       Get.offAll(() => BottomNavbar());
     } catch (e) {
       print("Google Sign In Error: $e");
-      Get.snackbar("Error", "Google Sign-In failed");
+
+      Get.snackbar(
+        "Error",
+        "Google Sign-In failed",
+        snackPosition: SnackPosition.BOTTOM,
+      );
     }
   }
 
   Future<void> loginUser() async {
-    if (email.text.trim().isEmpty) {
+    final String emailText = email.text.trim();
+    final String passwordText = password.text.trim();
+
+    if (emailText.isEmpty) {
       Get.snackbar(
-        'Error',
-        'Please enter your email',
+        "Error",
+        "Please enter your email",
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
 
-    if (password.text.trim().isEmpty) {
+    if (!GetUtils.isEmail(emailText)) {
       Get.snackbar(
-        'Error',
-        'Please enter your password',
+        "Error",
+        "Please enter a valid email address",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    if (passwordText.isEmpty) {
+      Get.snackbar(
+        "Error",
+        "Please enter your password",
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
@@ -117,51 +141,58 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await auth.signInWithEmailAndPassword(
-        email: email.text.trim(),
-        password: password.text.trim(),
+        email: emailText,
+        password: passwordText,
       );
 
       Get.snackbar(
-        'Success',
-        'Login successful',
+        "Success",
+        "Login successful",
         snackPosition: SnackPosition.BOTTOM,
       );
 
       Get.offAll(() => BottomNavbar());
     } on FirebaseAuthException catch (e) {
-      String message = 'Login failed';
+      String message = "Login failed";
 
       switch (e.code) {
-        case 'invalid-email':
-          message = 'Please enter a valid email address';
+        case "invalid-email":
+          message = "Please enter a valid email address";
           break;
-        case 'user-not-found':
-          message = 'No account found with this email';
+
+        case "user-not-found":
+          message = "No account found with this email";
           break;
-        case 'wrong-password':
-          message = 'Incorrect password';
+
+        case "wrong-password":
+          message = "Incorrect password";
           break;
-        case 'invalid-credential':
-          message = 'Email or password is incorrect';
+
+        case "invalid-credential":
+          message = "Email or password is incorrect";
           break;
-        case 'user-disabled':
-          message = 'This account has been disabled';
+
+        case "user-disabled":
+          message = "This account has been disabled";
           break;
-        case 'too-many-requests':
-          message = 'Too many attempts. Try again later';
+
+        case "too-many-requests":
+          message = "Too many attempts. Try again later";
           break;
-        case 'network-request-failed':
-          message = 'Please check your internet connection';
+
+        case "network-request-failed":
+          message = "Please check your internet connection";
           break;
+
         default:
-          message = e.message ?? 'Login failed';
+          message = e.message ?? "Login failed";
       }
 
-      Get.snackbar('Error', message, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar("Error", message, snackPosition: SnackPosition.BOTTOM);
     } catch (e) {
       Get.snackbar(
-        'Error',
-        'Something went wrong. Please try again',
+        "Error",
+        "Something went wrong. Please try again",
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
@@ -171,6 +202,65 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
+  }
+
+  InputDecoration inputDecoration({
+    required String hintText,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: AppFonts.poppinsMedium(
+        fontSize: 16,
+      ).copyWith(color: Colors.grey),
+      prefixIcon: Icon(icon, color: AppColors.Pink),
+      suffixIcon: suffixIcon,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Colors.grey, width: 1.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: AppColors.Pink, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Colors.grey, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: Colors.red, width: 2),
+      ),
+    );
+  }
+
+  Widget fieldTitle(String title) {
+    return Text(title, style: AppFonts.poppinsMedium(fontSize: 16));
+  }
+
+  Widget fieldSpace(BuildContext context) {
+    return SizedBox(height: MediaQuery.of(context).size.height * 0.018);
+  }
+
+  Widget socialButton({required String image, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(50),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.lightgrey, width: 1.5),
+        ),
+        child: CircleAvatar(
+          radius: 20,
+          backgroundColor: Colors.white,
+          backgroundImage: AssetImage(image),
+        ),
+      ),
+    );
   }
 
   @override
@@ -190,41 +280,43 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               children: [
                 SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+
                 Image.asset("assets/images/auth burger login.png", height: 170),
 
-                SizedBox(height: MediaQuery.of(context).size.height * 0.01),
+                const SizedBox(height: 8),
 
                 Text(
-                  "Welcome Back !",
-                  style: GoogleFonts.lobster(
-                    color: Colors.white,
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  "Welcome Back!",
+                  style: AppFonts.lobster(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w400,
+                  ).copyWith(color: Colors.white),
                 ),
 
-                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                const SizedBox(height: 8),
 
                 Text(
                   "Login to your account",
-                  style: GoogleFonts.lobster(
-                    color: Colors.white,
+                  style: AppFonts.lobster(
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                    fontWeight: FontWeight.w400,
+                  ).copyWith(color: Colors.white),
                 ),
 
-                SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                const SizedBox(height: 8),
 
-                const Text(
+                Text(
                   "Your world of living colors awaits",
-                  style: TextStyle(color: Colors.white70, fontSize: 15),
+                  style: AppFonts.poppinsMedium(
+                    fontSize: 14,
+                  ).copyWith(color: Colors.white70),
                 ),
 
                 SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+
                 Container(
-                  width: MediaQuery.of(context).size.width,
-                  padding: const EdgeInsets.all(22),
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(22, 26, 22, 24),
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.only(
@@ -235,50 +327,37 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Email",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
+                      fieldTitle("Email"),
+
+                      fieldSpace(context),
+
                       TextField(
                         controller: email,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
+                        style: AppFonts.poppinsMedium(fontSize: 18),
+                        decoration: inputDecoration(
                           hintText: "davidjonson@gmail.com",
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          icon: Icons.email_outlined,
                         ),
                       ),
 
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
-                      const Text(
-                        "Password",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
+                      fieldSpace(context),
+
+                      fieldTitle("Password"),
+
+                      fieldSpace(context),
+
                       TextField(
                         controller: password,
                         obscureText: obscure,
-                        decoration: InputDecoration(
+                        style: AppFonts.poppinsMedium(fontSize: 18),
+                        decoration: inputDecoration(
                           hintText: "xxxxxxxx",
-                          prefixIcon: const Icon(Icons.lock_outline),
+                          icon: Icons.lock_outline,
                           suffixIcon: IconButton(
                             icon: Icon(
                               obscure ? Icons.visibility_off : Icons.visibility,
+                              color: AppColors.Pink,
                             ),
                             onPressed: () {
                               setState(() {
@@ -286,52 +365,60 @@ class _LoginScreenState extends State<LoginScreen> {
                               });
                             },
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
                         ),
                       ),
 
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
+                      const SizedBox(height: 8),
+
                       Row(
                         children: [
                           Checkbox(
                             value: remember,
+                            activeColor: AppColors.Pink,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                             onChanged: (value) {
                               setState(() {
                                 remember = value ?? false;
                               });
                             },
                           ),
-                          const Text("Remember me"),
+
+                          Text(
+                            "Remember me",
+                            style: AppFonts.poppinsMedium(fontSize: 13),
+                          ),
+
                           const Spacer(),
+
                           TextButton(
                             onPressed: () {
                               Get.to(() => const ForgotPassword());
                             },
-                            child: const Text(
+                            child: Text(
                               "Forgot Password?",
-                              style: TextStyle(color: Colors.red),
+                              style: AppFonts.poppinsMedium(
+                                fontSize: 13,
+                              ).copyWith(color: AppColors.darkpink),
                             ),
                           ),
                         ],
                       ),
 
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
+                      const SizedBox(height: 12),
+
                       Center(
                         child: SizedBox(
                           width: MediaQuery.of(context).size.width * 0.7,
-                          height: 45,
+                          height: 48,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.Pink,
-                              foregroundColor: Colors.black,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             onPressed: isLoading ? null : loginUser,
@@ -341,163 +428,102 @@ class _LoginScreenState extends State<LoginScreen> {
                                     width: 22,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: Colors.black,
+                                      color: Colors.white,
                                     ),
                                   )
-                                : const Text(
+                                : Text(
                                     "Log In",
-                                    style: TextStyle(fontSize: 20),
+                                    style: AppFonts.poppinsMedium(
+                                      fontSize: 18,
+                                    ).copyWith(color: Colors.white),
                                   ),
                           ),
                         ),
                       ),
 
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.03,
-                      ),
-                      const Row(
+                      const SizedBox(height: 28),
+
+                      Row(
                         children: [
-                          Expanded(child: Divider()),
+                          const Expanded(child: Divider()),
                           Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 10),
-                            child: Text("Log in with"),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              "Log in with",
+                              style: AppFonts.poppinsMedium(
+                                fontSize: 14,
+                              ).copyWith(color: Colors.grey),
+                            ),
                           ),
-                          Expanded(child: Divider()),
+                          const Expanded(child: Divider()),
                         ],
                       ),
 
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
+                      const SizedBox(height: 20),
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          InkWell(
+                          socialButton(
+                            image: ImagePath.Google,
                             onTap: signInWithGoogle,
-                            borderRadius: BorderRadius.circular(50),
-
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.lightgrey,
-                                  width: 2,
-                                ),
-                              ),
-
-                              child: CircleAvatar(
-                                radius: 20,
-                                backgroundImage: AssetImage(ImagePath.Google),
-                              ),
-                            ),
                           ),
 
                           SizedBox(
                             width: MediaQuery.of(context).size.width * 0.05,
                           ),
 
-                          InkWell(
+                          socialButton(
+                            image: ImagePath.applelogo,
                             onTap: () {
                               Get.snackbar(
                                 "Apple Login",
                                 "Apple login is currently unavailable.",
+                                snackPosition: SnackPosition.BOTTOM,
                               );
                             },
-
-                            borderRadius: BorderRadius.circular(50),
-
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.lightgrey,
-                                  width: 1.5,
-                                ),
-                              ),
-
-                              child: CircleAvatar(
-                                radius: 20,
-
-                                backgroundImage: AssetImage(ImagePath.applelogo),
-
-                                backgroundColor: Colors.white,
-                              ),
-                            ),
                           ),
 
                           SizedBox(
                             width: MediaQuery.of(context).size.width * 0.05,
                           ),
-                          InkWell(
-                            onTap: () {
-                              signInWithFacebook();
-                              Get.snackbar(
-                                "Facebook Login",
-                                "Facebook login is not configured yet.",
-                              );
-                            },
 
-             borderRadius: BorderRadius.circular(50),
-
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.lightgrey,
-                                  width: 1.5,
-                                ),
-                              ),
-
-                              child: CircleAvatar(
-                                radius: 20,
-                                backgroundImage: AssetImage(ImagePath.Fb),
-                                backgroundColor: Colors.white,
-                              ),
-                            ),
+                          socialButton(
+                            image: ImagePath.Fb,
+                            onTap: signInWithFacebook,
                           ),
                         ],
                       ),
 
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          RichText(
-                            text: TextSpan(
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black,
+                      const SizedBox(height: 22),
+
+                      Center(
+                        child: RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            style: AppFonts.poppinsMedium(
+                              fontSize: 14,
+                            ).copyWith(color: Colors.black),
+                            children: [
+                              const TextSpan(text: "Don't have an account? "),
+                              TextSpan(
+                                text: "Sign Up",
+                                style: AppFonts.poppinsMedium(fontSize: 14)
+                                    .copyWith(
+                                      color: AppColors.Pink,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    Get.to(() => const SignUpScreen());
+                                  },
                               ),
-                              children: [
-                                const TextSpan(text: "Don't have an account? "),
-                                TextSpan(
-                                  text: "Sign Up",
-                                  style: const TextStyle(
-                                    color: AppColors.Pink,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  recognizer: TapGestureRecognizer()
-                                    ..onTap = () {
-                                      Get.to(() => const SignUpScreen());
-                                    },
-                                ),
-                              ],
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
 
-                      SizedBox(
-                        height: MediaQuery.of(context).size.height * 0.02,
-                      ),
+                      const SizedBox(height: 8),
                     ],
                   ),
                 ),
