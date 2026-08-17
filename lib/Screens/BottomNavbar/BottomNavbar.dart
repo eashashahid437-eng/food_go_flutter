@@ -7,7 +7,7 @@ import 'package:food_go/Controllers/bottomnavbarcontroller.dart';
 import 'package:food_go/Screens/BottomNavbar/favourite_screen.dart';
 import 'package:food_go/Screens/BottomNavbar/home_screen.dart';
 import 'package:food_go/Screens/BottomNavbar/message_screen.dart';
-import 'package:food_go/Screens/BottomNavbar/person_screen.dart'; // <-- 1. Yahan AddToppingScreen ka import lag gaya hai
+import 'package:food_go/Screens/BottomNavbar/person_screen.dart';
 import 'package:get/get.dart';
 
 class BottomNavbar extends StatelessWidget {
@@ -18,10 +18,8 @@ class BottomNavbar extends StatelessWidget {
   final List<Widget> pages = [
     HomeScreen(),
     FavoriteScreen(),
-   UserChatScreen (),
+    UserChatScreen(),
     PersonScreen(),
-     // <-- 1. Yahan AddToppingScreen ka instance lag gaya hai
-     // <-- 2. Yahan AddToppingScreen ka instance lag gaya hai
   ];
 
   @override

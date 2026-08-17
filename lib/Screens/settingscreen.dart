@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Controllers/settingScreencontroller.dart';
 import 'package:food_go/Screens/BottomNavbar/orderhistory.dart';
 import 'package:food_go/Screens/BottomNavbar/paymentscreen.dart';
@@ -11,48 +12,42 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final SettingsController controller =
-        Get.put(SettingsController());
+    final SettingsController controller = Get.put(SettingsController());
+    final bool isDark = Get.isDarkMode;
+    final Size screenSize = MediaQuery.sizeOf(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
-
+      backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
+          icon: Icon(
             Icons.arrow_back_ios_new,
-            color: Colors.black,
+            color: isDark ? AppColors.lightwhite : Colors.black,
           ),
           onPressed: () => Get.back(),
         ),
-        title: const Text(
+        title: Text(
           'Settings',
           style: TextStyle(
-            color: Colors.black,
+            color: isDark ? AppColors.lightwhite : Colors.black,
             fontWeight: FontWeight.bold,
-            fontSize: 24,
+            fontSize: screenSize.width * 0.055,
           ),
         ),
       ),
-
       body: ListView(
         padding: const EdgeInsets.only(bottom: 30),
         children: [
-          // ======================================================
-          // ACCOUNT
-          // ======================================================
-
           _sectionTitle('Account'),
-
           _settingTile(
             icon: Icons.person_outline,
             title: 'Personal Information',
             subtitle: 'Manage your profile information',
             onTap: () => Get.back(),
+            isDark: isDark,
           ),
-
           _settingTile(
             icon: Icons.location_on_outlined,
             title: 'Delivery Addresses',
@@ -60,8 +55,8 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Get.to(() => const AddressesScreen());
             },
+            isDark: isDark,
           ),
-
           _settingTile(
             icon: Icons.lock_outline,
             title: 'Password & Security',
@@ -69,16 +64,10 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Get.to(() => const SecurityScreen());
             },
+            isDark: isDark,
           ),
-
           const SizedBox(height: 8),
-
-          // ======================================================
-          // FOOD GO
-          // ======================================================
-
           _sectionTitle('Food Go'),
-
           _settingTile(
             icon: Icons.credit_card_outlined,
             title: 'Payment Methods',
@@ -86,8 +75,8 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Get.to(() => const PaymentDetailsScreen());
             },
+            isDark: isDark,
           ),
-
           _settingTile(
             icon: Icons.account_balance_wallet_outlined,
             title: 'Food Go Wallet',
@@ -95,8 +84,8 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Get.to(() => const WalletScreen());
             },
+            isDark: isDark,
           ),
-
           _settingTile(
             icon: Icons.favorite_border,
             title: 'Saved Items',
@@ -104,8 +93,8 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Get.to(() => const SavedItemsScreen());
             },
+            isDark: isDark,
           ),
-
           _settingTile(
             icon: Icons.receipt_long_outlined,
             title: 'Orders',
@@ -113,8 +102,8 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Get.to(() => const OrderHistoryScreen());
             },
+            isDark: isDark,
           ),
-
           _settingTile(
             icon: Icons.calendar_month_outlined,
             title: 'Bookings',
@@ -122,8 +111,8 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Get.to(() => const BookingsScreen());
             },
+            isDark: isDark,
           ),
-
           _settingTile(
             icon: Icons.card_giftcard_outlined,
             title: 'Rewards',
@@ -131,8 +120,8 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Get.to(() => const RewardsScreen());
             },
+            isDark: isDark,
           ),
-
           _settingTile(
             icon: Icons.redeem_outlined,
             title: 'Gift Cards',
@@ -140,8 +129,8 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Get.to(() => const GiftCardsScreen());
             },
+            isDark: isDark,
           ),
-
           _settingTile(
             icon: Icons.people_outline,
             title: 'Refer Friends',
@@ -149,94 +138,85 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Get.to(() => const ReferFriendsScreen());
             },
+            isDark: isDark,
           ),
-
           const SizedBox(height: 8),
-
-          // ======================================================
-          // NOTIFICATIONS
-          // ======================================================
-
           _sectionTitle('Notifications'),
-
           Obx(
             () => SwitchListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 20),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20),
               secondary: const Icon(
                 Icons.notifications_none,
-                color: Color(0xFFFF5722),
+                color: Colors.red,
               ),
-              title: const Text(
+              title: Text(
                 'Notifications',
-                style: TextStyle(fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.lightwhite : Colors.black,
+                ),
               ),
               subtitle: const Text(
                 'Receive app notifications',
+                style: TextStyle(color: Colors.grey),
               ),
               value: controller.notificationsEnabled.value,
-              activeColor: const Color(0xFFFF5722),
+              activeColor: Colors.red,
               onChanged: controller.toggleNotifications,
             ),
           ),
-
           Obx(
             () => SwitchListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 20),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20),
               secondary: const Icon(
                 Icons.shopping_bag_outlined,
-                color: Color(0xFFFF5722),
+                color: Colors.red,
               ),
-              title: const Text(
+              title: Text(
                 'Order Updates',
-                style: TextStyle(fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.lightwhite : Colors.black,
+                ),
               ),
               subtitle: const Text(
                 'Receive updates about your orders',
+                style: TextStyle(color: Colors.grey),
               ),
               value: controller.orderNotifications.value,
-              activeColor: const Color(0xFFFF5722),
-              onChanged:
-                  controller.notificationsEnabled.value
-                      ? controller.toggleOrderNotifications
-                      : null,
+              activeColor: Colors.red,
+              onChanged: controller.notificationsEnabled.value
+                  ? controller.toggleOrderNotifications
+                  : null,
             ),
           ),
-
           Obx(
             () => SwitchListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 20),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20),
               secondary: const Icon(
                 Icons.local_offer_outlined,
-                color: Color(0xFFFF5722),
+                color: Colors.red,
               ),
-              title: const Text(
+              title: Text(
                 'Offers & Promotions',
-                style: TextStyle(fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.lightwhite : Colors.black,
+                ),
               ),
               subtitle: const Text(
                 'Receive special offers and promotions',
+                style: TextStyle(color: Colors.grey),
               ),
-              value:
-                  controller.promotionalNotifications.value,
-              activeColor: const Color(0xFFFF5722),
-              onChanged:
-                  controller.notificationsEnabled.value
-                      ? controller.togglePromotionalNotifications
-                      : null,
+              value: controller.promotionalNotifications.value,
+              activeColor: Colors.red,
+              onChanged: controller.notificationsEnabled.value
+                  ? controller.togglePromotionalNotifications
+                  : null,
             ),
           ),
-
           const SizedBox(height: 8),
-
-          // ======================================================
-          // SUPPORT
-          // ======================================================
-
           _sectionTitle('Support'),
-
           _settingTile(
             icon: Icons.help_outline,
             title: 'Help & Support',
@@ -244,8 +224,8 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Get.to(() => const HelpSupportScreen());
             },
+            isDark: isDark,
           ),
-
           _settingTile(
             icon: Icons.info_outline,
             title: 'About Food Go',
@@ -253,28 +233,32 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
               Get.to(() => const AboutScreen());
             },
+            isDark: isDark,
           ),
-
           const SizedBox(height: 20),
-
-          // ======================================================
-          // LOGOUT
-          // ======================================================
-
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: OutlinedButton.icon(
               onPressed: () {
                 Get.dialog(
                   AlertDialog(
-                    title: const Text('Logout'),
-                    content: const Text(
+                    backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                    title: Text(
+                      'Logout',
+                      style: TextStyle(
+                        color: isDark ? AppColors.lightwhite : Colors.black,
+                      ),
+                    ),
+                    content: Text(
                       'Are you sure you want to logout?',
+                      style: TextStyle(
+                        color: isDark ? Colors.grey[300] : Colors.black87,
+                      ),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Get.back(),
-                        child: const Text('Cancel'),
+                        child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
                       ),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
@@ -298,8 +282,7 @@ class SettingsScreen extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.red,
                 side: const BorderSide(color: Colors.red),
-                padding:
-                    const EdgeInsets.symmetric(vertical: 15),
+                padding: const EdgeInsets.symmetric(vertical: 15),
               ),
             ),
           ),
@@ -307,10 +290,6 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
   }
-
-  // ============================================================
-  // SECTION TITLE
-  // ============================================================
 
   static Widget _sectionTitle(String title) {
     return Padding(
@@ -327,55 +306,56 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // SETTING TILE
-  // ============================================================
-
   static Widget _settingTile({
     required IconData icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    required bool isDark,
   }) {
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 3,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: Container(
-          width: 43,
-          height: 43,
+          width: 45,
+          height: 45,
           decoration: BoxDecoration(
-            color: const Color(0xFFFF5722).withOpacity(.10),
+            color: Colors.red.withOpacity(0.12),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            icon,
-            color: const Color(0xFFFF5722),
-          ),
+          child: Icon(icon, color: Colors.red, size: 22),
         ),
         title: Text(
           title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: isDark ? AppColors.lightwhite : Colors.black,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: Colors.grey,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
           ),
         ),
-        trailing: const Icon(
+        trailing: Icon(
           Icons.arrow_forward_ios,
-          size: 15,
-          color: Colors.grey,
+          size: 14,
+          color: isDark ? Colors.grey[500] : Colors.grey[400],
         ),
         onTap: onTap,
       ),
@@ -383,22 +363,20 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// ADDRESSES SCREEN
-// ============================================================================
-
 class AddressesScreen extends StatelessWidget {
   const AddressesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<SettingsController>();
+    final bool isDark = Get.isDarkMode;
 
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
       appBar: AppBar(
         title: const Text('Delivery Addresses'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
+        foregroundColor: isDark ? AppColors.lightwhite : Colors.black,
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -408,10 +386,9 @@ class AddressesScreen extends StatelessWidget {
             .orderBy('createdAt', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(),
+              child: CircularProgressIndicator(color: Colors.red),
             );
           }
 
@@ -420,43 +397,41 @@ class AddressesScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              ...docs.map(
-                (doc) {
-                  final data =
-                      doc.data() as Map<String, dynamic>;
+              ...docs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
 
-                  return Card(
-                    child: ListTile(
-                      leading: const Icon(
-                        Icons.location_on,
-                        color: Colors.red,
-                      ),
-                      title: Text(
-                        data['title'] ?? 'Address',
-                      ),
-                      subtitle: Text(
-                        data['address'] ?? '',
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                        ),
-                        onPressed: () {
-                          controller.deleteAddress(doc.id);
-                        },
+                return Card(
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  child: ListTile(
+                    leading: const Icon(Icons.location_on, color: Colors.red),
+                    title: Text(
+                      data['title'] ?? 'Address',
+                      style: TextStyle(
+                        color: isDark ? AppColors.lightwhite : Colors.black,
                       ),
                     ),
-                  );
-                },
-              ),
-
+                    subtitle: Text(
+                      data['address'] ?? '',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      onPressed: () {
+                        controller.deleteAddress(doc.id);
+                      },
+                    ),
+                  ),
+                );
+              }),
               const SizedBox(height: 15),
-
               ElevatedButton.icon(
                 onPressed: () {
-                  _addAddressDialog(context, controller);
+                  _addAddressDialog(context, controller, isDark);
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
                 icon: const Icon(Icons.add),
                 label: const Text('Add New Address'),
               ),
@@ -470,28 +445,44 @@ class AddressesScreen extends StatelessWidget {
   void _addAddressDialog(
     BuildContext context,
     SettingsController controller,
+    bool isDark,
   ) {
     final titleController = TextEditingController();
     final addressController = TextEditingController();
 
     Get.dialog(
       AlertDialog(
-        title: const Text('Add Address'),
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        title: Text(
+          'Add Address',
+          style: TextStyle(
+            color: isDark ? AppColors.lightwhite : Colors.black,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: titleController,
-              decoration: const InputDecoration(
+              style: TextStyle(
+                color: isDark ? AppColors.lightwhite : Colors.black,
+              ),
+              decoration: InputDecoration(
                 labelText: 'Address title',
+                labelStyle: const TextStyle(color: Colors.grey),
                 hintText: 'Home / Work',
+                hintStyle: TextStyle(color: Colors.grey[600]),
               ),
             ),
             TextField(
               controller: addressController,
               maxLines: 3,
+              style: TextStyle(
+                color: isDark ? AppColors.lightwhite : Colors.black,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Full address',
+                labelStyle: TextStyle(color: Colors.grey),
               ),
             ),
           ],
@@ -499,16 +490,19 @@ class AddressesScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
             onPressed: () {
               controller.addAddress(
                 title: titleController.text,
                 address: addressController.text,
               );
             },
-            child: const Text('Save'),
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -516,64 +510,58 @@ class AddressesScreen extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// SECURITY SCREEN
-// ============================================================================
-
 class SecurityScreen extends StatelessWidget {
   const SecurityScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<SettingsController>();
-
     final passwordController = TextEditingController();
+    final bool isDark = Get.isDarkMode;
 
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
       appBar: AppBar(
         title: const Text('Password & Security'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
+        foregroundColor: isDark ? AppColors.lightwhite : Colors.black,
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Icon(
-            Icons.security,
-            size: 70,
-            color: Color(0xFFFF5722),
-          ),
-
+          const Icon(Icons.security, size: 70, color: Colors.red),
           const SizedBox(height: 20),
-
-          const Text(
+          Text(
             'Account Security',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
+              color: isDark ? AppColors.lightwhite : Colors.black,
             ),
           ),
-
           const SizedBox(height: 30),
-
           TextField(
             controller: passwordController,
             obscureText: true,
+            style: TextStyle(
+              color: isDark ? AppColors.lightwhite : Colors.black,
+            ),
             decoration: const InputDecoration(
               labelText: 'New Password',
-              prefixIcon: Icon(Icons.lock_outline),
+              labelStyle: TextStyle(color: Colors.grey),
+              prefixIcon: Icon(Icons.lock_outline, color: Colors.grey),
               border: OutlineInputBorder(),
             ),
           ),
-
           const SizedBox(height: 15),
-
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () {
-              controller.changePassword(
-                passwordController.text.trim(),
-              );
+              controller.changePassword(passwordController.text.trim());
             },
             child: const Text('Update Password'),
           ),
@@ -583,22 +571,20 @@ class SecurityScreen extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// WALLET SCREEN
-// ============================================================================
-
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<SettingsController>();
+    final bool isDark = Get.isDarkMode;
 
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
       appBar: AppBar(
         title: const Text('Food Go Wallet'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
+        foregroundColor: isDark ? AppColors.lightwhite : Colors.black,
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
@@ -609,14 +595,9 @@ class WalletScreen extends StatelessWidget {
           double balance = 0;
 
           if (snapshot.hasData && snapshot.data!.exists) {
-            final data =
-                snapshot.data!.data() as Map<String, dynamic>?;
-
+            final data = snapshot.data!.data() as Map<String, dynamic>?;
             balance =
-                double.tryParse(
-                  data?['walletBalance']?.toString() ?? '0',
-                ) ??
-                0;
+                double.tryParse(data?['walletBalance']?.toString() ?? '0') ?? 0;
           }
 
           return Column(
@@ -627,16 +608,12 @@ class WalletScreen extends StatelessWidget {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFFF5722),
-                      Color(0xFFE91E63),
-                    ],
+                    colors: [Colors.red, Color(0xFFB71C1C)],
                   ),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Icon(
                       Icons.account_balance_wallet,
@@ -646,9 +623,7 @@ class WalletScreen extends StatelessWidget {
                     const SizedBox(height: 20),
                     const Text(
                       'Available Balance',
-                      style: TextStyle(
-                        color: Colors.white70,
-                      ),
+                      style: TextStyle(color: Colors.white70),
                     ),
                     const SizedBox(height: 5),
                     Text(
@@ -662,9 +637,8 @@ class WalletScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
-              const Padding(
-                padding: EdgeInsets.all(20),
+              Padding(
+                padding: const EdgeInsets.all(20),
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -672,51 +646,54 @@ class WalletScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
+                      color: isDark ? AppColors.lightwhite : Colors.black,
                     ),
                   ),
                 ),
               ),
-
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
                       .collection('users')
                       .doc(controller.uid)
                       .collection('walletTransactions')
-                      .orderBy(
-                        'createdAt',
-                        descending: true,
-                      )
+                      .orderBy('createdAt', descending: true)
                       .snapshots(),
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData ||
-                        snapshot.data!.docs.isEmpty) {
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                       return const Center(
                         child: Text(
                           'No wallet transactions yet.',
+                          style: TextStyle(color: Colors.grey),
                         ),
                       );
                     }
 
                     return ListView(
-                      children:
-                          snapshot.data!.docs.map((doc) {
-                        final data = doc.data()
-                            as Map<String, dynamic>;
+                      children: snapshot.data!.docs.map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
 
                         return ListTile(
                           leading: const CircleAvatar(
-                            child: Icon(Icons.payment),
+                            backgroundColor: Colors.red,
+                            child: Icon(Icons.payment, color: Colors.white),
                           ),
                           title: Text(
-                            data['title'] ??
-                                'Transaction',
+                            data['title'] ?? 'Transaction',
+                            style: TextStyle(
+                              color: isDark ? AppColors.lightwhite : Colors.black,
+                            ),
                           ),
                           subtitle: Text(
                             data['type'] ?? '',
+                            style: const TextStyle(color: Colors.grey),
                           ),
                           trailing: Text(
                             'Rs. ${data['amount'] ?? 0}',
+                            style: TextStyle(
+                              color: isDark ? AppColors.lightwhite : Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         );
                       }).toList(),
@@ -732,22 +709,20 @@ class WalletScreen extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// SAVED ITEMS
-// ============================================================================
-
 class SavedItemsScreen extends StatelessWidget {
   const SavedItemsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<SettingsController>();
+    final bool isDark = Get.isDarkMode;
 
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
       appBar: AppBar(
         title: const Text('Saved Items'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
+        foregroundColor: isDark ? AppColors.lightwhite : Colors.black,
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -756,8 +731,7 @@ class SavedItemsScreen extends StatelessWidget {
             .collection('savedItems')
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData ||
-              snapshot.data!.docs.isEmpty) {
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(
               child: Text(
                 'No saved items yet.',
@@ -769,23 +743,28 @@ class SavedItemsScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(15),
             children: snapshot.data!.docs.map((doc) {
-              final data =
-                  doc.data() as Map<String, dynamic>;
+              final data = doc.data() as Map<String, dynamic>;
 
               return Card(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                 child: ListTile(
-                  leading: const Icon(
-                    Icons.favorite,
-                    color: Colors.red,
-                  ),
+                  leading: const Icon(Icons.favorite, color: Colors.red),
                   title: Text(
                     data['name'] ?? 'Food Item',
+                    style: TextStyle(
+                      color: isDark ? AppColors.lightwhite : Colors.black,
+                    ),
                   ),
                   subtitle: Text(
                     data['description'] ?? '',
+                    style: const TextStyle(color: Colors.grey),
                   ),
                   trailing: Text(
                     'Rs. ${data['price'] ?? ''}',
+                    style: TextStyle(
+                      color: isDark ? AppColors.lightwhite : Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               );
@@ -797,22 +776,20 @@ class SavedItemsScreen extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// BOOKINGS
-// ============================================================================
-
 class BookingsScreen extends StatelessWidget {
   const BookingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<SettingsController>();
+    final bool isDark = Get.isDarkMode;
 
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
       appBar: AppBar(
         title: const Text('Bookings'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
+        foregroundColor: isDark ? AppColors.lightwhite : Colors.black,
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -822,31 +799,37 @@ class BookingsScreen extends StatelessWidget {
             .orderBy('createdAt', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData ||
-              snapshot.data!.docs.isEmpty) {
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(
-              child: Text('No bookings found.'),
+              child: Text(
+                'No bookings found.',
+                style: TextStyle(color: Colors.grey),
+              ),
             );
           }
 
           return ListView(
             children: snapshot.data!.docs.map((doc) {
-              final data =
-                  doc.data() as Map<String, dynamic>;
+              final data = doc.data() as Map<String, dynamic>;
 
               return ListTile(
                 leading: const Icon(
                   Icons.calendar_month,
-                  color: Colors.orange,
+                  color: Colors.red,
                 ),
                 title: Text(
                   data['restaurant'] ?? 'Booking',
+                  style: TextStyle(
+                    color: isDark ? AppColors.lightwhite : Colors.black,
+                  ),
                 ),
                 subtitle: Text(
                   '${data['date'] ?? ''} • ${data['time'] ?? ''}',
+                  style: const TextStyle(color: Colors.grey),
                 ),
                 trailing: Text(
                   data['status'] ?? 'Pending',
+                  style: const TextStyle(color: Colors.red),
                 ),
               );
             }).toList(),
@@ -857,22 +840,20 @@ class BookingsScreen extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// REWARDS
-// ============================================================================
-
 class RewardsScreen extends StatelessWidget {
   const RewardsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<SettingsController>();
+    final bool isDark = Get.isDarkMode;
 
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
       appBar: AppBar(
         title: const Text('Rewards'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
+        foregroundColor: isDark ? AppColors.lightwhite : Colors.black,
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
@@ -883,15 +864,9 @@ class RewardsScreen extends StatelessWidget {
           int points = 0;
 
           if (snapshot.hasData && snapshot.data!.exists) {
-            final data =
-                snapshot.data!.data()
-                    as Map<String, dynamic>?;
-
+            final data = snapshot.data!.data() as Map<String, dynamic>?;
             points =
-                int.tryParse(
-                  data?['rewardPoints']?.toString() ?? '0',
-                ) ??
-                0;
+                int.tryParse(data?['rewardPoints']?.toString() ?? '0') ?? 0;
           }
 
           return Center(
@@ -901,19 +876,23 @@ class RewardsScreen extends StatelessWidget {
                 const Icon(
                   Icons.card_giftcard,
                   size: 80,
-                  color: Color(0xFFFF5722),
+                  color: Colors.red,
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Your Reward Points',
-                  style: TextStyle(fontSize: 18),
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: isDark ? Colors.grey[400] : Colors.black54,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   '$points Points',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 35,
                     fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.lightwhite : Colors.black,
                   ),
                 ),
               ],
@@ -925,32 +904,22 @@ class RewardsScreen extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// GIFT CARDS
-// ============================================================================
-
 class GiftCardsScreen extends StatefulWidget {
   const GiftCardsScreen({super.key});
 
   @override
-  State<GiftCardsScreen> createState() =>
-      _GiftCardsScreenState();
+  State<GiftCardsScreen> createState() => _GiftCardsScreenState();
 }
 
 class _GiftCardsScreenState extends State<GiftCardsScreen> {
-  final TextEditingController codeController =
-      TextEditingController();
-
+  final TextEditingController codeController = TextEditingController();
   bool loading = false;
 
   Future<void> redeemCard() async {
     final code = codeController.text.trim();
 
     if (code.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Enter gift card code.',
-      );
+      Get.snackbar('Error', 'Enter gift card code.');
       return;
     }
 
@@ -959,9 +928,7 @@ class _GiftCardsScreenState extends State<GiftCardsScreen> {
     });
 
     try {
-      final uid =
-          FirebaseAuth.instance.currentUser?.uid;
-
+      final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
 
       final card = await FirebaseFirestore.instance
@@ -970,10 +937,7 @@ class _GiftCardsScreenState extends State<GiftCardsScreen> {
           .get();
 
       if (!card.exists) {
-        Get.snackbar(
-          'Invalid Code',
-          'Gift card does not exist.',
-        );
+        Get.snackbar('Invalid Code', 'Gift card does not exist.');
         return;
       }
 
@@ -987,16 +951,10 @@ class _GiftCardsScreenState extends State<GiftCardsScreen> {
         return;
       }
 
-      final amount =
-          data['amount'] ?? 0;
+      final amount = data['amount'] ?? 0;
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .set({
-        'walletBalance': FieldValue.increment(
-          (amount as num).toDouble(),
-        ),
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'walletBalance': FieldValue.increment((amount as num).toDouble()),
       }, SetOptions(merge: true));
 
       await card.reference.update({
@@ -1006,16 +964,9 @@ class _GiftCardsScreenState extends State<GiftCardsScreen> {
       });
 
       codeController.clear();
-
-      Get.snackbar(
-        'Success',
-        'Gift card redeemed successfully.',
-      );
+      Get.snackbar('Success', 'Gift card redeemed successfully.');
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Unable to redeem gift card.',
-      );
+      Get.snackbar('Error', 'Unable to redeem gift card.');
     } finally {
       if (mounted) {
         setState(() {
@@ -1027,45 +978,47 @@ class _GiftCardsScreenState extends State<GiftCardsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Get.isDarkMode;
+
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
       appBar: AppBar(
         title: const Text('Gift Cards'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
+        foregroundColor: isDark ? AppColors.lightwhite : Colors.black,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            const Icon(
-              Icons.card_giftcard,
-              size: 80,
-              color: Color(0xFFFF5722),
-            ),
-
+            const Icon(Icons.card_giftcard, size: 80, color: Colors.red),
             const SizedBox(height: 20),
-
             TextField(
               controller: codeController,
+              style: TextStyle(
+                color: isDark ? AppColors.lightwhite : Colors.black,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Gift Card Code',
+                labelStyle: TextStyle(color: Colors.grey),
                 hintText: 'Enter your code',
-                prefixIcon: Icon(Icons.redeem),
+                hintStyle: TextStyle(color: Colors.grey),
+                prefixIcon: Icon(Icons.redeem, color: Colors.grey),
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 15),
-
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: loading ? null : redeemCard,
                 child: loading
-                    ? const CircularProgressIndicator(
-                        color: Colors.white,
-                      )
+                    ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Redeem Gift Card'),
               ),
             ),
@@ -1076,86 +1029,70 @@ class _GiftCardsScreenState extends State<GiftCardsScreen> {
   }
 }
 
-// ============================================================================
-// REFER FRIENDS
-// ============================================================================
-
 class ReferFriendsScreen extends StatelessWidget {
   const ReferFriendsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final user =
-        FirebaseAuth.instance.currentUser;
-
-    final referralCode =
-        user?.uid.substring(0, 8).toUpperCase() ??
-            'FOODGO';
+    final user = FirebaseAuth.instance.currentUser;
+    final referralCode = user?.uid.substring(0, 8).toUpperCase() ?? 'FOODGO';
+    final bool isDark = Get.isDarkMode;
 
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
       appBar: AppBar(
         title: const Text('Refer Friends'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
+        foregroundColor: isDark ? AppColors.lightwhite : Colors.black,
       ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(25),
           child: Column(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.people,
-                size: 80,
-                color: Color(0xFFFF5722),
-              ),
-
+              const Icon(Icons.people, size: 80, color: Colors.red),
               const SizedBox(height: 20),
-
-              const Text(
+              Text(
                 'Invite your friends to Food Go',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.lightwhite : Colors.black,
                 ),
               ),
-
               const SizedBox(height: 15),
-
               const Text(
                 'Share your referral code and earn rewards.',
                 textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
               ),
-
               const SizedBox(height: 25),
-
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius:
-                      BorderRadius.circular(15),
+                  color: isDark ? const Color(0xFF1E1E1E) : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(15),
                 ),
                 child: Text(
                   referralCode,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 25,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 3,
+                    color: isDark ? AppColors.lightwhite : Colors.black,
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
               ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () {
-                  Get.snackbar(
-                    'Referral Code',
-                    'Your code is $referralCode',
-                  );
+                  Get.snackbar('Referral Code', 'Your code is $referralCode');
                 },
                 icon: const Icon(Icons.share),
                 label: const Text('Share Referral Code'),
@@ -1168,107 +1105,132 @@ class ReferFriendsScreen extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// HELP & SUPPORT
-// ============================================================================
-
 class HelpSupportScreen extends StatelessWidget {
   const HelpSupportScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Get.isDarkMode;
+
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
       appBar: AppBar(
         title: const Text('Help & Support'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
+        foregroundColor: isDark ? AppColors.lightwhite : Colors.black,
       ),
       body: ListView(
         padding: const EdgeInsets.all(15),
         children: [
           const SizedBox(height: 15),
-
-          const Icon(
-            Icons.support_agent,
-            size: 75,
-            color: Color(0xFFFF5722),
-          ),
-
+          const Icon(Icons.support_agent, size: 75, color: Colors.red),
           const SizedBox(height: 20),
-
-          const Center(
+          Center(
             child: Text(
               'How can we help?',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.lightwhite : Colors.black,
               ),
             ),
           ),
-
           const SizedBox(height: 25),
-
           Card(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
             child: ListTile(
-              leading: const Icon(Icons.chat),
-              title: const Text('Chat Support'),
+              leading: const Icon(Icons.chat, color: Colors.red),
+              title: Text(
+                'Chat Support',
+                style: TextStyle(
+                  color: isDark ? AppColors.lightwhite : Colors.black,
+                ),
+              ),
               subtitle: const Text(
                 'Talk to Food Go support',
+                style: TextStyle(color: Colors.grey),
               ),
               trailing: const Icon(
                 Icons.arrow_forward_ios,
                 size: 15,
+                color: Colors.grey,
               ),
               onTap: () {
-                Get.snackbar(
-                  'Support',
-                  'Support chat will be available soon.',
-                );
+                Get.snackbar('Support', 'Support chat will be available soon.');
               },
             ),
           ),
-
           Card(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
             child: ListTile(
-              leading: const Icon(Icons.email_outlined),
-              title: const Text('Email Support'),
+              leading: const Icon(
+                Icons.email_outlined,
+                color: Colors.red,
+              ),
+              title: Text(
+                'Email Support',
+                style: TextStyle(
+                  color: isDark ? AppColors.lightwhite : Colors.black,
+                ),
+              ),
               subtitle: const Text(
                 'support@foodgo.com',
+                style: TextStyle(color: Colors.grey),
               ),
               trailing: const Icon(
                 Icons.arrow_forward_ios,
                 size: 15,
+                color: Colors.grey,
               ),
               onTap: () {
-                Get.snackbar(
-                  'Email',
-                  'support@foodgo.com',
-                );
+                Get.snackbar('Email', 'support@foodgo.com');
               },
             ),
           ),
-
           Card(
+            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
             child: ExpansionTile(
-              leading: const Icon(Icons.help_outline),
-              title: const Text('Frequently Asked Questions'),
-              children: const [
+              iconColor: Colors.red,
+              collapsedIconColor: Colors.grey,
+              leading: const Icon(
+                Icons.help_outline,
+                color: Colors.red,
+              ),
+              title: Text(
+                'Frequently Asked Questions',
+                style: TextStyle(
+                  color: isDark ? AppColors.lightwhite : Colors.black,
+                ),
+              ),
+              children: [
                 ListTile(
-                  title: Text('How can I place an order?'),
-                  subtitle: Text(
+                  title: Text(
+                    'How can I place an order?',
+                    style: TextStyle(color: isDark ? AppColors.lightwhite : Colors.black),
+                  ),
+                  subtitle: const Text(
                     'Select your food item, add it to cart and complete checkout.',
+                    style: TextStyle(color: Colors.grey),
                   ),
                 ),
                 ListTile(
-                  title: Text('How can I track my order?'),
-                  subtitle: Text(
+                  title: Text(
+                    'How can I track my order?',
+                    style: TextStyle(color: isDark ? AppColors.lightwhite : Colors.black),
+                  ),
+                  subtitle: const Text(
                     'Open Orders from your profile to see your order status.',
+                    style: TextStyle(color: Colors.grey),
                   ),
                 ),
                 ListTile(
-                  title: Text('How can I change my password?'),
-                  subtitle: Text(
+                  title: Text(
+                    'How can I change my password?',
+                    style: TextStyle(color: isDark ? AppColors.lightwhite : Colors.black),
+                  ),
+                  subtitle: const Text(
                     'Go to Settings > Password & Security.',
+                    style: TextStyle(color: Colors.grey),
                   ),
                 ),
               ],
@@ -1280,51 +1242,47 @@ class HelpSupportScreen extends StatelessWidget {
   }
 }
 
-// ============================================================================
-// ABOUT
-// ============================================================================
-
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Get.isDarkMode;
+
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
       appBar: AppBar(
         title: const Text('About Food Go'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: isDark ? Colors.black : AppColors.lightwhite,
+        foregroundColor: isDark ? AppColors.lightwhite : Colors.black,
       ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(30),
           child: Column(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.fastfood,
-                size: 85,
-                color: Color(0xFFFF5722),
-              ),
+              const Icon(Icons.fastfood, size: 85, color: Colors.red),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Food Go',
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.lightwhite : Colors.black,
                 ),
               ),
               const SizedBox(height: 10),
               const Text(
                 'Food ordering and delivery application.',
                 textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 25),
               Text(
                 'Version 1.0.0',
                 style: TextStyle(
-                  color: Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
             ],

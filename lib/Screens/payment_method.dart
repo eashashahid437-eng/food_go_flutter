@@ -1,132 +1,258 @@
 import 'package:flutter/material.dart';
+import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Controllers/paymentmethodcontroller.dart';
 import 'package:get/get.dart';
 
-class PaymentMethodScreen extends StatelessWidget {
-  final double totalPrice; // Pichli screen se aane wali real price
-  
-  const PaymentMethodScreen({super.key, required this.totalPrice});
+class PaymentMethodScreen extends StatefulWidget {
+  final double totalPrice;
+  final List<Map<String, dynamic>> orderItems;
+
+  const PaymentMethodScreen({
+    super.key,
+    required this.totalPrice,
+    this.orderItems = const [],
+  });
+
+  @override
+  State<PaymentMethodScreen> createState() => _PaymentMethodScreenState();
+}
+
+class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
+  late PaymentController controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    controller = PaymentController(
+      widget.totalPrice,
+      orderItems: widget.orderItems,
+    );
+
+    Get.put(controller);
+  }
+
+  @override
+  void dispose() {
+    if (Get.isRegistered<PaymentController>()) {
+      Get.delete<PaymentController>();
+    }
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final PaymentController controller = Get.put(PaymentController(totalPrice));
+    final bool isDark = Get.isDarkMode;
+    final Size screenSize = MediaQuery.sizeOf(context);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+          ),
           onPressed: () => Get.back(),
         ),
-        actions: [
-          IconButton(icon: const Icon(Icons.search, color: Colors.black), onPressed: () {}),
-        ],
+        title: Text(
+          "Payment",
+          style: TextStyle(
+            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+            fontWeight: FontWeight.bold,
+            fontSize: screenSize.width * 0.055,
+          ),
+        ),
+        centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Order summary",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
-            ),
-            const SizedBox(height: 15),
-            
-            // Dynamic Order Price Calculation
-            Obx(() => _buildSummaryRow("Order", "\$${controller.orderAmount.value.toStringAsFixed(2)}")),
-            const SizedBox(height: 8),
-            Obx(() => _buildSummaryRow("Taxes", "\$${controller.taxes.value.toStringAsFixed(2)}")),
-            const SizedBox(height: 8),
-            Obx(() => _buildSummaryRow("Delivery fees", "\$${controller.deliveryFees.value.toStringAsFixed(2)}")),
-            
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12.0),
-              child: Divider(color: Colors.grey, thickness: 0.5),
-            ),
-
-            Obx(() => _buildSummaryRow("Total:", "\$${controller.totalAmount.toStringAsFixed(2)}", isTotal: true)),
             const SizedBox(height: 10),
-            
-            const Text(
-              "Estimated delivery time:        15 - 30mins",
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+            Text(
+              "Order summary",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+              ),
             ),
-            
+            const SizedBox(height: 15),
+            Obx(
+              () => _summaryRow(
+                "Order",
+                controller.orderAmount.value,
+                isDark: isDark,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Obx(
+              () => _summaryRow(
+                "Taxes",
+                controller.taxes.value,
+                isDark: isDark,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Obx(
+              () => _summaryRow(
+                "Delivery fees",
+                controller.deliveryFees.value,
+                isDark: isDark,
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: 12,
+              ),
+              child: Divider(color: Colors.grey),
+            ),
+            Obx(
+              () => _summaryRow(
+                "Total",
+                controller.totalAmount,
+                isTotal: true,
+                isDark: isDark,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              "Estimated delivery time: 15 - 30 mins",
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+              ),
+            ),
             const SizedBox(height: 30),
-            const Text(
+            Text(
               "Payment methods",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+              ),
             ),
             const SizedBox(height: 15),
-
-            // Payment Cards with Assets Images (account.jpg & visa.jpg)
-            Obx(() => Column(
-              children: [
-                _buildPaymentCard(
-                  title: 'Credit card',
-                  subtitle: '5105 **** **** 0505',
-                  imagePath: "assets/images/account.jpg",
-                  isSelected: controller.selectedMethod.value == 'mastercard',
-                  onTap: () => controller.selectedMethod.value = 'mastercard',
-                ),
-                const SizedBox(height: 12),
-                _buildPaymentCard(
-                  title: 'Debit card',
-                  subtitle: '3566 **** **** 0505',
-                  imagePath: "assets/images/visa.jpg",
-                  isSelected: controller.selectedMethod.value == 'visa',
-                  onTap: () => controller.selectedMethod.value = 'visa',
-                ),
-              ],
-            )),
-
+            Obx(
+              () => Column(
+                children: [
+                  _buildPaymentCard(
+                    title: "Credit card",
+                    subtitle: "5105 **** **** 0505",
+                    imagePath: "assets/images/account.jpg",
+                    isSelected:
+                        controller.selectedMethod.value == "credit_card",
+                    isDark: isDark,
+                    onTap: () {
+                      controller.selectPaymentMethod("credit_card");
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildPaymentCard(
+                    title: "Debit card",
+                    subtitle: "3566 **** **** 0505",
+                    imagePath: "assets/images/visa.jpg",
+                    isSelected: controller.selectedMethod.value == "debit_card",
+                    isDark: isDark,
+                    onTap: () {
+                      controller.selectPaymentMethod("debit_card");
+                    },
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 15),
-
-            Obx(() => Row(
-              children: [
-                Checkbox(
-                  value: controller.saveCard.value,
-                  activeColor: Colors.red,
-                  onChanged: (val) => controller.saveCard.value = val ?? true,
-                ),
-                const Text(
-                  "Save card details for future payments",
-                  style: TextStyle(fontSize: 13, color: Colors.black87),
-                ),
-              ],
-            )),
-
+            Obx(
+              () => Row(
+                children: [
+                  Checkbox(
+                    value: controller.saveCard.value,
+                    activeColor: AppColors.primaryLight,
+                    onChanged: (value) {
+                      controller.saveCard.value = value ?? false;
+                    },
+                  ),
+                  Expanded(
+                    child: Text(
+                      "Save card details for future payments",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.grey[300] : AppColors.textPrimaryLight,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const Spacer(),
-
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Total price", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text(
+                      "Total price",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Obx(() => Text(
-                      "\$${controller.totalAmount.toStringAsFixed(2)}",
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.red),
-                    )),
+                    Obx(
+                      () => Text(
+                        "\$${controller.totalAmount.toStringAsFixed(2)}",
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryLight,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 SizedBox(
                   width: 150,
                   height: 50,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2C2424),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: Obx(
+                    () => ElevatedButton(
+                      onPressed: controller.isProcessing.value
+                          ? null
+                          : () {
+                              controller.processPayment(context);
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isDark ? AppColors.surfaceDark : const Color(0xFF2C2424),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: controller.isProcessing.value
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              "PAY NOW",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
-                    onPressed: () => controller.processPayment(context),
-                    child: Obx(() => controller.isProcessing.value
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                        : const Text("Pay Now", style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold))),
                   ),
                 ),
               ],
@@ -138,12 +264,33 @@ class PaymentMethodScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryRow(String title, String amount, {bool isTotal = false}) {
+  Widget _summaryRow(
+    String title,
+    double amount, {
+    bool isTotal = false,
+    required bool isDark,
+  }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: TextStyle(fontSize: isTotal ? 16 : 14, fontWeight: isTotal ? FontWeight.bold : FontWeight.normal, color: isTotal ? Colors.black : Colors.grey[700])),
-        Text(amount, style: TextStyle(fontSize: isTotal ? 18 : 14, fontWeight: FontWeight.bold, color: isTotal ? Colors.black : Colors.black87)),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: isTotal ? 16 : 14,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            color: isTotal
+                ? (isDark ? AppColors.lightwhite : AppColors.textPrimaryLight)
+                : Colors.grey[400],
+          ),
+        ),
+        Text(
+          "\$${amount.toStringAsFixed(2)}",
+          style: TextStyle(
+            fontSize: isTotal ? 18 : 14,
+            fontWeight: FontWeight.bold,
+            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+          ),
+        ),
       ],
     );
   }
@@ -153,6 +300,7 @@ class PaymentMethodScreen extends StatelessWidget {
     required String subtitle,
     required String imagePath,
     required bool isSelected,
+    required bool isDark,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -160,7 +308,9 @@ class PaymentMethodScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF2C2424) : Colors.grey[100],
+          color: isSelected
+              ? (isDark ? AppColors.primaryLight : const Color(0xFF2C2424))
+              : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight),
           borderRadius: BorderRadius.circular(15),
         ),
         child: Row(
@@ -176,6 +326,13 @@ class PaymentMethodScreen extends StatelessWidget {
               child: Image.asset(
                 imagePath,
                 fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) {
+                  return const Icon(
+                    Icons.credit_card,
+                    color: Colors.grey,
+                    size: 22,
+                  );
+                },
               ),
             ),
             const SizedBox(width: 15),
@@ -183,14 +340,31 @@ class PaymentMethodScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : Colors.black)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected
+                          ? Colors.white
+                          : (isDark ? AppColors.lightwhite : AppColors.textPrimaryLight),
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white70 : Colors.grey)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected ? Colors.white70 : Colors.grey,
+                    ),
+                  ),
                 ],
               ),
             ),
             Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_off,
               color: isSelected ? Colors.white : Colors.grey,
             ),
           ],
