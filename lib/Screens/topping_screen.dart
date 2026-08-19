@@ -64,9 +64,9 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
       Get.snackbar(
         "Select toppings",
         "Please select at least one topping.",
-        backgroundColor: Colors.orange,
-        colorText: AppColors.lightwhite,
-        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText:Colors.black,
+        snackPosition: SnackPosition.TOP,
       );
       return;
     }
@@ -103,9 +103,9 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
     Get.snackbar(
       "Added to Cart",
       "Customized burger added to your cart.",
-      backgroundColor: isDark ? Colors.grey[800] : const Color(0xFF30252F),
-      colorText: AppColors.lightwhite,
-      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.white,
+      colorText:Colors.black,
+      snackPosition: SnackPosition.TOP,
       duration: const Duration(seconds: 2),
     );
 
@@ -119,9 +119,9 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
     final bool isDark = Get.isDarkMode;
 
     return Scaffold(
-      backgroundColor: isDark ? Colors.black : Colors.white, // Yahan background white kar diya hai
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: isDark ? Colors.black : Colors.white, // AppBar bhi white kar di hai
+        backgroundColor: isDark ? Colors.black : Colors.white, 
         elevation: 0,
         leading: IconButton(
           icon: Icon(

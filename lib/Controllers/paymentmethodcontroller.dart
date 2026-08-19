@@ -94,7 +94,8 @@ class PaymentController extends GetxController {
         'userId': user.uid,
         'email': user.email ?? '',
         'items': cleanItems,
-        'orderTitle': firstItemName, // Yahan 'itemName' ko 'orderTitle' kar diya hai
+        'orderTitle':
+            firstItemName, // Yahan 'itemName' ko 'orderTitle' kar diya hai
         'totalItems': cleanItems.fold<int>(
           0,
           (sum, item) => sum + _toInt(item['quantity']),
@@ -147,6 +148,7 @@ class PaymentController extends GetxController {
       barrierDismissible: false,
       builder: (dialogContext) {
         return Dialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -166,8 +168,12 @@ class PaymentController extends GetxController {
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  "Order Placed!",
-                  style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
+                  "Success!",
+                  style: TextStyle(
+                    fontSize: 23,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 const Text(

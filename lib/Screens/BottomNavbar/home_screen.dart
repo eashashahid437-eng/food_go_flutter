@@ -210,10 +210,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
 
             SizedBox(height: screenHeight * 0.04),
-
-            // Products StreamBuilder wrapped inside Obx for instant filtering response
             Obx(() {
-              // Yeh line ensure karegi ke selectedCategory change hote hi StreamBuilder trigger ho
               final String currentCategory = controller.selectedCategory.value;
 
               return StreamBuilder(
@@ -224,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Padding(
                         padding: EdgeInsets.all(50.0),
                         child: CircularProgressIndicator(
-                          color: AppColors.darkpink,
+                          color: Colors.white,
                         ),
                       ),
                     );
@@ -237,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Text(
                           'Something went wrong:\n${snapshot.error}',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.red),
+                          style: const TextStyle(color: Colors.black),
                         ),
                       ),
                     );
@@ -248,8 +245,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Padding(
                         padding: EdgeInsets.all(50.0),
                         child: Text(
-                          'Koi product nahi mila!',
-                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                          'No Product Found!',
+                          style: TextStyle(color: Colors.black, fontSize: 16),
                         ),
                       ),
                     );
@@ -263,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         padding: EdgeInsets.all(50.0),
                         child: Text(
                           'no food found!',
-                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                          style: TextStyle(color: Colors.black, fontSize: 16),
                         ),
                       ),
                     );

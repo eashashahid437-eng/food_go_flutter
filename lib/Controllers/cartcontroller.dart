@@ -8,26 +8,26 @@ class CartController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // App start hotay hi local storage se saved cart load karein
+    
     var savedCart = box.read('cart_data');
     if (savedCart != null) {
       cartItems.assignAll(List<Map<String, dynamic>>.from(savedCart));
     }
   }
 
-  // Add item to cart and save
+  
   void addToCart(Map<String, dynamic> item) {
     cartItems.add(item);
     _saveToStorage();
   }
 
-  // Remove specific item by index and save
+  
   void removeItem(int index) {
     cartItems.removeAt(index);
     _saveToStorage();
   }
 
-  // Increase quantity
+  
   void increaseQuantity(int index) {
     var item = cartItems[index];
     int currentQty = _safeInt(item['quantity']);
@@ -41,7 +41,7 @@ class CartController extends GetxController {
     _saveToStorage();
   }
 
-  // Decrease quantity
+
   void decreaseQuantity(int index) {
     var item = cartItems[index];
     int currentQty = _safeInt(item['quantity']);
@@ -56,18 +56,18 @@ class CartController extends GetxController {
     }
   }
 
-  // Clear entire cart
+  
   void clearCart() {
     cartItems.clear();
     _saveToStorage();
   }
 
-  // Save cart list to local storage box
+  
   void _saveToStorage() {
     box.write('cart_data', cartItems.toList());
   }
 
-  // Helper to calculate correct total when quantity changes
+
   double _calculateItemTotal(Map<String, dynamic> item) {
     int qty = _safeInt(item['quantity']);
     
@@ -82,7 +82,6 @@ class CartController extends GetxController {
     return unitPrice * qty;
   }
 
-  // Subtotal calculation for all items in cart
   double get subtotal {
     return cartItems.fold(0.0, (sum, item) {
       return sum + _toDouble(item['itemTotal']);
