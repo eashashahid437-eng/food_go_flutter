@@ -32,7 +32,7 @@ class BottomNavbar extends StatelessWidget {
       () => Scaffold(
         body: pages[controller.currentIndex.value],
 
-        // --- Perfect Circular FAB with Border ---
+
         floatingActionButton: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,

@@ -336,8 +336,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
       Get.snackbar(
         "Error",
         "Message could not be sent.",
-        backgroundColor: AppColors.Pink,
-        colorText: Colors.white,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
     }
   }
@@ -397,9 +397,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
     Get.snackbar(
       "Order Selected",
       "This order is now selected for support.",
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.white,
+      colorText: Colors.black,
+      snackPosition: SnackPosition.TOP,
     );
   }
 
@@ -455,8 +455,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
       Get.snackbar(
         "Sent",
         "Photo sent successfully.",
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
     } catch (e) {
       if (mounted) {
@@ -468,8 +468,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
       Get.snackbar(
         "Camera Error",
         e.toString(),
-        backgroundColor: AppColors.Pink,
-        colorText: Colors.white,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
     }
   }
@@ -522,8 +522,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
       Get.snackbar(
         "Error",
         "Logout failed.",
-        backgroundColor: AppColors.Pink,
-        colorText: Colors.white,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
     }
   }

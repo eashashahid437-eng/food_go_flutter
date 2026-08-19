@@ -30,7 +30,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       Get.snackbar(
         "Error",
         "Please enter your email address",
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.white,
+        colorText:Colors.black,
       );
       return;
     }
@@ -39,7 +41,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       Get.snackbar(
         "Error",
         "Please enter a valid email address",
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
+         backgroundColor: Colors.white,
+        colorText:Colors.black,
       );
       return;
     }
@@ -56,8 +60,10 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       Get.snackbar(
         "Email Sent",
         "Password reset link has been sent to your email.",
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 4),
+        snackPosition: SnackPosition.TOP,
+         backgroundColor: Colors.white,
+        colorText:Colors.black,
+        duration: const Duration(seconds: 2),
       );
 
       Get.offAll(() => const LoginScreen());

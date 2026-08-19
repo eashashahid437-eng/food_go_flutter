@@ -36,43 +36,110 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> signInWithFacebook() async {
-    try {
-      final LoginResult result = await FacebookAuth.instance.login(
-        permissions: ['email', 'public_profile'],
-      );
+  try {
+    final LoginResult result = await FacebookAuth.instance.login(
+      permissions: ['email', 'public_profile'],
+    );
 
-      if (result.status == LoginStatus.success) {
-        final AccessToken accessToken = result.accessToken!;
-
-        final OAuthCredential credential = FacebookAuthProvider.credential(
-          accessToken.tokenString,
-        );
-
-        final UserCredential userCredential = await auth.signInWithCredential(
-          credential,
-        );
-
-        print("Facebook Login Successful");
-        print("Name: ${userCredential.user?.displayName}");
-        print("Email: ${userCredential.user?.email}");
-
-        Get.offAll(() => BottomNavbar());
-      } else if (result.status == LoginStatus.cancelled) {
-        print("Facebook Login Cancelled");
-      } else {
-        print("Facebook Login Failed");
-        print(result.message);
-      }
-    } catch (e) {
-      print("Facebook Login Error: $e");
-
-      Get.snackbar(
-        "Facebook Login Failed",
-        "Unable to login with Facebook.",
-        snackPosition: SnackPosition.BOTTOM,
-      );
+    if (result.status != LoginStatus.success) {
+      print("Facebook Login Failed: ${result.message}");
+      return;
     }
+
+    final AccessToken accessToken = result.accessToken!;
+
+    final OAuthCredential facebookCredential =
+        FacebookAuthProvider.credential(
+      accessToken.tokenString,
+    );
+
+    try {
+      final UserCredential userCredential =
+          await auth.signInWithCredential(facebookCredential);
+
+      print("Facebook Login Successful");
+      print("Name: ${userCredential.user?.displayName}");
+      print("Email: ${userCredential.user?.email}");
+
+      Get.offAll(() => BottomNavbar());
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'account-exists-with-different-credential') {
+        final String email = e.email ?? '';
+
+        if (email.isEmpty) {
+          Get.snackbar(
+            "Login Failed",
+            "This Facebook account is already registered with another login method.",
+          );
+          return;
+        }
+
+        Get.snackbar(
+          "Account Already Exists",
+          "Please login with your existing Email/Password account first.",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.white,
+          colorText: Colors.black,
+        );
+
+        return;
+      }
+
+      rethrow;
+    }
+  } catch (e) {
+    print("Facebook Login Error: $e");
+
+    Get.snackbar(
+      "Facebook Login Failed",
+      e.toString(),
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.white,
+      colorText: Colors.black,
+    );
   }
+}
+
+  // Future<void> signInWithFacebook() async {
+  //   try {
+  //     final LoginResult result = await FacebookAuth.instance.login(
+  //       permissions: ['email', 'public_profile'],
+  //     );
+
+  //     if (result.status == LoginStatus.success) {
+  //       final AccessToken accessToken = result.accessToken!;
+
+  //       final OAuthCredential credential = FacebookAuthProvider.credential(
+  //         accessToken.tokenString,
+  //       );
+
+  //       final UserCredential userCredential = await auth.signInWithCredential(
+  //         credential,
+  //       );
+
+  //       print("Facebook Login Successful");
+  //       print("Name: ${userCredential.user?.displayName}");
+  //       print("Email: ${userCredential.user?.email}");
+
+  //       Get.offAll(() => BottomNavbar());
+  //     } else if (result.status == LoginStatus.cancelled) {
+  //       print("Facebook Login Cancelled");
+  //     } else {
+  //       print("Facebook Login Failed");
+  //       print(result.message);
+  //     }
+  //   } catch (e) {
+  //     print("Facebook Login Error: $e");
+
+  //     Get.snackbar(
+  //       "Facebook Login Failed",
+  //       "Unable to login with Facebook.",
+  //       snackPosition: SnackPosition.TOP,
+  //       backgroundColor: Colors.white,
+  //       colorText: Colors.black,
+  //     );
+  //   }
+  // }
 
   Future<void> signInWithGoogle() async {
     try {
@@ -99,7 +166,9 @@ class _LoginScreenState extends State<LoginScreen> {
       Get.snackbar(
         "Error",
         "Google Sign-In failed",
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
     }
   }
@@ -112,7 +181,9 @@ class _LoginScreenState extends State<LoginScreen> {
       Get.snackbar(
         "Error",
         "Please enter your email",
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
       return;
     }
@@ -121,7 +192,9 @@ class _LoginScreenState extends State<LoginScreen> {
       Get.snackbar(
         "Error",
         "Please enter a valid email address",
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
       return;
     }
@@ -130,7 +203,9 @@ class _LoginScreenState extends State<LoginScreen> {
       Get.snackbar(
         "Error",
         "Please enter your password",
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
       return;
     }
@@ -148,7 +223,9 @@ class _LoginScreenState extends State<LoginScreen> {
       Get.snackbar(
         "Success",
         "Login successful",
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
 
       Get.offAll(() => BottomNavbar());
@@ -188,12 +265,14 @@ class _LoginScreenState extends State<LoginScreen> {
           message = e.message ?? "Login failed";
       }
 
-      Get.snackbar("Error", message, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar("Error", message, snackPosition: SnackPosition.TOP);
     } catch (e) {
       Get.snackbar(
         "Error",
         "Something went wrong. Please try again",
-        snackPosition: SnackPosition.BOTTOM,
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
     } finally {
       if (mounted) {

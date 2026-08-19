@@ -94,7 +94,8 @@ class PaymentController extends GetxController {
         'userId': user.uid,
         'email': user.email ?? '',
         'items': cleanItems,
-        'orderTitle': firstItemName, // Yahan 'itemName' ko 'orderTitle' kar diya hai
+        'orderTitle':
+            firstItemName, // Yahan 'itemName' ko 'orderTitle' kar diya hai
         'totalItems': cleanItems.fold<int>(
           0,
           (sum, item) => sum + _toInt(item['quantity']),
