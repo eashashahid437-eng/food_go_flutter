@@ -66,28 +66,46 @@ class _ProductCardState extends State<ProductCard> {
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double screenHeight = MediaQuery.of(context).size.height;
+
     final food = widget.food;
+
     final String displayName =
         food.subtitle.isNotEmpty ? food.subtitle : food.productname;
+
+    // App ka current GetX theme
+    final bool isDark = Get.isDarkMode;
 
     return GestureDetector(
       onTap: () {
         print("Card Clicked Index: ${food.id}");
-        Get.to(() => ProductDetailScreen(food: food));
+
+        Get.to(
+          () => ProductDetailScreen(food: food),
+        );
       },
       child: Container(
         padding: EdgeInsets.all(screenWidth * 0.03),
+
         decoration: BoxDecoration(
-          color: Colors.white,
+          // LIGHT = White
+          // DARK = Dark card
+          color: isDark
+              ? AppColors.surfaceDark
+              : Colors.white,
+
           borderRadius: BorderRadius.circular(18),
-          boxShadow: const [
+
+          boxShadow: [
             BoxShadow(
-              color: Colors.black12,
+              color: isDark
+                  ? Colors.black.withOpacity(0.35)
+                  : Colors.black12,
               blurRadius: 8,
-              offset: Offset(0, 4),
+              offset: const Offset(0, 4),
             ),
           ],
         ),
+
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -96,45 +114,86 @@ class _ProductCardState extends State<ProductCard> {
                 children: [
                   CachedNetworkImage(
                     imageUrl: food.image,
+
                     height: screenHeight * 0.11,
+
                     fit: BoxFit.contain,
-                    placeholder: (context, url) => SizedBox(
-                      height: screenHeight * 0.11,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppColors.darkpink,
+
+                    placeholder: (context, url) {
+                      return SizedBox(
+                        height: screenHeight * 0.11,
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.darkpink,
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
+
+                    errorWidget: (context, url, error) {
+                      return SizedBox(
+                        height: screenHeight * 0.11,
+                        child: Icon(
+                          Icons.fastfood,
+                          size: 35,
+                          color: isDark
+                              ? Colors.grey[400]
+                              : AppColors.lightgrey,
+                        ),
+                      );
+                    },
                   ),
-                  SizedBox(height: screenHeight * 0.003),
+
+                  SizedBox(
+                    height: screenHeight * 0.003,
+                  ),
+
                   Text(
                     displayName,
+
                     maxLines: 1,
+
                     overflow: TextOverflow.ellipsis,
+
                     style: TextStyle(
-                      color: AppColors.lightgrey,
+                      color: isDark
+                          ? Colors.grey[400]
+                          : AppColors.lightgrey,
                     ),
                   ),
                 ],
               ),
             ),
-            SizedBox(height: screenHeight * 0.012),
+
+            SizedBox(
+              height: screenHeight * 0.012,
+            ),
+
             Row(
               children: [
                 Expanded(
                   child: Text(
                     food.title,
+
                     maxLines: 1,
+
                     overflow: TextOverflow.ellipsis,
+
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
+
                       fontSize: screenWidth * 0.038,
-                      color: Colors.black,
+
+                      // LIGHT = Black
+                      // DARK = White
+                      color: isDark
+                          ? AppColors.lightwhite
+                          : Colors.black,
                     ),
                   ),
                 ),
+
                 StatefulBuilder(
                   builder: (context, setStateCard) {
                     return GestureDetector(
@@ -151,15 +210,23 @@ class _ProductCardState extends State<ProductCard> {
                           }
                         });
                       },
+
                       child: Padding(
-                        padding: EdgeInsets.all(screenWidth * 0.01),
+                        padding: EdgeInsets.all(
+                          screenWidth * 0.01,
+                        ),
+
                         child: Icon(
                           food.isFavorite
                               ? Icons.favorite
                               : Icons.favorite_border,
+
                           color: food.isFavorite
                               ? Colors.red
-                              : AppColors.lightgrey,
+                              : (isDark
+                                  ? Colors.grey[400]
+                                  : AppColors.lightgrey),
+
                           size: 22,
                         ),
                       ),

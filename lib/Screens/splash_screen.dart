@@ -2,10 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:food_go/Auth/login_screen.dart';
+import 'package:food_go/Constants/app_fonts.dart';
 import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/utility/responsive.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -38,10 +39,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // MediaQuery utility se screen width & height nikalna
     final double screenWidth = MediaQueryu.getScreenWidth(context);
-
     final double screenHeight = MediaQueryu.getScreenHeight(context);
+    final bool isDark = Get.isDarkMode;
 
     return Scaffold(
       body: Container(
@@ -51,21 +51,20 @@ class _SplashScreenState extends State<SplashScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xffff8995), Color(0xffff172d)],
+            colors: isDark
+                ? [Colors.grey[900]!, Colors.black]
+                : const [Color(0xffff8995), AppColors.darkpink],
           ),
         ),
         child: Stack(
           children: [
-            // Foodgo Logo
             Center(
               child: Text(
                 "Foodgo",
-                style: GoogleFonts.lobster(
-                  color: Colors.white,
-                  fontSize: 60,
-                  fontWeight: FontWeight.bold,
-                  fontStyle: FontStyle.italic,
-                ),
+                style: AppFonts.lobster(
+                  fontSize: 40,
+                  fontWeight: FontWeight.w400,
+                ).copyWith(color: AppColors.lightwhite),
               ),
             ),
 
@@ -78,6 +77,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Stack(
                   alignment: Alignment.bottomLeft,
                   children: [
+                    // Bada Burger
                     Positioned(
                       left: 0,
                       bottom: 0,

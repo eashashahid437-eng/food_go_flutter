@@ -566,7 +566,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                     ),
                     trailing: Switch(
                       value: isDarkMode,
-                      activeColor: AppColors.Pink,
+                      activeThumbColor: AppColors.Pink,
                       onChanged: (value) async {
                         setState(() {
                           isDarkMode = value;
@@ -607,7 +607,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                     ),
                     trailing: Switch(
                       value: notificationsEnabled,
-                      activeColor: AppColors.Pink,
+                      activeThumbColor: AppColors.Pink,
                       onChanged: (value) async {
                         setState(() {
                           notificationsEnabled = value;

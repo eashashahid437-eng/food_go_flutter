@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Controllers/cartcontroller.dart';
+import 'package:food_go/Screens/cartscreen.dart';
 import 'package:food_go/Screens/payment_method.dart';
 import 'package:food_go/utility/responsive.dart';
 import 'package:food_go/widgets/customized.dart';
@@ -608,7 +609,7 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
     );
 
     Future.delayed(const Duration(seconds: 1), () {
-      Get.off(() => PaymentMethodScreen(totalPrice: total));
+      Get.off(() => CartScreen());
     });
   }
 
@@ -683,7 +684,6 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-
               child: const Text(
                 "ADD TO CART",
 

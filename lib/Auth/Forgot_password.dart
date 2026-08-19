@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Auth/login_screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
+import 'package:food_go/Constants/app_fonts.dart';
 import 'package:get/get.dart';
 
 class ForgotPassword extends StatefulWidget {
@@ -23,9 +24,8 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   }
 
   Future<void> resetPassword() async {
-    final email = emailController.text.trim();
+    final String email = emailController.text.trim();
 
-    // Empty email check
     if (email.isEmpty) {
       Get.snackbar(
         "Error",
@@ -35,7 +35,6 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       return;
     }
 
-    // Simple email validation
     if (!GetUtils.isEmail(email)) {
       Get.snackbar(
         "Error",
@@ -50,12 +49,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     });
 
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(
-        email: email,
-      );
-//       validator: (value) {
-//   return value == '2222' ? null : 'Pin is incorrect';
-// }
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
 
       if (!mounted) return;
 
@@ -66,9 +60,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         duration: const Duration(seconds: 4),
       );
 
-      
       Get.offAll(() => const LoginScreen());
-
     } on FirebaseAuthException catch (e) {
       String message;
 
@@ -93,12 +85,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
           message = e.message ?? "Something went wrong.";
       }
 
-      Get.snackbar(
-        "Error",
-        message,
-        snackPosition: SnackPosition.TOP,
-      );
-
+      Get.snackbar("Error", message, snackPosition: SnackPosition.BOTTOM);
     } finally {
       if (mounted) {
         setState(() {
@@ -108,159 +95,297 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     }
   }
 
+  InputDecoration emailDecoration() {
+    return InputDecoration(
+      hintText: "john.doe@example.com",
+      hintStyle: AppFonts.poppinsMedium(
+        fontSize: 15,
+      ).copyWith(color: Colors.grey.shade400),
+      prefixIcon: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColors.Pink.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(Icons.email_outlined, color: AppColors.Pink),
+      ),
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.Pink, width: 1.8),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       backgroundColor: Colors.white,
-
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-
-        leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios,
-            color: Colors.black,
-          ),
-          onPressed: () {
-            Get.back();
-          },
-        ),
-
-        title: const Text(
-          "Forgot Password",
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.03,
-            ),
-            Center(
-              child: Text(
-                "Enter Your Email Address to Reset Your Password",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 20,
-                  color: AppColors.lightgrey,
-                ),
-              ),
-            ),
-
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.04,
-            ),
-
-            const Text(
-              "Email address",
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // Email
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-
-              decoration: InputDecoration(
-                hintText: "john.doe@example.com",
-
-                prefixIcon: const Icon(
-                  Icons.email_outlined,
-                ),
-
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.05,
-            ),
-
-            // Reset Button
-            Center(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.7,
-                height: 50,
-
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.Pink,
-                    foregroundColor: Colors.black,
-
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                height: size.height * 0.38,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color.fromARGB(255, 245, 80, 94),
+                      Color(0xffff172d),
+                    ],
                   ),
-
-                  onPressed: isLoading
-                      ? null
-                      : resetPassword,
-
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(45),
+                    bottomRight: Radius.circular(45),
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: 12,
+                      left: 12,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.18),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            Get.back();
+                          },
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new,
                             color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          "Set New Password",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
+                            size: 20,
                           ),
                         ),
+                      ),
+                    ),
+
+                    Positioned(
+                      top: 25,
+                      right: -35,
+                      child: Container(
+                        height: 120,
+                        width: 120,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.08),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+
+                    Positioned(
+                      bottom: -15,
+                      left: -35,
+                      child: Container(
+                        height: 100,
+                        width: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.08),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            height: 95,
+                            width: 95,
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.12),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.lock_reset_rounded,
+                              size: 55,
+                              color: AppColors.Pink,
+                            ),
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          Text(
+                            "Forgot Password?",
+                            style: AppFonts.lobster(
+                              fontSize: 34,
+                            ).copyWith(color: Colors.white),
+                          ),
+
+                          const SizedBox(height: 5),
+
+                          Text(
+                            "Don't worry, we've got you!",
+                            style: AppFonts.poppinsMedium(
+                              fontSize: 14,
+                            ).copyWith(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
 
-            const SizedBox(height: 25),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Text(
+                        "Reset your password",
+                        style: AppFonts.poppinsMedium(
+                          fontSize: 22,
+                        ).copyWith(color: Colors.black87),
+                      ),
+                    ),
 
-            // Return to Login
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  Get.offAll(
-                    () => const LoginScreen(),
-                  );
-                },
+                    const SizedBox(height: 8),
 
-                child: const Text(
-                  "Return to Login",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.darkpink,
-                  ),
+                    Center(
+                      child: Text(
+                        "Enter the email address associated\nwith your account.",
+                        textAlign: TextAlign.center,
+                        style: AppFonts.poppinsMedium(
+                          fontSize: 14,
+                        ).copyWith(color: Colors.grey),
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    Text(
+                      "Email address",
+                      style: AppFonts.poppinsMedium(fontSize: 16),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    TextField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      style: AppFonts.poppinsMedium(fontSize: 17),
+                      decoration: emailDecoration(),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.Pink.withOpacity(0.07),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.info_outline_rounded,
+                            color: AppColors.Pink,
+                            size: 21,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              "We'll send you a password reset link to your email address.",
+                              style: AppFonts.poppinsMedium(
+                                fontSize: 12,
+                              ).copyWith(color: Colors.grey.shade700),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : resetPassword,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.Pink,
+                          foregroundColor: Colors.white,
+                          elevation: 3,
+                          shadowColor: AppColors.Pink.withOpacity(0.35),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 23,
+                                width: 23,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "Send Reset Link",
+                                    style: AppFonts.poppinsMedium(
+                                      fontSize: 17,
+                                    ).copyWith(color: Colors.white),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  const Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 21,
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          Get.offAll(() => const LoginScreen());
+                        },
+                        child: Text(
+                          "←  Return to Login",
+                          style: AppFonts.poppinsMedium(
+                            fontSize: 15,
+                          ).copyWith(color: AppColors.darkpink),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
-
