@@ -228,7 +228,7 @@ class CartScreen extends StatelessWidget {
     final bool isCustomized = item['isCustomized'] == true;
 
     return Dismissible(
-      key: ValueKey("${item['productId']}_${item['customizationKey']}_$index"),
+      key: ObjectKey(item),
       direction: DismissDirection.endToStart,
       background: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -241,7 +241,9 @@ class CartScreen extends StatelessWidget {
         child: const Icon(Icons.delete_outline, color: Colors.white, size: 28),
       ),
       onDismissed: (_) {
-        controller.removeItem(index);
+        if (index < controller.cartItems.length) {
+          controller.removeItem(index);
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
@@ -346,7 +348,6 @@ class CartScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          // Price aur quantity ke peechay wale container ko pure white kar diya hai
                           color: isDark ? AppColors.surfaceDark : Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(

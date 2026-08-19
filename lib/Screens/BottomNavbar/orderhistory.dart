@@ -85,7 +85,8 @@ class OrderHistoryScreen extends StatelessWidget {
                   } else if (status == 'ongoing' ||
                       status == 'preparing' ||
                       status == 'shipping' ||
-                      status == 'out for delivery') {
+                      status == 'out for delivery' ||
+                      status == 'on the way') {
                     ongoingCount++;
                   } else if (status == 'completed' || status == 'delivered') {
                     completedCount++;
@@ -457,7 +458,8 @@ class OrderHistoryScreen extends StatelessWidget {
     if (value == 'ongoing' ||
         value == 'preparing' ||
         value == 'shipping' ||
-        value == 'out for delivery') {
+        value == 'out for delivery' ||
+        value == 'on the way') {
       return Colors.blue;
     }
 

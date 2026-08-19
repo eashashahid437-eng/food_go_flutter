@@ -4,6 +4,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,8 +14,10 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import 'package:food_go/Auth/Login_Screen.dart';
-// NOTE: Agar AppColors kisi aur file mein hain toh sahi import path dein:
-// import 'package:food_go/Constants/AppColors.dart';
+
+// Global notification plugin instance
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 class UserChatScreen extends StatefulWidget {
   const UserChatScreen({super.key});
@@ -35,14 +40,183 @@ class _UserChatScreenState extends State<UserChatScreen> {
   String? selectedOrderId;
   Map<String, dynamic>? selectedOrder;
 
+  // Variables to prevent duplicate notifications on screen load
+  bool _isInitialLoad = true;
+  String? _lastNotifiedMessageId;
+
   @override
   void initState() {
     super.initState();
 
+    _initLocalNotifications();
+    _clearUnreadBadge();
+
     if (currentUser != null) {
       _loadUserSettings();
       _loadSelectedOrder();
+      _listenForAdminMessages();
+      _markAdminMessagesAsSeen(); // <-- Admin ke messages ko seen mark karne ke liye yahan call kar diya hai
     }
+
+    // Foreground FCM Notification Listener
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (message.notification != null && notificationsEnabled) {
+        Get.snackbar(
+          message.notification!.title ?? 'FoodGo',
+          message.notification!.body ?? '',
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: AppColors.Pink,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 4),
+        );
+      }
+    });
+  }
+
+  // Admin ke bheje hue unread messages ko 'seen' (true) karne ka function
+  void _markAdminMessagesAsSeen() async {
+    if (currentUser == null) return;
+    try {
+      var unreadAdminMessages = await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(currentUser!.uid)
+          .collection('messages')
+          .where('sender', isEqualTo: 'admin')
+          .where('isSeen', isEqualTo: false)
+          .get();
+
+      for (var doc in unreadAdminMessages.docs) {
+        doc.reference.update({'isSeen': true});
+      }
+    } catch (e) {
+      debugPrint("Error marking admin messages as seen: $e");
+    }
+  }
+
+  // Local Notifications Initialize karna (Reply action remove kar diya gaya hai)
+  void _initLocalNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+    );
+  }
+
+  // Firestore se Admin ke naye messages detect karke local notification aur app badge update karne ka function
+  void _listenForAdminMessages() {
+    if (currentUser == null) return;
+
+    FirebaseFirestore.instance
+        .collection('chats')
+        .doc(currentUser!.uid)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .limit(1)
+        .snapshots()
+        .listen((snapshot) {
+      
+      // Jab bhi naya message aaye aur user chat screen par ho, turant seen mark kar do
+      _markAdminMessagesAsSeen();
+
+      if (_isInitialLoad) {
+        if (snapshot.docs.isNotEmpty) {
+          _lastNotifiedMessageId = snapshot.docs.first.id;
+        }
+        _isInitialLoad = false;
+        return;
+      }
+
+      for (var change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.added) {
+          var data = change.doc.data();
+          String messageId = change.doc.id;
+          
+          String sender = (data?['sender'] ?? '').toString().trim().toLowerCase();
+          
+          if ((sender == 'admin' || sender == 'seller') && messageId != _lastNotifiedMessageId) {
+            _lastNotifiedMessageId = messageId;
+
+            _incrementAppBadge();
+
+            if (notificationsEnabled) {
+              String messageText = data?['text'] ?? '';
+              if (messageText.isEmpty && data?['imageUrl'] != null) {
+                messageText = '📷 Sent an image';
+              }
+
+              _showLocalNotification(
+                "FoodGo",
+                messageText.isNotEmpty ? messageText : "You have a new message",
+              );
+            }
+          }
+        }
+      }
+    });
+  }
+
+  Future<void> _clearUnreadBadge() async {
+    try {
+      bool isSupported = await AppBadgePlus.isSupported();
+      if (isSupported) {
+        AppBadgePlus.updateBadge(0);
+      }
+
+      if (currentUser != null) {
+        await FirebaseFirestore.instance
+            .collection('chats')
+            .doc(currentUser!.uid)
+            .update({'unreadAdminCount': 0});
+      }
+    } catch (e) {
+      debugPrint("Badge Clear Error: $e");
+    }
+  }
+
+  Future<void> _incrementAppBadge() async {
+    try {
+      bool isSupported = await AppBadgePlus.isSupported();
+      if (isSupported && currentUser != null) {
+        var chatDoc = await FirebaseFirestore.instance
+            .collection('chats')
+            .doc(currentUser!.uid)
+            .get();
+        
+        if (chatDoc.exists) {
+          int unreadCount = chatDoc.data()?['unreadAdminCount'] ?? 1;
+          AppBadgePlus.updateBadge(unreadCount);
+        }
+      }
+    } catch (e) {
+      debugPrint("Badge Update Error: $e");
+    }
+  }
+
+  // Local Notification pop-up (Bina reply action ke)
+  void _showLocalNotification(String title, String body) async {
+    AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'admin_chat_channel',
+      'Admin Chat Notifications',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: true,
+    );
+
+    NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin.show(
+      DateTime.now().millisecond,
+      title,
+      body,
+      platformChannelSpecifics,
+      payload: 'chat_notification',
+    );
   }
 
   Future<void> _loadUserSettings() async {
@@ -146,6 +320,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
           .add({
             'text': text,
             'sender': 'user',
+            'isSeen': false, // Blue tick status field added
             'orderId': selectedOrderId,
             'orderTitle':
                 selectedOrder?['orderTitle'] ??
@@ -313,6 +488,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
           'imageUrl': imageUrl,
           'messageType': 'image',
           'sender': 'user',
+          'isSeen': false, // Blue tick status field added
           'orderId': selectedOrderId,
           'orderTitle':
               selectedOrder?['orderTitle'] ??
@@ -572,7 +748,6 @@ class _UserChatScreenState extends State<UserChatScreen> {
                           isDarkMode = value;
                         });
                         
-                        // Yeh line foran theme ko switch kar degi!
                         Get.changeThemeMode(value ? ThemeMode.dark : ThemeMode.light);
 
                         await _saveUserSettings();
@@ -1020,6 +1195,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
     final data = message.data() as Map<String, dynamic>;
 
     final bool isMe = data['sender'] == 'user';
+    final bool isSeen = data['isSeen'] ?? false; // Read status fetch kar rahe hain
 
     final String? imageUrl = data['imageUrl'];
 
@@ -1091,16 +1267,33 @@ class _UserChatScreenState extends State<UserChatScreen> {
                         ),
                       ),
                     if ((data['text'] ?? '').toString().isNotEmpty)
-                      Text(
-                        data['text'] ?? '',
-                        style: TextStyle(
-                          color: isMe
-                              ? Colors.white
-                              : isDarkMode
-                              ? AppColors.lightwhite
-                              : Colors.black,
-                          fontSize: 15,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              data['text'] ?? '',
+                              style: TextStyle(
+                                color: isMe
+                                    ? Colors.white
+                                    : isDarkMode
+                                    ? AppColors.lightwhite
+                                    : Colors.black,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          // Ab user aur admin dono ke messages ke neechay ticks show honge
+                          const SizedBox(width: 5),
+                          Icon(
+                            Icons.done_all,
+                            size: 14,
+                            color: isSeen 
+                                ? Colors.blue 
+                                : (isMe ? Colors.white60 : Colors.grey),
+                          ),
+                        ],
                       ),
                   ],
                 ),
@@ -1162,6 +1355,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
     }
 
     final uid = currentUser!.uid;
+    
+    // Har baar screen build hone par bhi admin messages ko seen mark kar do
+    _markAdminMessagesAsSeen();
 
     return Scaffold(
       backgroundColor: darkColorThemeCheck(AppColors.backgroundDark, AppColors.lightwhite),
@@ -1173,14 +1369,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
         foregroundColor: isDarkMode ? AppColors.lightwhite : Colors.black,
         elevation: 0,
         automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 23),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            }
-          },
-        ),
+        leading: null,
         title: const SizedBox(),
         actions: [
           Builder(

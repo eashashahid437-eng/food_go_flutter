@@ -147,6 +147,7 @@ class PaymentController extends GetxController {
       barrierDismissible: false,
       builder: (dialogContext) {
         return Dialog(
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -166,8 +167,12 @@ class PaymentController extends GetxController {
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  "Order Placed!",
-                  style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
+                  "Success!",
+                  style: TextStyle(
+                    fontSize: 23,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 const Text(
@@ -223,6 +228,89 @@ class PaymentController extends GetxController {
       },
     );
   }
+
+  // void _showSuccessDialog(BuildContext context, String orderId) {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (dialogContext) {
+  //       return Dialog(
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(18),
+  //         ),
+  //         child: Padding(
+  //           padding: const EdgeInsets.all(25),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               Container(
+  //                 width: 70,
+  //                 height: 70,
+  //                 decoration: const BoxDecoration(
+  //                   color: Colors.red,
+  //                   shape: BoxShape.circle,
+  //                 ),
+  //                 child: const Icon(Icons.check, color: Colors.white, size: 40),
+  //               ),
+  //               const SizedBox(height: 20),
+  //               const Text(
+  //                 "Order Placed!",
+  //                 style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
+  //               ),
+  //               const SizedBox(height: 10),
+  //               const Text(
+  //                 "Your order has been placed successfully.",
+  //                 textAlign: TextAlign.center,
+  //                 style: TextStyle(fontSize: 14, color: Colors.grey),
+  //               ),
+  //               const SizedBox(height: 15),
+  //               const Text(
+  //                 "Order ID",
+  //                 style: TextStyle(fontSize: 12, color: Colors.grey),
+  //               ),
+  //               const SizedBox(height: 5),
+  //               Text(
+  //                 orderId,
+  //                 textAlign: TextAlign.center,
+  //                 style: const TextStyle(
+  //                   fontSize: 12,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: Colors.red,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 25),
+  //               SizedBox(
+  //                 width: double.infinity,
+  //                 height: 45,
+  //                 child: ElevatedButton(
+  //                   onPressed: () {
+  //                     Navigator.of(dialogContext).pop();
+  //                     Get.back();
+  //                   },
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: Colors.red,
+  //                     elevation: 0,
+  //                     shape: RoundedRectangleBorder(
+  //                       borderRadius: BorderRadius.circular(10),
+  //                     ),
+  //                   ),
+  //                   child: const Text(
+  //                     "Done",
+  //                     style: TextStyle(
+  //                       color: Colors.white,
+  //                       fontSize: 16,
+  //                       fontWeight: FontWeight.bold,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   double _toDouble(dynamic value) {
     if (value is num) {
