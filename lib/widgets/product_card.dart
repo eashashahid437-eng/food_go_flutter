@@ -56,10 +56,9 @@ class _ProductCardState extends State<ProductCard> {
   void initState() {
     super.initState();
 
-    favoriteController = Get.put(
-      FavoriteController(),
-      permanent: true,
-    );
+    favoriteController = Get.isRegistered<FavoriteController>()
+        ? Get.find<FavoriteController>()
+        : Get.put(FavoriteController(), permanent: true);
   }
 
   @override
@@ -72,7 +71,6 @@ class _ProductCardState extends State<ProductCard> {
     final String displayName =
         food.subtitle.isNotEmpty ? food.subtitle : food.productname;
 
-    // App ka current GetX theme
     final bool isDark = Get.isDarkMode;
 
     return GestureDetector(
@@ -85,25 +83,17 @@ class _ProductCardState extends State<ProductCard> {
       },
       child: Container(
         padding: EdgeInsets.all(screenWidth * 0.03),
-
         decoration: BoxDecoration(
-          color: isDark
-              ? AppColors.surfaceDark
-              : Colors.white,
-
+          color: isDark ? AppColors.surfaceDark : Colors.white,
           borderRadius: BorderRadius.circular(18),
-
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? Colors.black.withOpacity(0.35)
-                  : Colors.black12,
+              color: isDark ? Colors.black.withOpacity(0.35) : Colors.black12,
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
           ],
         ),
-
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -112,11 +102,8 @@ class _ProductCardState extends State<ProductCard> {
                 children: [
                   CachedNetworkImage(
                     imageUrl: food.image,
-
                     height: screenHeight * 0.09,
-
                     fit: BoxFit.contain,
-
                     placeholder: (context, url) {
                       return SizedBox(
                         height: screenHeight * 0.09,
@@ -128,102 +115,71 @@ class _ProductCardState extends State<ProductCard> {
                         ),
                       );
                     },
-
                     errorWidget: (context, url, error) {
                       return SizedBox(
                         height: screenHeight * 0.09,
                         child: Icon(
                           Icons.fastfood,
                           size: 35,
-                          color: isDark
-                              ? Colors.grey[400]
-                              : AppColors.lightgrey,
+                          color: isDark ? Colors.grey[400] : AppColors.lightgrey,
                         ),
                       );
                     },
                   ),
-
                   SizedBox(
                     height: screenHeight * 0.002,
                   ),
-
                   Text(
                     displayName,
-
                     maxLines: 1,
-
                     overflow: TextOverflow.ellipsis,
-
                     style: TextStyle(
-                      color: isDark
-                          ? Colors.grey[400]
-                          : AppColors.lightgrey,
+                      color: isDark ? Colors.grey[400] : AppColors.lightgrey,
                       fontSize: 12,
                     ),
                   ),
                 ],
               ),
             ),
-
             SizedBox(
               height: screenHeight * 0.006,
             ),
-
             Row(
               children: [
                 Expanded(
                   child: Text(
                     food.title,
-
                     maxLines: 1,
-
                     overflow: TextOverflow.ellipsis,
-
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-
                       fontSize: screenWidth * 0.036,
-
-                      color: isDark
-                          ? AppColors.lightwhite
-                          : Colors.black,
+                      color: isDark ? AppColors.lightwhite : Colors.black,
                     ),
                   ),
                 ),
-
                 StatefulBuilder(
                   builder: (context, setStateCard) {
+                    // Controller se current status check karein ke product favorite hai ya nahi
+                    final bool isFav = favoriteController.isFavorite(food);
+
                     return GestureDetector(
-                      onTap: () {
-                        setStateCard(() {
-                          food.isFavorite = !food.isFavorite;
-
-                          if (food.isFavorite) {
-                            if (!globalFavoriteList.contains(food)) {
-                              globalFavoriteList.add(food);
-                            }
-                          } else {
-                            globalFavoriteList.remove(food);
-                          }
-                        });
+                      onTap: () async {
+                        // Firebase aur local list mein toggle karein
+                        await favoriteController.toggleFavorite(food);
+                        setStateCard(() {});
                       },
-
                       child: Padding(
                         padding: EdgeInsets.all(
                           screenWidth * 0.01,
                         ),
-
                         child: Icon(
-                          food.isFavorite
-                              ? Icons.favorite
-                              : Icons.favorite_border,
-
-                          color: food.isFavorite
+                          isFav ? Icons.favorite : Icons.favorite_border,
+                          color: isFav
                               ? Colors.red
                               : (isDark
                                   ? Colors.grey[400]
                                   : AppColors.lightgrey),
-
                           size: 20,
                         ),
                       ),
@@ -232,10 +188,7 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ],
             ),
-
             const Spacer(),
-
-            // Price aur Rating yahan add kar di gayi hai
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
