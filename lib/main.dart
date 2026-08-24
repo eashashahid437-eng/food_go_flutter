@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 import 'firebase_options.dart';
 import 'package:food_go/Auth/Login_Screen.dart';
@@ -23,6 +24,11 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  // ---- Stripe setup ----
+  Stripe.publishableKey = "pk_test_51U61yA31XAVPYuneJXmxrdbRDy3ZSCoXAgoY2sVRcjZcJHj6UN0D5odYlGaaKHfjMQjOJRU8iKXZG1PQQNmqFCXS00ZxWIkS6Z"; // apni Stripe publishable key yahan lagao
+  await Stripe.instance.applySettings();
+  // -----------------------
 
   Get.put<CartController>(CartController(), permanent: true);
 
@@ -57,7 +63,6 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
 
-      // Light Theme Configuration
       theme: ThemeData(
         brightness: Brightness.light,
         scaffoldBackgroundColor: Colors.white,

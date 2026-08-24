@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Controllers/paymentmethodcontroller.dart';
@@ -68,14 +69,15 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         ),
         centerTitle: true,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(
           horizontal: 20,
+          vertical: 10,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 10),
+            const SizedBox(height: 5),
             Text(
               "Order summary",
               style: TextStyle(
@@ -130,68 +132,62 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 color: Colors.grey,
               ),
             ),
-            const SizedBox(height: 30),
-            Text(
-              "Payment methods",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+            const SizedBox(height: 25),
+
+            // Stylish Secure Payment Banner
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.grey.withOpacity(0.2),
+                ),
               ),
-            ),
-            const SizedBox(height: 15),
-            Obx(
-              () => Column(
+              child: Row(
                 children: [
-                  _buildPaymentCard(
-                    title: "Credit card",
-                    subtitle: "5105 **** **** 0505",
-                    imagePath: "assets/images/account.jpg",
-                    isSelected:
-                        controller.selectedMethod.value == "credit_card",
-                    isDark: isDark,
-                    onTap: () {
-                      controller.selectPaymentMethod("credit_card");
-                    },
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.lock_outline,
+                      color: Colors.red,
+                      size: 24,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  _buildPaymentCard(
-                    title: "Debit card",
-                    subtitle: "3566 **** **** 0505",
-                    imagePath: "assets/images/visa.jpg",
-                    isSelected: controller.selectedMethod.value == "debit_card",
-                    isDark: isDark,
-                    onTap: () {
-                      controller.selectPaymentMethod("debit_card");
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 15),
-            Obx(
-              () => Row(
-                children: [
-                  Checkbox(
-                    value: controller.saveCard.value,
-                    activeColor: AppColors.primaryLight,
-                    onChanged: (value) {
-                      controller.saveCard.value = value ?? false;
-                    },
-                  ),
+                  const SizedBox(width: 15),
                   Expanded(
-                    child: Text(
-                      "Save card details for future payments",
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark ? Colors.grey[300] : AppColors.textPrimaryLight,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          "Secure Stripe Payment",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 3),
+                        Text(
+                          "Tap 'Pay Now' to enter your card details securely.",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const Spacer(),
+
+            // Banner ke neechay space kam karne ke liye chota SizedBox
+            const SizedBox(height: 40),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -262,7 +258,6 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         ),
       ),
     );
-  
   }
 
   Widget _summaryRow(
@@ -293,84 +288,6 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildPaymentCard({
-    required String title,
-    required String subtitle,
-    required String imagePath,
-    required bool isSelected,
-    required bool isDark,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isDark ? AppColors.primaryLight : const Color(0xFF2C2424))
-              : (isDark ? AppColors.surfaceDark : AppColors.surfaceLight),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 50,
-              height: 30,
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Image.asset(
-                imagePath,
-                fit: BoxFit.contain,
-                errorBuilder: (_, _, _) {
-                  return const Icon(
-                    Icons.credit_card,
-                    color: Colors.grey,
-                    size: 22,
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected
-                          ? Colors.white
-                          : (isDark ? AppColors.lightwhite : AppColors.textPrimaryLight),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isSelected ? Colors.white70 : Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              isSelected
-                  ? Icons.radio_button_checked
-                  : Icons.radio_button_off,
-              color: isSelected ? Colors.white : Colors.grey,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
