@@ -1,502 +1,755 @@
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:food_go/Auth/Login_Screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
+import 'package:food_go/Controllers/profile_controller.dart';
+import 'package:food_go/Screens/BottomNavbar/paymentscreen.dart';
+import 'package:food_go/Screens/settingscreen.dart';
+import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'orderhistory.dart';
 
-class PaymentDetailsScreen extends StatelessWidget {
-  const PaymentDetailsScreen({super.key});
+class PersonScreen extends StatefulWidget {
+  const PersonScreen({super.key});
+
+  @override
+  State<PersonScreen> createState() => _PersonScreenState();
+}
+
+class _PersonScreenState extends State<PersonScreen> {
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      if (!mounted) return;
+
+      Get.offAll(
+        () => const LoginScreen(),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      Get.snackbar(
+        "Error",
+        "Logout failed:\n$e",
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(12),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final User? currentUser = FirebaseAuth.instance.currentUser;
+    final ProfileController controller = Get.put(ProfileController());
     final bool isDark = Get.isDarkMode;
+    final Size screenSize = MediaQuery.sizeOf(context);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-      appBar: AppBar(
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          "Payment Details",
-          style: TextStyle(
-            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
-        ),
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back,
-            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
-          ),
-          onPressed: () {
-            Get.back();
-          },
-        ),
-      ),
-      body: currentUser == null
-          ? const Center(
-              child: Text(
-                "Please log in to view payment details.",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                ),
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      body: SafeArea(
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: AppColors.darkpink,
               ),
-            )
-          : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(currentUser.uid)
-                  .collection('saved_cards')
-                  .orderBy(
-                    'createdAt',
-                    descending: true,
-                  )
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.darkpink,
-                    ),
-                  );
-                }
+            );
+          }
 
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(25),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            color: Colors.redAccent,
-                            size: 45,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            "Unable to load payment details.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "${snapshot.error}",
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
+          final User? user = FirebaseAuth.instance.currentUser;
 
-                final List<QueryDocumentSnapshot<Map<String, dynamic>>>
-                    cardsDocs = snapshot.data?.docs ?? [];
-
-                return SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                SizedBox(
+                  height: (screenSize.height < 700 ? 180 : 200) +
+                      (screenSize.height < 700 ? 110 : 125) / 2,
+                  child: Stack(
+                    clipBehavior: Clip.none,
                     children: [
-                      Text(
-                        "Payment Methods",
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+                      Container(
+                        height: screenSize.height < 700 ? 180 : 200,
+                        width: double.infinity,
+                        decoration: const BoxDecoration(
+                          color: AppColors.darkpink,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        "Manage your saved payment methods",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey,
+                      Positioned(
+                        left: -60,
+                        top: 5,
+                        child: Opacity(
+                          opacity: 0.65,
+                          child: Image.asset(
+                            'assets/images/profile burger.png',
+                            width: 190,
+                            height: 190,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 25),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "Your Saved Cards",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+                      Positioned(
+                        right: -60,
+                        top: 5,
+                        child: Opacity(
+                          opacity: 0.65,
+                          child: Image.asset(
+                            'assets/images/profile burger 2.png',
+                            width: 190,
+                            height: 190,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        height: screenSize.height < 700 ? 180 : 200,
+                        width: double.infinity,
+                        color: AppColors.darkpink.withOpacity(0.38),
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: screenSize.height < 700 ? 165 : 185,
+                        bottom: -1000,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(35),
+                              topRight: Radius.circular(35),
                             ),
                           ),
-                          if (cardsDocs.isNotEmpty)
-                            Text(
-                              "${cardsDocs.length} card${cardsDocs.length == 1 ? '' : 's'}",
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
+                        ),
+                      ),
+                      Positioned(
+                        top: 15,
+                        right: 20,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(30),
+                            onTap: () {
+                              Get.to(() => const SettingsScreen());
+                            },
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: const BoxDecoration(
+                                color: Colors.transparent,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.settings_outlined,
+                                color: Colors.white,
+                                size: 28,
                               ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
-                      if (cardsDocs.isEmpty) _buildEmptyCard(isDark),
-                      if (cardsDocs.isNotEmpty)
-                        ListView.builder(
-                          itemCount: cardsDocs.length,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemBuilder: (context, index) {
-                            final doc = cardsDocs[index];
-                            final Map<String, dynamic> cardData = doc.data();
-
-                            return _buildSavedCard(
-                              context: context,
-                              cardData: cardData,
-                              docId: doc.id,
-                              uid: currentUser.uid,
-                            );
-                          },
-                        ),
-                      const SizedBox(height: 20),
-                      Text(
-                        "Other Payment Option",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      _buildCashOnDelivery(isDark),
-                      const SizedBox(height: 25),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            _showAddCardBottomSheet(
-                              context,
-                              currentUser.uid,
-                              isDark,
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isDark ? AppColors.primaryLight : Colors.black87,
-                            foregroundColor: Colors.white,
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
-                          icon: const Icon(
-                            Icons.add_card,
-                            size: 21,
-                          ),
-                          label: const Text(
-                            "Add New Card",
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: GestureDetector(
+                            onTap: controller.isUploadingImage.value
+                                ? null
+                                : () {
+                                    _showImageOptions(
+                                      context,
+                                      controller,
+                                      isDark,
+                                    );
+                                  },
+                            child: Container(
+                              width: screenSize.height < 700 ? 110 : 125,
+                              height: screenSize.height < 700 ? 110 : 125,
+                              padding: EdgeInsets.zero,
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppColors.surfaceDark
+                                    : AppColors.surfaceLight,
+                                borderRadius: BorderRadius.circular(25),
+                                border: Border.all(
+                                  color: AppColors.darkpink,
+                                  width: 3,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: isDark
+                                        ? Colors.black.withOpacity(0.5)
+                                        : Colors.black26,
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(22),
+                                child: controller
+                                        .profileImageUrl.value.isNotEmpty
+                                    ? CachedNetworkImage(
+                                        imageUrl:
+                                            controller.profileImageUrl.value,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) =>
+                                            const Center(
+                                          child: CircularProgressIndicator(
+                                            color: AppColors.darkpink,
+                                            strokeWidth: 2.5,
+                                          ),
+                                        ),
+                                        errorWidget:
+                                            (context, url, error) => Container(
+                                          color: isDark
+                                              ? AppColors.backgroundDark
+                                              : Colors.grey[100],
+                                          child: const Icon(
+                                            Icons.person,
+                                            size: 50,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        color: isDark
+                                            ? AppColors.backgroundDark
+                                            : Colors.grey[100],
+                                        child: controller
+                                                .isUploadingImage.value
+                                            ? const Padding(
+                                                padding: EdgeInsets.all(30),
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  color: AppColors.darkpink,
+                                                  strokeWidth: 2.5,
+                                                ),
+                                              )
+                                            : const Icon(
+                                                Icons.person,
+                                                size: 50,
+                                                color: Colors.grey,
+                                              ),
+                                      ),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ],
                   ),
-                );
-              },
-            ),
-    );
-  }
-
-  Widget _buildEmptyCard(bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 30,
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.surfaceDark : Colors.grey.shade200,
-        ),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: AppColors.darkpink.withOpacity(0.10),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.credit_card_off_outlined,
-              color: AppColors.darkpink,
-              size: 30,
-            ),
-          ),
-          const SizedBox(height: 15),
-          Text(
-            "No saved cards yet",
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            "Add a card to make future payments easier.",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSavedCard({
-    required BuildContext context,
-    required Map<String, dynamic> cardData,
-    required String docId,
-    required String uid,
-  }) {
-    final String cardType = (cardData["type"] ?? "Credit Card").toString();
-    final String cardNumber = (cardData["number"] ?? "•••• •••• •••• 0000").toString();
-    final String holder = (cardData["holder"] ?? "Card Holder").toString();
-    final String expiry = (cardData["expiry"] ?? "--/--").toString();
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF1E1E2C),
-            Color(0xFF2D3250),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.12),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  cardType,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
                 ),
-              ),
-              const Icon(
-                Icons.credit_card,
-                color: Colors.white70,
-                size: 28,
-              ),
-            ],
-          ),
-          const SizedBox(height: 25),
-          Text(
-            cardNumber,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 17,
-              letterSpacing: 1.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 22),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                flex: 5,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "CARD HOLDER",
-                      style: TextStyle(
-                        color: Colors.white54,
-                        fontSize: 9,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 15),
+                      _field(
+                        'Name',
+                        controller.nameController,
+                        Icons.person_outline,
+                        isDark,
+                        compact: true,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      holder,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(height: 10),
+                      _readOnly(
+                        'Email',
+                        user?.email ?? controller.email.value,
+                        Icons.email_outlined,
+                        isDark,
+                        compact: true,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "EXPIRES",
-                      style: TextStyle(
-                        color: Colors.white54,
-                        fontSize: 9,
+                      const SizedBox(height: 10),
+                      _field(
+                        'Delivery Address',
+                        controller.addressController,
+                        Icons.location_on_outlined,
+                        isDark,
+                        maxLines: 1,
+                        compact: true,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      expiry,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(height: 10),
+                      _readOnly(
+                        'Password',
+                        '••••••••',
+                        Icons.lock_outline,
+                        isDark,
+                        compact: true,
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 35,
-                  minHeight: 35,
-                ),
-                icon: const Icon(
-                  Icons.delete_outline,
-                  color: Colors.redAccent,
-                  size: 21,
-                ),
-                onPressed: () {
-                  _confirmDeleteCard(
-                    context: context,
-                    uid: uid,
-                    docId: docId,
-                  );
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCashOnDelivery(bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: isDark ? AppColors.surfaceDark : Colors.grey.shade200,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.10),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.money,
-              color: Colors.green,
-            ),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Cash on Delivery",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                const Text(
-                  "Pay when you receive your food",
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
+                      const SizedBox(height: 14),
+                      Divider(
+                        color: isDark
+                            ? AppColors.surfaceDark
+                            : Colors.grey.shade300,
+                        thickness: 1,
+                        height: 1,
+                      ),
+                      const SizedBox(height: 4),
+                      _figmaStyleAction(
+                        title: 'Payment Details',
+                        isDark: isDark,
+                        onTap: () {
+                          Get.to(() => const PaymentDetailsScreen());
+                        },
+                      ),
+                      _figmaStyleAction(
+                        title: 'Order history',
+                        isDark: isDark,
+                        onTap: () {
+                          Get.to(() => const OrderHistoryScreen());
+                        },
+                      ),
+                      Divider(
+                        color: isDark
+                            ? AppColors.surfaceDark
+                            : Colors.grey.shade300,
+                        thickness: 1,
+                        height: 1,
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: ElevatedButton.icon(
+                                onPressed: controller.isSaving.value
+                                    ? null
+                                    : () async {
+                                        await controller.saveUserData();
+                                      },
+                                icon: controller.isSaving.value
+                                    ? const SizedBox(
+                                        width: 17,
+                                        height: 17,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.edit_outlined,
+                                        size: 18,
+                                      ),
+                                label: Text(
+                                  controller.isSaving.value
+                                      ? 'Saving...'
+                                      : 'Edit Profile',
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: isDark
+                                      ? AppColors.primaryLight
+                                      : Colors.black87,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: SizedBox(
+                              height: 48,
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  _showLogoutDialog(
+                                    context,
+                                    controller,
+                                    isDark,
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.logout,
+                                  size: 18,
+                                ),
+                                label: const Text('Log Out'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.darkpink,
+                                  side: const BorderSide(
+                                    color: AppColors.darkpink,
+                                    width: 1,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 30),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-          const Icon(
-            Icons.check_circle,
-            color: Colors.green,
-          ),
-        ],
+          );
+        }),
       ),
     );
   }
 
-  void _confirmDeleteCard({
-    required BuildContext context,
-    required String uid,
-    required String docId,
+  static Widget _figmaStyleAction({
+    required String title,
+    required bool isDark,
+    required VoidCallback onTap,
   }) {
-    final bool isDark = Get.isDarkMode;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 4,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                color: isDark
+                    ? AppColors.lightwhite
+                    : AppColors.textPrimaryLight,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 13,
+              color: Colors.grey,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Widget _field(
+    String title,
+    TextEditingController controller,
+    IconData icon,
+    bool isDark, {
+    int maxLines = 1,
+    bool compact = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: isDark
+                ? AppColors.lightwhite
+                : AppColors.textPrimaryLight,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 3),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          style: TextStyle(
+            color: isDark
+                ? AppColors.lightwhite
+                : AppColors.textPrimaryLight,
+            fontSize: 14,
+          ),
+          decoration: InputDecoration(
+            prefixIcon: Icon(
+              icon,
+              color: Colors.grey,
+              size: 22,
+            ),
+            filled: true,
+            fillColor: isDark
+                ? AppColors.surfaceDark
+                : AppColors.surfaceLight,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: compact ? 10 : 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide(
+                color: isDark
+                    ? AppColors.surfaceDark
+                    : Colors.grey.shade300,
+                width: 1,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: BorderSide(
+                color: isDark
+                    ? AppColors.surfaceDark
+                    : Colors.grey.shade300,
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: const BorderSide(
+                color: AppColors.darkpink,
+                width: 1,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  static Widget _readOnly(
+    String title,
+    String value,
+    IconData icon,
+    bool isDark, {
+    bool compact = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: isDark
+                ? AppColors.lightwhite
+                : AppColors.textPrimaryLight,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: compact ? 11 : 14,
+          ),
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.surfaceDark
+                : AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: isDark
+                  ? AppColors.surfaceDark
+                  : Colors.grey.shade300,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: Colors.grey[500],
+                size: 22,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  value.isEmpty ? 'Not available' : value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark
+                        ? AppColors.lightwhite
+                        : AppColors.textPrimaryLight,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  static void _showImageOptions(
+    BuildContext context,
+    ProfileController controller,
+    bool isDark,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor:
+          isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(25),
+        ),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(
+              top: 10,
+              bottom: 15,
+            ),
+            child: Wrap(
+              children: [
+                Center(
+                  child: Container(
+                    width: 45,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[700],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(15),
+                    child: Text(
+                      'Change Profile Picture',
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? AppColors.lightwhite
+                            : Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+                ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 25),
+                  leading: Container(
+                    width: 45,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: AppColors.darkpink.withOpacity(0.10),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_outlined,
+                      color: AppColors.darkpink,
+                    ),
+                  ),
+                  title: Text(
+                    'Take Photo',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? AppColors.lightwhite
+                          : Colors.black,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Use your camera',
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                    ),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 15,
+                    color: Colors.grey,
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    controller.pickImage(ImageSource.camera);
+                  },
+                ),
+                ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 25),
+                  leading: Container(
+                    width: 45,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: AppColors.darkpink.withOpacity(0.10),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.photo_library_outlined,
+                      color: AppColors.darkpink,
+                    ),
+                  ),
+                  title: Text(
+                    'Choose from Gallery',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? AppColors.lightwhite
+                          : Colors.black,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Select an existing photo',
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                    ),
+                  ),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 15,
+                    color: Colors.grey,
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    controller.pickImage(ImageSource.gallery);
+                  },
+                ),
+                ListTile(
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 25),
+                  leading: const Icon(
+                    Icons.close,
+                    color: Colors.grey,
+                  ),
+                  title: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  static void _showLogoutDialog(
+    BuildContext context,
+    ProfileController controller,
+    bool isDark,
+  ) {
     Get.dialog(
       AlertDialog(
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+        backgroundColor:
+            isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
         ),
         title: Text(
-          "Delete Card?",
+          'Logout',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+            color: isDark ? AppColors.lightwhite : Colors.black,
           ),
         ),
         content: Text(
-          "Are you sure you want to remove this saved card?",
+          'Are you sure you want to logout?',
           style: TextStyle(
             color: isDark ? Colors.grey[300] : Colors.black87,
           ),
@@ -507,353 +760,75 @@ class PaymentDetailsScreen extends StatelessWidget {
               Get.back();
             },
             child: const Text(
-              "Cancel",
-              style: TextStyle(color: Colors.grey),
+              'Cancel',
+              style: TextStyle(
+                color: Colors.grey,
+              ),
             ),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.darkpink,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () async {
               Get.back();
-              await _deleteCard(
-                uid: uid,
-                docId: docId,
-              );
+              await controller.logout();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-            ),
-            child: const Text(
-              "Delete",
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Logout'),
           ),
         ],
       ),
     );
   }
+}
 
-  Future<void> _deleteCard({
-    required String uid,
-    required String docId,
-  }) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('saved_cards')
-          .doc(docId)
-          .delete();
+class PaymentDetailsScreen extends StatelessWidget {
+  const PaymentDetailsScreen({super.key});
 
-      Get.snackbar(
-        "Deleted",
-        "Card removed successfully.",
-        backgroundColor: Colors.black87,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(12),
-      );
-    } catch (e) {
-      Get.snackbar(
-        "Error",
-        "Could not delete the card.",
-        backgroundColor: Colors.redAccent,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(12),
-      );
-    }
-  }
+  @override
+  Widget build(BuildContext context) {
+    final bool isDark = Get.isDarkMode;
 
-  void _showAddCardBottomSheet(
-    BuildContext context,
-    String uid,
-    bool isDark,
-  ) {
-    final TextEditingController numController = TextEditingController();
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController expController = TextEditingController();
-    final TextEditingController cvvController = TextEditingController();
-
-    Get.bottomSheet(
-      SafeArea(
-        child: Container(
-          padding: EdgeInsets.only(
-            left: 25,
-            right: 25,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+    return Scaffold(
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      appBar: AppBar(
+        backgroundColor:
+            isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          onPressed: () => Get.back(),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
           ),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : Colors.white,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(25),
-            ),
+        ),
+        title: Text(
+          'Payment Details',
+          style: TextStyle(
+            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
           ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Add New Card",
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
-                      ),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.close,
-                        color: isDark ? AppColors.lightwhite : Colors.black,
-                      ),
-                      onPressed: () {
-                        Get.back();
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  "Enter your card details",
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                TextField(
-                  controller: numController,
-                  keyboardType: TextInputType.number,
-                  maxLength: 19,
-                  style: TextStyle(color: isDark ? AppColors.lightwhite : Colors.black),
-                  decoration: InputDecoration(
-                    labelText: "Card Number",
-                    labelStyle: const TextStyle(color: Colors.grey),
-                    hintText: "1234 5678 9012 3456",
-                    counterText: "",
-                    prefixIcon: const Icon(Icons.credit_card, color: Colors.grey),
-                    filled: true,
-                    fillColor: isDark ? AppColors.backgroundDark : Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: nameController,
-                  textCapitalization: TextCapitalization.words,
-                  style: TextStyle(color: isDark ? AppColors.lightwhite : Colors.black),
-                  decoration: InputDecoration(
-                    labelText: "Card Holder Name",
-                    labelStyle: const TextStyle(color: Colors.grey),
-                    hintText: "Alex Morgan",
-                    prefixIcon: const Icon(Icons.person_outline, color: Colors.grey),
-                    filled: true,
-                    fillColor: isDark ? AppColors.backgroundDark : Colors.grey.shade100,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: expController,
-                        keyboardType: TextInputType.number,
-                        maxLength: 5,
-                        style: TextStyle(color: isDark ? AppColors.lightwhite : Colors.black),
-                        decoration: InputDecoration(
-                          labelText: "Expires",
-                          labelStyle: const TextStyle(color: Colors.grey),
-                          hintText: "MM/YY",
-                          counterText: "",
-                          filled: true,
-                          fillColor: isDark ? AppColors.backgroundDark : Colors.grey.shade100,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: cvvController,
-                        keyboardType: TextInputType.number,
-                        maxLength: 4,
-                        obscureText: true,
-                        style: TextStyle(color: isDark ? AppColors.lightwhite : Colors.black),
-                        decoration: InputDecoration(
-                          labelText: "CVV",
-                          labelStyle: const TextStyle(color: Colors.grey),
-                          hintText: "123",
-                          counterText: "",
-                          filled: true,
-                          fillColor: isDark ? AppColors.backgroundDark : Colors.grey.shade100,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                const Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.lock_outline,
-                      size: 15,
-                      color: Colors.grey,
-                    ),
-                    SizedBox(width: 7),
-                    Expanded(
-                      child: Text(
-                        "For security, your full card number and CVV are not stored.",
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      final String rawNum = numController.text.trim();
-                      final String holder = nameController.text.trim();
-                      final String expiry = expController.text.trim();
-
-                      if (rawNum.length < 4) {
-                        Get.snackbar(
-                          "Invalid Card",
-                          "Please enter a valid card number.",
-                          backgroundColor: Colors.redAccent,
-                          colorText: Colors.white,
-                          snackPosition: SnackPosition.TOP,
-                        );
-                        return;
-                      }
-
-                      if (holder.isEmpty) {
-                        Get.snackbar(
-                          "Required",
-                          "Please enter card holder name.",
-                          backgroundColor: Colors.redAccent,
-                          colorText: Colors.white,
-                          snackPosition: SnackPosition.TOP,
-                        );
-                        return;
-                      }
-
-                      if (expiry.isEmpty) {
-                        Get.snackbar(
-                          "Required",
-                          "Please enter expiry date.",
-                          backgroundColor: Colors.redAccent,
-                          colorText: Colors.white,
-                          snackPosition: SnackPosition.TOP,
-                        );
-                        return;
-                      }
-
-                      final String digitsOnly = rawNum.replaceAll(RegExp(r'\D'), '');
-                      final String lastFour = digitsOnly.length >= 4
-                          ? digitsOnly.substring(digitsOnly.length - 4)
-                          : digitsOnly;
-                      final String maskedNumber = "•••• •••• •••• $lastFour";
-
-                      Get.dialog(
-                        const Center(
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
-                        ),
-                        barrierDismissible: false,
-                      );
-
-                      try {
-                        await FirebaseFirestore.instance
-                            .collection('users')
-                            .doc(uid)
-                            .collection('saved_cards')
-                            .add({
-                          "holder": holder,
-                          "number": maskedNumber,
-                          "expiry": expiry,
-                          "type": "Credit Card",
-                          "createdAt": FieldValue.serverTimestamp(),
-                        });
-
-                        if (Get.isDialogOpen ?? false) {
-                          Get.back();
-                        }
-
-                        Get.back();
-
-                        Get.snackbar(
-                          "Success",
-                          "Card saved successfully.",
-                          backgroundColor: Colors.black87,
-                          colorText: Colors.white,
-                          snackPosition: SnackPosition.TOP,
-                          margin: const EdgeInsets.all(12),
-                        );
-                      } catch (e) {
-                        if (Get.isDialogOpen ?? false) {
-                          Get.back();
-                        }
-
-                        Get.snackbar(
-                          "Error",
-                          "Could not save the card. Please try again.",
-                          backgroundColor: Colors.redAccent,
-                          colorText: Colors.white,
-                          snackPosition: SnackPosition.TOP,
-                          margin: const EdgeInsets.all(12),
-                        );
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isDark ? AppColors.primaryLight : Colors.black87,
-                      foregroundColor: Colors.white,
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      "Save Card",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+        ),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Payment details are not available yet.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
       ),
-      isScrollControlled: true,
     );
   }
 }
+

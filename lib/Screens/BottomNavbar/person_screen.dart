@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:food_go/Auth/Login_Screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Controllers/profile_controller.dart';
+import 'package:food_go/Screens/BottomNavbar/home_screen.dart';
 import 'package:food_go/Screens/BottomNavbar/paymentscreen.dart';
 import 'package:food_go/Screens/settingscreen.dart';
 import 'package:get/get.dart';
@@ -120,30 +121,87 @@ class _PersonScreenState extends State<PersonScreen> {
                       ),
                       Positioned(
                         top: 15,
+                        left: 20,
                         right: 20,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(30),
-                            onTap: () {
-                              Get.to(() => const SettingsScreen());
-                            },
-                            child: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: const BoxDecoration(
-                                color: Colors.transparent,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.settings_outlined,
-                                color: Colors.white,
-                                size: 28,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(30),
+                                onTap: () {
+                           Get.offAll(() => const HomeScreen());
+                                },
+                                // onTap: () {
+                                //   Get.back();
+                                // },
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.transparent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.arrow_back,
+                                    color: Colors.white,
+                                    size: 25,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(30),
+                                onTap: () {
+                                  Get.to(() => const SettingsScreen());
+                                },
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.transparent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.settings_outlined,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      // Positioned(
+                      //   top: 15,
+                      //   right: 20,
+                      //   child: Material(
+                      //     color: Colors.transparent,
+                      //     child: InkWell(
+                      //       borderRadius: BorderRadius.circular(30),
+                      //       onTap: () {
+                      //         Get.to(() => const SettingsScreen());
+                      //       },
+                      //       child: Container(
+                      //         width: 48,
+                      //         height: 48,
+                      //         decoration: const BoxDecoration(
+                      //           color: Colors.transparent,
+                      //           shape: BoxShape.circle,
+                      //         ),
+                      //         child: const Icon(
+                      //           Icons.settings_outlined,
+                      //           color: Colors.white,
+                      //           size: 28,
+                      //         ),
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
                       Positioned(
                         left: 0,
                         right: 0,

@@ -14,5 +14,7 @@ class ImagePath {
   static const String Authburger="assets/images/auth burger login.png";
   static const String Fb="assets/images/facebook.webp";
   static const String logoapp="assets/images/app logo food app.png";
+  static const String Profilelogo1="assets/images/profile burger.png";
+  static const String Profilelogo2="assets/images/profile burger 2.png";
 
 }
