@@ -87,8 +87,6 @@ class _ProductCardState extends State<ProductCard> {
         padding: EdgeInsets.all(screenWidth * 0.03),
 
         decoration: BoxDecoration(
-          // LIGHT = White
-          // DARK = Dark card
           color: isDark
               ? AppColors.surfaceDark
               : Colors.white,
@@ -115,13 +113,13 @@ class _ProductCardState extends State<ProductCard> {
                   CachedNetworkImage(
                     imageUrl: food.image,
 
-                    height: screenHeight * 0.11,
+                    height: screenHeight * 0.09,
 
                     fit: BoxFit.contain,
 
                     placeholder: (context, url) {
                       return SizedBox(
-                        height: screenHeight * 0.11,
+                        height: screenHeight * 0.09,
                         child: const Center(
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
@@ -133,7 +131,7 @@ class _ProductCardState extends State<ProductCard> {
 
                     errorWidget: (context, url, error) {
                       return SizedBox(
-                        height: screenHeight * 0.11,
+                        height: screenHeight * 0.09,
                         child: Icon(
                           Icons.fastfood,
                           size: 35,
@@ -146,7 +144,7 @@ class _ProductCardState extends State<ProductCard> {
                   ),
 
                   SizedBox(
-                    height: screenHeight * 0.003,
+                    height: screenHeight * 0.002,
                   ),
 
                   Text(
@@ -160,6 +158,7 @@ class _ProductCardState extends State<ProductCard> {
                       color: isDark
                           ? Colors.grey[400]
                           : AppColors.lightgrey,
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -167,7 +166,7 @@ class _ProductCardState extends State<ProductCard> {
             ),
 
             SizedBox(
-              height: screenHeight * 0.012,
+              height: screenHeight * 0.006,
             ),
 
             Row(
@@ -183,10 +182,8 @@ class _ProductCardState extends State<ProductCard> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
 
-                      fontSize: screenWidth * 0.038,
+                      fontSize: screenWidth * 0.036,
 
-                      // LIGHT = Black
-                      // DARK = White
                       color: isDark
                           ? AppColors.lightwhite
                           : Colors.black,
@@ -227,11 +224,46 @@ class _ProductCardState extends State<ProductCard> {
                                   ? Colors.grey[400]
                                   : AppColors.lightgrey),
 
-                          size: 22,
+                          size: 20,
                         ),
                       ),
                     );
                   },
+                ),
+              ],
+            ),
+
+            const Spacer(),
+
+            // Price aur Rating yahan add kar di gayi hai
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "\$${food.price.toStringAsFixed(2)}",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: screenWidth * 0.035,
+                    color: AppColors.darkpink,
+                  ),
+                ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.star,
+                      color: Colors.amber,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 3),
+                    Text(
+                      food.rating.toString(),
+                      style: TextStyle(
+                        fontSize: screenWidth * 0.03,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.grey[300] : Colors.grey[700],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
