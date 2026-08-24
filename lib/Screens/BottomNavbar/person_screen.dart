@@ -1,16 +1,14 @@
-
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Auth/Login_Screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Controllers/profile_controller.dart';
+import 'package:food_go/Screens/BottomNavbar/home_screen.dart';
 import 'package:food_go/Screens/BottomNavbar/paymentscreen.dart';
 import 'package:food_go/Screens/settingscreen.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-
 import 'orderhistory.dart';
 
 class PersonScreen extends StatefulWidget {
@@ -21,18 +19,13 @@ class PersonScreen extends StatefulWidget {
 }
 
 class _PersonScreenState extends State<PersonScreen> {
-  
- 
- 
   Future<void> _logout() async {
     try {
       await FirebaseAuth.instance.signOut();
 
       if (!mounted) return;
 
-      Get.offAll(
-        () => const LoginScreen(),
-      );
+      Get.offAll(() => const LoginScreen());
     } catch (e) {
       if (!mounted) return;
 
@@ -45,8 +38,6 @@ class _PersonScreenState extends State<PersonScreen> {
     }
   }
 
- 
- 
   @override
   Widget build(BuildContext context) {
     final ProfileController controller = Get.put(ProfileController());
@@ -54,7 +45,9 @@ class _PersonScreenState extends State<PersonScreen> {
     final Size screenSize = MediaQuery.sizeOf(context);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
@@ -69,7 +62,9 @@ class _PersonScreenState extends State<PersonScreen> {
             child: Column(
               children: [
                 SizedBox(
-                  height: (screenSize.height < 700 ? 180 : 200) + (screenSize.height < 700 ? 110 : 125) / 2,
+                  height:
+                      (screenSize.height < 700 ? 180 : 200) +
+                      (screenSize.height < 700 ? 110 : 125) / 2,
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
@@ -77,39 +72,136 @@ class _PersonScreenState extends State<PersonScreen> {
                         height: screenSize.height < 700 ? 180 : 200,
                         width: double.infinity,
                         decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [AppColors.darkpink, AppColors.lightPink],
+                          color: AppColors.darkpink,
+                        ),
+                      ),
+                      Positioned(
+                        left: -60,
+                        top: 5,
+                        child: Opacity(
+                          opacity: 0.65,
+                          child: Image.asset(
+                            'assets/images/profile burger.png',
+                            width: 190,
+                            height: 190,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: -60,
+                        top: 5,
+                        child: Opacity(
+                          opacity: 0.65,
+                          child: Image.asset(
+                            'assets/images/profile burger 2.png',
+                            width: 190,
+                            height: 190,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        height: screenSize.height < 700 ? 180 : 200,
+                        width: double.infinity,
+                        color: AppColors.darkpink.withOpacity(0.48),
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: screenSize.height < 700 ? 165 : 185,
+                        bottom: -1000,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(35),
+                              topRight: Radius.circular(35),
+                            ),
                           ),
                         ),
                       ),
                       Positioned(
                         top: 15,
+                        left: 20,
                         right: 20,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(30),
-                            onTap: () {
-                              Get.to(() => const SettingsScreen());
-                            },
-                            child: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: const BoxDecoration(
-                                color: Colors.transparent,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.settings_outlined,
-                                color: Colors.white,
-                                size: 28,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(30),
+                                onTap: () {
+                           Get.offAll(() => const HomeScreen());
+                                },
+                                // onTap: () {
+                                //   Get.back();
+                                // },
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.transparent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.arrow_back,
+                                    color: Colors.white,
+                                    size: 25,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(30),
+                                onTap: () {
+                                  Get.to(() => const SettingsScreen());
+                                },
+                                child: Container(
+                                  width: 48,
+                                  height: 48,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.transparent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.settings_outlined,
+                                    color: Colors.white,
+                                    size: 28,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      // Positioned(
+                      //   top: 15,
+                      //   right: 20,
+                      //   child: Material(
+                      //     color: Colors.transparent,
+                      //     child: InkWell(
+                      //       borderRadius: BorderRadius.circular(30),
+                      //       onTap: () {
+                      //         Get.to(() => const SettingsScreen());
+                      //       },
+                      //       child: Container(
+                      //         width: 48,
+                      //         height: 48,
+                      //         decoration: const BoxDecoration(
+                      //           color: Colors.transparent,
+                      //           shape: BoxShape.circle,
+                      //         ),
+                      //         child: const Icon(
+                      //           Icons.settings_outlined,
+                      //           color: Colors.white,
+                      //           size: 28,
+                      //         ),
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
                       Positioned(
                         left: 0,
                         right: 0,
@@ -119,14 +211,20 @@ class _PersonScreenState extends State<PersonScreen> {
                             onTap: controller.isUploadingImage.value
                                 ? null
                                 : () {
-                                    _showImageOptions(context, controller, isDark);
+                                    _showImageOptions(
+                                      context,
+                                      controller,
+                                      isDark,
+                                    );
                                   },
                             child: Container(
                               width: screenSize.height < 700 ? 110 : 125,
                               height: screenSize.height < 700 ? 110 : 125,
                               padding: EdgeInsets.zero,
                               decoration: BoxDecoration(
-                                color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                                color: isDark
+                                    ? AppColors.surfaceDark
+                                    : AppColors.surfaceLight,
                                 borderRadius: BorderRadius.circular(25),
                                 border: Border.all(
                                   color: AppColors.darkpink,
@@ -144,47 +242,43 @@ class _PersonScreenState extends State<PersonScreen> {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(22),
-                                child: controller
-                                        .profileImageUrl
-                                        .value
-                                        .isNotEmpty
+                                child:
+                                    controller.profileImageUrl.value.isNotEmpty
                                     ? CachedNetworkImage(
-                                        imageUrl: controller
-                                            .profileImageUrl.value,
+                                        imageUrl:
+                                            controller.profileImageUrl.value,
                                         fit: BoxFit.cover,
                                         placeholder: (context, url) =>
                                             const Center(
-                                          child: CircularProgressIndicator(
-                                            color: AppColors.darkpink,
-                                            strokeWidth: 2.5,
-                                          ),
-                                        ),
-                                        errorWidget:
-                                            (context, url, error) =>
-                                                Container(
-                                          color: isDark
-                                              ? AppColors.backgroundDark
-                                              : Colors.grey[100],
-                                          child: const Icon(
-                                            Icons.person,
-                                            size: 50,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
+                                              child: CircularProgressIndicator(
+                                                color: AppColors.darkpink,
+                                                strokeWidth: 2.5,
+                                              ),
+                                            ),
+                                        errorWidget: (context, url, error) =>
+                                            Container(
+                                              color: isDark
+                                                  ? AppColors.backgroundDark
+                                                  : Colors.grey[100],
+                                              child: const Icon(
+                                                Icons.person,
+                                                size: 50,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
                                       )
                                     : Container(
                                         color: isDark
                                             ? AppColors.backgroundDark
                                             : Colors.grey[100],
-                                        child: controller
-                                                .isUploadingImage.value
+                                        child: controller.isUploadingImage.value
                                             ? const Padding(
                                                 padding: EdgeInsets.all(30),
                                                 child:
                                                     CircularProgressIndicator(
-                                                  color: AppColors.darkpink,
-                                                  strokeWidth: 2.5,
-                                                ),
+                                                      color: AppColors.darkpink,
+                                                      strokeWidth: 2.5,
+                                                    ),
                                               )
                                             : const Icon(
                                                 Icons.person,
@@ -240,7 +334,9 @@ class _PersonScreenState extends State<PersonScreen> {
                       ),
                       const SizedBox(height: 14),
                       Divider(
-                        color: isDark ? AppColors.surfaceDark : Colors.grey.shade300,
+                        color: isDark
+                            ? AppColors.surfaceDark
+                            : Colors.grey.shade300,
                         thickness: 1,
                         height: 1,
                       ),
@@ -260,7 +356,9 @@ class _PersonScreenState extends State<PersonScreen> {
                         },
                       ),
                       Divider(
-                        color: isDark ? AppColors.surfaceDark : Colors.grey.shade300,
+                        color: isDark
+                            ? AppColors.surfaceDark
+                            : Colors.grey.shade300,
                         thickness: 1,
                         height: 1,
                       ),
@@ -285,10 +383,7 @@ class _PersonScreenState extends State<PersonScreen> {
                                           strokeWidth: 2,
                                         ),
                                       )
-                                    : const Icon(
-                                        Icons.edit_outlined,
-                                        size: 18,
-                                      ),
+                                    : const Icon(Icons.edit_outlined, size: 18),
                                 label: Text(
                                   controller.isSaving.value
                                       ? 'Saving...'
@@ -313,7 +408,11 @@ class _PersonScreenState extends State<PersonScreen> {
                               height: 48,
                               child: OutlinedButton.icon(
                                 onPressed: () {
-                                  _showLogoutDialog(context, controller, isDark);
+                                  _showLogoutDialog(
+                                    context,
+                                    controller,
+                                    isDark,
+                                  );
                                 },
                                 icon: const Icon(Icons.logout, size: 18),
                                 label: const Text('Log Out'),
@@ -359,7 +458,9 @@ class _PersonScreenState extends State<PersonScreen> {
             Text(
               title,
               style: TextStyle(
-                color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+                color: isDark
+                    ? AppColors.lightwhite
+                    : AppColors.textPrimaryLight,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -473,7 +574,9 @@ class _PersonScreenState extends State<PersonScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+                    color: isDark
+                        ? AppColors.lightwhite
+                        : AppColors.textPrimaryLight,
                     fontSize: 14,
                   ),
                 ),
@@ -551,7 +654,11 @@ class _PersonScreenState extends State<PersonScreen> {
                     'Use your camera',
                     style: TextStyle(color: Colors.grey[400]),
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 15,
+                    color: Colors.grey,
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     controller.pickImage(ImageSource.camera);
@@ -582,7 +689,11 @@ class _PersonScreenState extends State<PersonScreen> {
                     'Select an existing photo',
                     style: TextStyle(color: Colors.grey[400]),
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 15, color: Colors.grey),
+                  trailing: const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 15,
+                    color: Colors.grey,
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     controller.pickImage(ImageSource.gallery);
@@ -614,7 +725,9 @@ class _PersonScreenState extends State<PersonScreen> {
   ) {
     Get.dialog(
       AlertDialog(
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        backgroundColor: isDark
+            ? AppColors.surfaceDark
+            : AppColors.surfaceLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(
           'Logout',
@@ -625,9 +738,7 @@ class _PersonScreenState extends State<PersonScreen> {
         ),
         content: Text(
           'Are you sure you want to logout?',
-          style: TextStyle(
-            color: isDark ? Colors.grey[300] : Colors.black87,
-          ),
+          style: TextStyle(color: isDark ? Colors.grey[300] : Colors.black87),
         ),
         actions: [
           TextButton(
@@ -652,7 +763,3 @@ class _PersonScreenState extends State<PersonScreen> {
     );
   }
 }
-
-
-
-
