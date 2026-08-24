@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:food_go/Auth/Login_Screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Controllers/profile_controller.dart';
-import 'package:food_go/Screens/BottomNavbar/paymentscreen.dart';
 import 'package:food_go/Screens/settingscreen.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';

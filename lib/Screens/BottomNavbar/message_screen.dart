@@ -1312,7 +1312,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                     var userData =
                         snapshot.data!.data() as Map<String, dynamic>;
                     profileImg =
-                        userData?['profileImage'] ?? userData?['image'];
+                        userData['profileImage'] ?? userData['image'];
                   }
 
                   return CircleAvatar(
