@@ -1310,7 +1310,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                   String? profileImg;
                   if (snapshot.hasData && snapshot.data!.exists) {
                     var userData =
-                        snapshot.data!.data() as Map<String, dynamic>?;
+                        snapshot.data!.data() as Map<String, dynamic>;
                     profileImg =
                         userData?['profileImage'] ?? userData?['image'];
                   }
@@ -1369,7 +1369,11 @@ class _UserChatScreenState extends State<UserChatScreen> {
         foregroundColor: isDarkMode ? AppColors.lightwhite : Colors.black,
         elevation: 0,
         automaticallyImplyLeading: false,
-        leading: null,
+        // --- YAHAN LEFT SIDE PAR BACK ARROW ADD KIA GAYA HAI ---
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
+        ),
         title: const SizedBox(),
         actions: [
           Builder(

@@ -15,39 +15,33 @@ class BottomNavbar extends StatelessWidget {
 
   final BottomNavController controller = Get.put(BottomNavController());
 
+  // Ab yahan sirf wohi screens rakhi hain jo bottom bar ke andar switch honi chahiye (Home aur Favorite)
   final List<Widget> pages = [
     HomeScreen(),
     FavoriteScreen(),
-    UserChatScreen(),
-    PersonScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    // MediaQueryu utility se screen width & height nikalna
     final double screenWidth = MediaQueryu.getScreenWidth(context);
     final double screenHeight = MediaQueryu.getScreenHeight(context);
 
     return Obx(
       () => Scaffold(
-        body: pages[controller.currentIndex.value],
-
+        body: pages[controller.currentIndex.value > 1 ? 0 : controller.currentIndex.value],
 
         floatingActionButton: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 4), // Dynamic notch border look
+            border: Border.all(color: Colors.white, width: 4),
           ),
           child: FloatingActionButton(
             backgroundColor: AppColors.darkpink,
             elevation: 4,
-            shape: const CircleBorder(), // <-- Is se button bilkul GOL (Circle) ho jayega!
-            
-            // --- 2. Yahan par Get.to() add kar diya hai ---
+            shape: const CircleBorder(),
             onPressed: () {
               Get.to(() => const BurgerCustomizationScreen());
             },
-            
             child: const Icon(
               Icons.add,
               color: Colors.white,
@@ -69,11 +63,9 @@ class BottomNavbar extends StatelessWidget {
             );
           },
 
-          activeIndex: controller.currentIndex.value,
+          activeIndex: controller.currentIndex.value > 1 ? 0 : controller.currentIndex.value,
 
           gapLocation: GapLocation.center,
-
-          // Notch smoothness ko soft border ke sath adjust kiya hai
           notchSmoothness: NotchSmoothness.smoothEdge, 
           notchMargin: 8,
 
@@ -84,7 +76,16 @@ class BottomNavbar extends StatelessWidget {
           backgroundColor: AppColors.darkpink,
 
           height: screenHeight * 0.08,
-          onTap: controller.changeIndex,
+          onTap: (index) {
+            // Index 2 aur 3 par Message aur Profile hain, un par click hotay hi Get.to() chal jaye ga
+            if (index == 2) {
+              Get.to(() => const UserChatScreen());
+            } else if (index == 3) {
+              Get.to(() => const PersonScreen());
+            } else {
+              controller.changeIndex(index);
+            }
+          },
         ),
       ),
     );
