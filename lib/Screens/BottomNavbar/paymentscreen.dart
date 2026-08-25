@@ -1,724 +1,309 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:food_go/Auth/Login_Screen.dart';
-import 'package:food_go/Constants/app_colors.dart';
-import 'package:food_go/Controllers/profile_controller.dart';
-import 'package:food_go/Screens/settingscreen.dart';
+import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'orderhistory.dart';
+import 'package:food_go/Constants/app_colors.dart';
 
-class PersonScreen extends StatefulWidget {
-  const PersonScreen({super.key});
+class PaymentDetailsScreen extends StatefulWidget {
+  const PaymentDetailsScreen({super.key});
 
   @override
-  State<PersonScreen> createState() => _PersonScreenState();
+  State<PaymentDetailsScreen> createState() => _PaymentDetailsScreenState();
 }
 
-class _PersonScreenState extends State<PersonScreen> {
-  Future<void> _logout() async {
-    try {
-      await FirebaseAuth.instance.signOut();
+class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
+  final User? currentUser = FirebaseAuth.instance.currentUser;
+  
+  // Controllers for Add Card Form
+  final TextEditingController _cardNumberController = TextEditingController();
+  final TextEditingController _cardHolderController = TextEditingController();
+  final TextEditingController _expiryController = TextEditingController();
+  final TextEditingController _cvvController = TextEditingController();
 
-      if (!mounted) return;
+  bool _isLoading = false;
 
-      Get.offAll(
-        () => const LoginScreen(),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
+  // Function to Add New Card to Firebase Firestore
+  Future<void> _addNewCard() async {
+    if (_cardNumberController.text.isEmpty ||
+        _cardHolderController.text.isEmpty ||
+        _expiryController.text.isEmpty ||
+        _cvvController.text.isEmpty) {
       Get.snackbar(
         "Error",
-        "Logout failed:\n$e",
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
-        snackPosition: SnackPosition.TOP,
-        margin: const EdgeInsets.all(12),
+        "Please fill in all card details",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    // Masking card number for security display (e.g., ************1234)
+    String rawCard = _cardNumberController.text.trim();
+    String maskedCard = rawCard.length > 4 
+        ? "**** **** **** ${rawCard.substring(rawCard.length - 4)}" 
+        : rawCard;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      if (currentUser != null) {
+        Map<String, dynamic> newCardData = {
+          'cardNumber': maskedCard,
+          'cardHolder': _cardHolderController.text.trim(),
+          'expiryDate': _expiryController.text.trim(),
+          'createdAt': FieldNameTimestamp(), // or FieldValue.serverTimestamp()
+        };
+
+        // Firestore ke 'savedCards' array mein card add karna
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser!.uid)
+            .update({
+          'savedCards': FieldValue.arrayUnion([newCardData])
+        });
+
+        // Clear controllers
+        _cardNumberController.clear();
+        _cardHolderController.clear();
+        _expiryController.clear();
+        _cvvController.clear();
+
+        Get.back(); // Close bottom sheet
+        Get.snackbar(
+          "Success",
+          "Card added successfully!",
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      // Agar document field na ho, toh set with merge/create use ho sakta hai
+      try {
+        if (currentUser != null) {
+          Map<String, dynamic> newCardData = {
+            'cardNumber': maskedCard,
+            'cardHolder': _cardHolderController.text.trim(),
+            'expiryDate': _expiryController.text.trim(),
+          };
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser!.uid)
+              .set({
+            'savedCards': [newCardData]
+          }, SetOptions(merge: true));
+
+          _cardNumberController.clear();
+          _cardHolderController.clear();
+          _expiryController.clear();
+          _cvvController.clear();
+
+          Get.back();
+          Get.snackbar(
+            "Success",
+            "Card added successfully!",
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        }
+      } catch (err) {
+        Get.snackbar(
+          "Error",
+          "Failed to add card: $err",
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Function to Delete Card from Firebase
+  Future<void> _deleteCard(Map<String, dynamic> cardData) async {
+    try {
+      if (currentUser != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser!.uid)
+            .update({
+          'savedCards': FieldValue.arrayRemove([cardData])
+        });
+        Get.snackbar(
+          "Deleted",
+          "Card removed successfully",
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Could not delete card: $e",
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
       );
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final ProfileController controller = Get.put(ProfileController());
+  // Show Bottom Sheet to Add Card
+  void _showAddCardBottomSheet(BuildContext context) {
     final bool isDark = Get.isDarkMode;
-    final Size screenSize = MediaQuery.sizeOf(context);
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-      body: SafeArea(
-        child: Obx(() {
-          if (controller.isLoading.value) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.darkpink,
-              ),
-            );
-          }
-
-          final User? user = FirebaseAuth.instance.currentUser;
-
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                SizedBox(
-                  height: (screenSize.height < 700 ? 180 : 200) +
-                      (screenSize.height < 700 ? 110 : 125) / 2,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        height: screenSize.height < 700 ? 180 : 200,
-                        width: double.infinity,
-                        decoration: const BoxDecoration(
-                          color: AppColors.darkpink,
-                        ),
-                      ),
-                      Positioned(
-                        left: -60,
-                        top: 5,
-                        child: Opacity(
-                          opacity: 0.65,
-                          child: Image.asset(
-                            'assets/images/profile burger.png',
-                            width: 190,
-                            height: 190,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: -60,
-                        top: 5,
-                        child: Opacity(
-                          opacity: 0.65,
-                          child: Image.asset(
-                            'assets/images/profile burger 2.png',
-                            width: 190,
-                            height: 190,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        height: screenSize.height < 700 ? 180 : 200,
-                        width: double.infinity,
-                        color: AppColors.darkpink.withOpacity(0.38),
-                      ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        top: screenSize.height < 700 ? 165 : 185,
-                        bottom: -1000,
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(35),
-                              topRight: Radius.circular(35),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 15,
-                        right: 20,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(30),
-                            onTap: () {
-                              Get.to(() => const SettingsScreen());
-                            },
-                            child: Container(
-                              width: 48,
-                              height: 48,
-                              decoration: const BoxDecoration(
-                                color: Colors.transparent,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.settings_outlined,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: Center(
-                          child: GestureDetector(
-                            onTap: controller.isUploadingImage.value
-                                ? null
-                                : () {
-                                    _showImageOptions(
-                                      context,
-                                      controller,
-                                      isDark,
-                                    );
-                                  },
-                            child: Container(
-                              width: screenSize.height < 700 ? 110 : 125,
-                              height: screenSize.height < 700 ? 110 : 125,
-                              padding: EdgeInsets.zero,
-                              decoration: BoxDecoration(
-                                color: isDark
-                                    ? AppColors.surfaceDark
-                                    : AppColors.surfaceLight,
-                                borderRadius: BorderRadius.circular(25),
-                                border: Border.all(
-                                  color: AppColors.darkpink,
-                                  width: 3,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: isDark
-                                        ? Colors.black.withOpacity(0.5)
-                                        : Colors.black26,
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 5),
-                                  ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(22),
-                                child: controller
-                                        .profileImageUrl.value.isNotEmpty
-                                    ? CachedNetworkImage(
-                                        imageUrl:
-                                            controller.profileImageUrl.value,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) =>
-                                            const Center(
-                                          child: CircularProgressIndicator(
-                                            color: AppColors.darkpink,
-                                            strokeWidth: 2.5,
-                                          ),
-                                        ),
-                                        errorWidget:
-                                            (context, url, error) => Container(
-                                          color: isDark
-                                              ? AppColors.backgroundDark
-                                              : Colors.grey[100],
-                                          child: const Icon(
-                                            Icons.person,
-                                            size: 50,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      )
-                                    : Container(
-                                        color: isDark
-                                            ? AppColors.backgroundDark
-                                            : Colors.grey[100],
-                                        child: controller
-                                                .isUploadingImage.value
-                                            ? const Padding(
-                                                padding: EdgeInsets.all(30),
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  color: AppColors.darkpink,
-                                                  strokeWidth: 2.5,
-                                                ),
-                                              )
-                                            : const Icon(
-                                                Icons.person,
-                                                size: 50,
-                                                color: Colors.grey,
-                                              ),
-                                      ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 15),
-                      _field(
-                        'Name',
-                        controller.nameController,
-                        Icons.person_outline,
-                        isDark,
-                        compact: true,
-                      ),
-                      const SizedBox(height: 10),
-                      _readOnly(
-                        'Email',
-                        user?.email ?? controller.email.value,
-                        Icons.email_outlined,
-                        isDark,
-                        compact: true,
-                      ),
-                      const SizedBox(height: 10),
-                      _field(
-                        'Delivery Address',
-                        controller.addressController,
-                        Icons.location_on_outlined,
-                        isDark,
-                        maxLines: 1,
-                        compact: true,
-                      ),
-                      const SizedBox(height: 10),
-                      _readOnly(
-                        'Password',
-                        '••••••••',
-                        Icons.lock_outline,
-                        isDark,
-                        compact: true,
-                      ),
-                      const SizedBox(height: 14),
-                      Divider(
-                        color: isDark
-                            ? AppColors.surfaceDark
-                            : Colors.grey.shade300,
-                        thickness: 1,
-                        height: 1,
-                      ),
-                      const SizedBox(height: 4),
-                      _figmaStyleAction(
-                        title: 'Payment Details',
-                        isDark: isDark,
-                        onTap: () {
-                          Get.to(() => const PaymentDetailsScreen());
-                        },
-                      ),
-                      _figmaStyleAction(
-                        title: 'Order history',
-                        isDark: isDark,
-                        onTap: () {
-                          Get.to(() => const OrderHistoryScreen());
-                        },
-                      ),
-                      Divider(
-                        color: isDark
-                            ? AppColors.surfaceDark
-                            : Colors.grey.shade300,
-                        thickness: 1,
-                        height: 1,
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 48,
-                              child: ElevatedButton.icon(
-                                onPressed: controller.isSaving.value
-                                    ? null
-                                    : () async {
-                                        await controller.saveUserData();
-                                      },
-                                icon: controller.isSaving.value
-                                    ? const SizedBox(
-                                        width: 17,
-                                        height: 17,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.edit_outlined,
-                                        size: 18,
-                                      ),
-                                label: Text(
-                                  controller.isSaving.value
-                                      ? 'Saving...'
-                                      : 'Edit Profile',
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: isDark
-                                      ? AppColors.primaryLight
-                                      : Colors.black87,
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: SizedBox(
-                              height: 48,
-                              child: OutlinedButton.icon(
-                                onPressed: () {
-                                  _showLogoutDialog(
-                                    context,
-                                    controller,
-                                    isDark,
-                                  );
-                                },
-                                icon: const Icon(
-                                  Icons.logout,
-                                  size: 18,
-                                ),
-                                label: const Text('Log Out'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.darkpink,
-                                  side: const BorderSide(
-                                    color: AppColors.darkpink,
-                                    width: 1,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 30),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  static Widget _figmaStyleAction({
-    required String title,
-    required bool isDark,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: 14,
-          horizontal: 4,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                color: isDark
-                    ? AppColors.lightwhite
-                    : AppColors.textPrimaryLight,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 13,
-              color: Colors.grey,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static Widget _field(
-    String title,
-    TextEditingController controller,
-    IconData icon,
-    bool isDark, {
-    int maxLines = 1,
-    bool compact = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: isDark
-                ? AppColors.lightwhite
-                : AppColors.textPrimaryLight,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 3),
-        TextField(
-          controller: controller,
-          maxLines: maxLines,
-          style: TextStyle(
-            color: isDark
-                ? AppColors.lightwhite
-                : AppColors.textPrimaryLight,
-            fontSize: 14,
-          ),
-          decoration: InputDecoration(
-            prefixIcon: Icon(
-              icon,
-              color: Colors.grey,
-              size: 22,
-            ),
-            filled: true,
-            fillColor: isDark
-                ? AppColors.surfaceDark
-                : AppColors.surfaceLight,
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: compact ? 10 : 14,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: BorderSide(
-                color: isDark
-                    ? AppColors.surfaceDark
-                    : Colors.grey.shade300,
-                width: 1,
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: BorderSide(
-                color: isDark
-                    ? AppColors.surfaceDark
-                    : Colors.grey.shade300,
-                width: 1,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(
-                color: AppColors.darkpink,
-                width: 1,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  static Widget _readOnly(
-    String title,
-    String value,
-    IconData icon,
-    bool isDark, {
-    bool compact = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: isDark
-                ? AppColors.lightwhite
-                : AppColors.textPrimaryLight,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: compact ? 11 : 14,
-          ),
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.surfaceDark
-                : AppColors.surfaceLight,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isDark
-                  ? AppColors.surfaceDark
-                  : Colors.grey.shade300,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: Colors.grey[500],
-                size: 22,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  value.isEmpty ? 'Not available' : value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: isDark
-                        ? AppColors.lightwhite
-                        : AppColors.textPrimaryLight,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  static void _showImageOptions(
-    BuildContext context,
-    ProfileController controller,
-    bool isDark,
-  ) {
     showModalBottomSheet(
       context: context,
-      backgroundColor:
-          isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+      isScrollControlled: true,
+      backgroundColor: isDark ? AppColors.backgroundDark : Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(25),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
       ),
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.only(
-              top: 10,
-              bottom: 15,
-            ),
-            child: Wrap(
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
                   child: Container(
-                    width: 45,
-                    height: 5,
+                    width: 40,
+                    height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey[700],
+                      color: Colors.grey.withOpacity(0.4),
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(15),
-                    child: Text(
-                      'Change Profile Picture',
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                        color: isDark
-                            ? AppColors.lightwhite
-                            : Colors.black,
+                const SizedBox(height: 15),
+                Text(
+                  "Add New Bank Card",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.lightwhite : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Card Number Field
+                TextField(
+                  controller: _cardNumberController,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(16)],
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                  decoration: InputDecoration(
+                    labelText: "Card Number",
+                    labelStyle: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+                    prefixIcon: const Icon(Icons.credit_card, color: AppColors.Pink),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: const BorderSide(color: AppColors.Pink, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
+
+                // Card Holder Name
+                TextField(
+                  controller: _cardHolderController,
+                  style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                  decoration: InputDecoration(
+                    labelText: "Card Holder Name",
+                    labelStyle: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+                    prefixIcon: const Icon(Icons.person_outline, color: AppColors.Pink),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                      borderSide: const BorderSide(color: AppColors.Pink, width: 2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 15),
+
+                // Expiry & CVV Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _expiryController,
+                        keyboardType: TextInputType.datetime,
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                        decoration: InputDecoration(
+                          labelText: "Expiry Date",
+                          hintText: "MM/YY",
+                          labelStyle: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+                          prefixIcon: const Icon(Icons.calendar_today, color: AppColors.Pink),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: const BorderSide(color: AppColors.Pink, width: 2),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: TextField(
+                        controller: _cvvController,
+                        keyboardType: TextInputType.number,
+                        obscureText: true,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                        decoration: InputDecoration(
+                          labelText: "CVV",
+                          labelStyle: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+                          prefixIcon: const Icon(Icons.lock_outline, color: AppColors.Pink),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: const BorderSide(color: AppColors.Pink, width: 2),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 25),
-                  leading: Container(
-                    width: 45,
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: AppColors.darkpink.withOpacity(0.10),
-                      shape: BoxShape.circle,
+                const SizedBox(height: 25),
+
+                // Save Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _addNewCard,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.Pink,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.camera_alt_outlined,
-                      color: AppColors.darkpink,
-                    ),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                            "Save Card",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
-                  title: Text(
-                    'Take Photo',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? AppColors.lightwhite
-                          : Colors.black,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Use your camera',
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 15,
-                    color: Colors.grey,
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    controller.pickImage(ImageSource.camera);
-                  },
-                ),
-                ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 25),
-                  leading: Container(
-                    width: 45,
-                    height: 45,
-                    decoration: BoxDecoration(
-                      color: AppColors.darkpink.withOpacity(0.10),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.photo_library_outlined,
-                      color: AppColors.darkpink,
-                    ),
-                  ),
-                  title: Text(
-                    'Choose from Gallery',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: isDark
-                          ? AppColors.lightwhite
-                          : Colors.black,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Select an existing photo',
-                    style: TextStyle(
-                      color: Colors.grey[400],
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 15,
-                    color: Colors.grey,
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    controller.pickImage(ImageSource.gallery);
-                  },
-                ),
-                ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 25),
-                  leading: const Icon(
-                    Icons.close,
-                    color: Colors.grey,
-                  ),
-                  title: const Text(
-                    'Cancel',
-                    style: TextStyle(
-                      color: Colors.grey,
-                    ),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
                 ),
               ],
             ),
@@ -728,106 +313,290 @@ class _PersonScreenState extends State<PersonScreen> {
     );
   }
 
-  static void _showLogoutDialog(
-    BuildContext context,
-    ProfileController controller,
-    bool isDark,
-  ) {
-    Get.dialog(
-      AlertDialog(
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
-        title: Text(
-          'Logout',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isDark ? AppColors.lightwhite : Colors.black,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to logout?',
-          style: TextStyle(
-            color: isDark ? Colors.grey[300] : Colors.black87,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Get.back();
-            },
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: Colors.grey,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.darkpink,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () async {
-              Get.back();
-              await controller.logout();
-            },
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class PaymentDetailsScreen extends StatelessWidget {
-  const PaymentDetailsScreen({super.key});
-
   @override
   Widget build(BuildContext context) {
     final bool isDark = Get.isDarkMode;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.lightwhite,
       appBar: AppBar(
-        backgroundColor:
-            isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          onPressed: () => Get.back(),
           icon: Icon(
-            Icons.arrow_back,
-            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+            Icons.arrow_back_ios_rounded,
+            color: isDark ? AppColors.lightwhite : Colors.black87,
+            size: 20,
           ),
+          onPressed: () => Get.back(),
         ),
         title: Text(
-          'Payment Details',
+          "Payment Details",
           style: TextStyle(
-            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
-            fontSize: 18,
+            color: isDark ? AppColors.lightwhite : Colors.black87,
           ),
         ),
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            'Payment details are not available yet.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+      body: SafeArea(
+        child: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser?.uid)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: AppColors.Pink));
+            }
+
+            if (!snapshot.hasData || !snapshot.data!.exists) {
+              return _buildEmptyState(context);
+            }
+
+            var userData = snapshot.data!.data() as Map<String, dynamic>?;
+            List<dynamic> savedCards = userData?['savedCards'] ?? [];
+
+            if (savedCards.isEmpty) {
+              return _buildEmptyState(context);
+            }
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Your Saved Cards (${savedCards.length})",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white60 : Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  
+                  // List of Real Saved Cards from Firebase
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: savedCards.length,
+                      itemBuilder: (context, index) {
+                        var card = savedCards[index] as Map<String, dynamic>;
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 20),
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [AppColors.Pink, AppColors.Pink.withOpacity(0.75)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.Pink.withOpacity(0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    "FoodGo Secure Pay",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.white70),
+                                    onPressed: () => _deleteCard(card),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                card['cardNumber'] ?? "**** **** **** 0000",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  letterSpacing: 2,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "CARD HOLDER",
+                                        style: TextStyle(color: Colors.white70, fontSize: 9),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        card['cardHolder'] ?? "User",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "EXPIRES",
+                                        style: TextStyle(color: Colors.white70, fontSize: 9),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        card['expiryDate'] ?? "MM/YY",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Text(
+                                      "VISA",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Add New Card Button at Bottom
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showAddCardBottomSheet(context),
+                      icon: const Icon(Icons.add_rounded, color: AppColors.Pink),
+                      label: const Text(
+                        "Add New Payment Card",
+                        style: TextStyle(
+                          color: AppColors.Pink,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.Pink.withOpacity(0.5), width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        backgroundColor: AppColors.Pink.withOpacity(0.05),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
   }
-}
 
+  // Widget when no card is saved yet
+  Widget _buildEmptyState(BuildContext context) {
+    final bool isDark = Get.isDarkMode;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(25),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.Pink.withOpacity(0.1),
+              ),
+              child: const Icon(
+                Icons.credit_card_off_rounded,
+                size: 60,
+                color: AppColors.Pink,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              "No Saved Cards Found",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: isDark ? AppColors.lightwhite : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Add your debit or credit card to make secure payments easily.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: isDark ? Colors.white60 : Colors.black54,
+              ),
+            ),
+            const SizedBox(height: 30),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: () => _showAddCardBottomSheet(context),
+                icon: const Icon(Icons.add_rounded, color: Colors.white),
+                label: const Text(
+                  "Add New Card",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.Pink,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  FieldValue FieldNameTimestamp() => FieldValue.serverTimestamp();
+}

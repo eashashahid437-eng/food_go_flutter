@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // <-- Added for SystemChrome
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -18,6 +19,13 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // ---- Lock Orientation to Portrait Only ----
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  
 
   await GetStorage.init();
 
@@ -28,7 +36,7 @@ void main() async {
   // ---- Stripe setup ----
   Stripe.publishableKey = "pk_test_51U61yA31XAVPYuneJXmxrdbRDy3ZSCoXAgoY2sVRcjZcJHj6UN0D5odYlGaaKHfjMQjOJRU8iKXZG1PQQNmqFCXS00ZxWIkS6Z"; // apni Stripe publishable key yahan lagao
   await Stripe.instance.applySettings();
-  // -----------------------
+  
 
   Get.put<CartController>(CartController(), permanent: true);
 

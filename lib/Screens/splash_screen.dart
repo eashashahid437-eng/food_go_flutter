@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:food_go/Auth/login_screen.dart';
 import 'package:food_go/Constants/app_fonts.dart';
 import 'package:food_go/Screens/BottomNavbar/BottomNavbar.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/utility/responsive.dart';
 import 'package:get/get.dart';
-
+import 'package:food_go/Screens/loockscreen.dart';
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -20,15 +21,45 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
-    Timer(const Duration(seconds: 3), () {
+    Timer(const Duration(seconds: 3), () async {
       final User? user = FirebaseAuth.instance.currentUser;
 
       if (user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => BottomNavbar()),
-        );
+  
+        try {
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+          bool isBiometricEnabled = false;
+          if (userDoc.exists && userDoc.data() != null) {
+            final data = userDoc.data() as Map<String, dynamic>;
+            isBiometricEnabled = data['biometricEnabled'] ?? false;
+          }
+
+          if (isBiometricEnabled) {
+          
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const StylishFingerprintScreen()),
+            );
+          } else {
+            
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => BottomNavbar()),
+            );
+          }
+        } catch (e) {
+          
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => BottomNavbar()),
+          );
+        }
       } else {
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const LoginScreen()),

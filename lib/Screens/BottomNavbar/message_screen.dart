@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -12,6 +13,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:local_auth/local_auth.dart'; // Biometric package
 
 import 'package:food_go/Auth/Login_Screen.dart';
 
@@ -32,9 +34,11 @@ class _UserChatScreenState extends State<UserChatScreen> {
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
   final ImagePicker _picker = ImagePicker();
+  final LocalAuthentication auth = LocalAuthentication(); // Biometric instance
 
   bool isDarkMode = false;
   bool notificationsEnabled = true;
+  bool biometricEnabled = false; // Biometric state variable
   bool isUploadingImage = false;
 
   String? selectedOrderId;
@@ -55,7 +59,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
       _loadUserSettings();
       _loadSelectedOrder();
       _listenForAdminMessages();
-      _markAdminMessagesAsSeen(); // <-- Admin ke messages ko seen mark karne ke liye yahan call kar diya hai
+      _markAdminMessagesAsSeen();
     }
 
     // Foreground FCM Notification Listener
@@ -93,7 +97,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
     }
   }
 
-  // Local Notifications Initialize karna (Reply action remove kar diya gaya hai)
+  // Local Notifications Initialize karna
   void _initLocalNotifications() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -106,7 +110,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  // Firestore se Admin ke naye messages detect karke local notification aur app badge update karne ka function
+  // Firestore se Admin ke naye messages detect karna
   void _listenForAdminMessages() {
     if (currentUser == null) return;
 
@@ -119,7 +123,6 @@ class _UserChatScreenState extends State<UserChatScreen> {
         .snapshots()
         .listen((snapshot) {
       
-      // Jab bhi naya message aaye aur user chat screen par ho, turant seen mark kar do
       _markAdminMessagesAsSeen();
 
       if (_isInitialLoad) {
@@ -196,7 +199,6 @@ class _UserChatScreenState extends State<UserChatScreen> {
     }
   }
 
-  // Local Notification pop-up (Bina reply action ke)
   void _showLocalNotification(String title, String body) async {
     AndroidNotificationDetails androidPlatformChannelSpecifics =
         AndroidNotificationDetails(
@@ -237,26 +239,223 @@ class _UserChatScreenState extends State<UserChatScreen> {
       setState(() {
         isDarkMode = data['darkMode'] ?? false;
         notificationsEnabled = data['notificationsEnabled'] ?? true;
+        biometricEnabled = data['biometricEnabled'] ?? false;
       });
     } catch (e) {
       debugPrint("Settings Error: $e");
     }
   }
 
-  Future<void> _saveUserSettings() async {
+  Future<void> _saveUserSettings(String? customPin) async {
     if (currentUser == null) return;
 
     try {
+      Map<String, dynamic> updateData = {
+        'darkMode': isDarkMode,
+        'notificationsEnabled': notificationsEnabled,
+        'biometricEnabled': biometricEnabled,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (customPin != null) {
+        updateData['customPin'] = customPin;
+      }
+
       await FirebaseFirestore.instance
           .collection('users')
           .doc(currentUser!.uid)
-          .set({
-            'darkMode': isDarkMode,
-            'notificationsEnabled': notificationsEnabled,
-            'updatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
+          .set(updateData, SetOptions(merge: true));
     } catch (e) {
       debugPrint("Save Settings Error: $e");
+    }
+  }
+
+  // Stylish PIN Setup Bottom Sheet / Dialog when enabling security
+  void _showPinSetupDialog() {
+    String tempPin = "";
+    
+    Get.bottomSheet(
+      StatefulBuilder(
+        builder: (context, setBottomSheetState) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDarkMode ? AppColors.surfaceDark : AppColors.lightwhite,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Icon(Icons.lock_outline_rounded, size: 36, color: AppColors.Pink),
+                const SizedBox(height: 10),
+                Text(
+                  "Set Your 4-Digit PIN",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isDarkMode ? AppColors.lightwhite : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "Enter a secure PIN for app protection",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDarkMode ? Colors.white60 : Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 25),
+                // PIN Dots
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(4, (index) {
+                    bool isFilled = index < tempPin.length;
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isFilled ? AppColors.Pink : Colors.transparent,
+                        border: Border.all(color: AppColors.Pink, width: 2),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 25),
+                // Keypad grid
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildPinKey("1", tempPin, (val) => setBottomSheetState(() => tempPin = val)),
+                          _buildPinKey("2", tempPin, (val) => setBottomSheetState(() => tempPin = val)),
+                          _buildPinKey("3", tempPin, (val) => setBottomSheetState(() => tempPin = val)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildPinKey("4", tempPin, (val) => setBottomSheetState(() => tempPin = val)),
+                          _buildPinKey("5", tempPin, (val) => setBottomSheetState(() => tempPin = val)),
+                          _buildPinKey("6", tempPin, (val) => setBottomSheetState(() => tempPin = val)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildPinKey("7", tempPin, (val) => setBottomSheetState(() => tempPin = val)),
+                          _buildPinKey("8", tempPin, (val) => setBottomSheetState(() => tempPin = val)),
+                          _buildPinKey("9", tempPin, (val) => setBottomSheetState(() => tempPin = val)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          const SizedBox(width: 60, height: 60),
+                          _buildPinKey("0", tempPin, (val) => setBottomSheetState(() => tempPin = val)),
+                          IconButton(
+                            onPressed: () {
+                              if (tempPin.isNotEmpty) {
+                                setBottomSheetState(() {
+                                  tempPin = tempPin.substring(0, tempPin.length - 1);
+                                });
+                              }
+                            },
+                            icon: Icon(
+                              Icons.backspace_outlined,
+                              color: isDarkMode ? Colors.white : Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 15),
+              ],
+            ),
+          );
+        },
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _buildPinKey(String number, String currentPin, Function(String) updatePin) {
+    return InkWell(
+      onTap: () {
+        if (currentPin.length < 4) {
+          String newPin = currentPin + number;
+          updatePin(newPin);
+          HapticFeedback.lightImpact();
+
+          if (newPin.length == 4) {
+            // Save PIN & Enable Security
+            Future.delayed(const Duration(milliseconds: 200), () async {
+              Get.back(); // Close bottom sheet
+              setState(() {
+                biometricEnabled = true;
+              });
+              await _saveUserSettings(newPin);
+              Get.snackbar(
+                "Success",
+                "App Security & Custom PIN enabled",
+                backgroundColor: AppColors.Pink,
+                colorText: Colors.white,
+                snackPosition: SnackPosition.TOP,
+              );
+            });
+          }
+        }
+      },
+      borderRadius: BorderRadius.circular(30),
+      child: Container(
+        width: 60,
+        height: 60,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: isDarkMode ? Colors.white.withOpacity(0.06) : Colors.grey.withOpacity(0.1),
+        ),
+        child: Text(
+          number,
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: isDarkMode ? AppColors.lightwhite : Colors.black87,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Biometric test and toggle handler
+  Future<void> _handleBiometricToggle(bool value) async {
+    if (value) {
+      // Pehle user ko stylish PIN setup sheet dikhayein takay custom PIN save ho sakay
+      _showPinSetupDialog();
+    } else {
+      setState(() {
+        biometricEnabled = false;
+      });
+      await _saveUserSettings(null);
+      Get.snackbar("Disabled", "App Security turned off", backgroundColor: Colors.white, colorText: Colors.black);
     }
   }
 
@@ -320,7 +519,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
           .add({
             'text': text,
             'sender': 'user',
-            'isSeen': false, // Blue tick status field added
+            'isSeen': false,
             'orderId': selectedOrderId,
             'orderTitle':
                 selectedOrder?['orderTitle'] ??
@@ -488,7 +687,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
           'imageUrl': imageUrl,
           'messageType': 'image',
           'sender': 'user',
-          'isSeen': false, // Blue tick status field added
+          'isSeen': false,
           'orderId': selectedOrderId,
           'orderTitle':
               selectedOrder?['orderTitle'] ??
@@ -590,7 +789,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
               builder: (context, snapshot) {
                 String? profileImg;
                 if (snapshot.hasData && snapshot.data!.exists) {
-                  var data = snapshot.data!.data() as Map<String, dynamic>?;
+                  var data = snapshot.data!.data() as Map<String, dynamic>;
                   profileImg = data?['profileImage'] ?? data?['image'];
                 }
 
@@ -750,7 +949,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                         
                         Get.changeThemeMode(value ? ThemeMode.dark : ThemeMode.light);
 
-                        await _saveUserSettings();
+                        await _saveUserSettings(null);
                       },
                     ),
                   ),
@@ -787,8 +986,41 @@ class _UserChatScreenState extends State<UserChatScreen> {
                         setState(() {
                           notificationsEnabled = value;
                         });
-                        await _saveUserSettings();
+                        await _saveUserSettings(null);
                       },
+                    ),
+                  ),
+                  // --- APP SECURITY SWITCH ---
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 2,
+                    ),
+                    leading: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: AppColors.Pink.withOpacity(0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.fingerprint,
+                        color: AppColors.Pink,
+                        size: 21,
+                      ),
+                    ),
+                    title: Text(
+                      "App Security",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: dark ? AppColors.lightwhite : Colors.black87,
+                      ),
+                    ),
+                    trailing: Switch(
+                      value: biometricEnabled,
+                      activeThumbColor: AppColors.Pink,
+                      onChanged: (value) => _handleBiometricToggle(value),
                     ),
                   ),
                   Padding(
@@ -1195,7 +1427,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
     final data = message.data() as Map<String, dynamic>;
 
     final bool isMe = data['sender'] == 'user';
-    final bool isSeen = data['isSeen'] ?? false; // Read status fetch kar rahe hain
+    final bool isSeen = data['isSeen'] ?? false;
 
     final String? imageUrl = data['imageUrl'];
 
@@ -1284,7 +1516,6 @@ class _UserChatScreenState extends State<UserChatScreen> {
                               ),
                             ),
                           ),
-                          // Ab user aur admin dono ke messages ke neechay ticks show honge
                           const SizedBox(width: 5),
                           Icon(
                             Icons.done_all,
@@ -1356,7 +1587,6 @@ class _UserChatScreenState extends State<UserChatScreen> {
 
     final uid = currentUser!.uid;
     
-    // Har baar screen build hone par bhi admin messages ko seen mark kar do
     _markAdminMessagesAsSeen();
 
     return Scaffold(
@@ -1369,7 +1599,6 @@ class _UserChatScreenState extends State<UserChatScreen> {
         foregroundColor: isDarkMode ? AppColors.lightwhite : Colors.black,
         elevation: 0,
         automaticallyImplyLeading: false,
-        // --- YAHAN LEFT SIDE PAR BACK ARROW ADD KIA GAYA HAI ---
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),

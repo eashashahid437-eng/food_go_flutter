@@ -320,6 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Obx(
               () {
                 controller.selectedCategory.value;
+                controller.selectedFilter.value; // Yeh line add ki gayi hai taake filter change par UI update ho
 
                 return StreamBuilder(
                   stream: controller.productsStream,
