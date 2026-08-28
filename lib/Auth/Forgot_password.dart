@@ -1,9 +1,10 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:food_go/Auth/login_screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Constants/app_fonts.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});
@@ -32,7 +33,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         "Please enter your email address",
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.white,
-        colorText:Colors.black,
+        colorText: Colors.black,
       );
       return;
     }
@@ -42,8 +43,8 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         "Error",
         "Please enter a valid email address",
         snackPosition: SnackPosition.TOP,
-         backgroundColor: Colors.white,
-        colorText:Colors.black,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
       return;
     }
@@ -53,45 +54,50 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     });
 
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      // ---- Humara custom backend call kar rahe hain (Gmail SMTP se email bhejta hai) ----
+      final response = await http.post(
+        Uri.parse(
+          'https://food-delivery-backend-ivory.vercel.app/api/send-reset-email',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+
+      final data = jsonDecode(response.body);
 
       if (!mounted) return;
 
-      Get.snackbar(
-        "Email Sent",
-        "Password reset link has been sent to your email.",
-        snackPosition: SnackPosition.TOP,
-         backgroundColor: Colors.white,
-        colorText:Colors.black,
-        duration: const Duration(seconds: 2),
-      );
+      if (response.statusCode == 200) {
+        Get.snackbar(
+          "Email Sent",
+          data['message'] ??
+              "Password reset link has been sent to your email.",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.white,
+          colorText: Colors.black,
+          duration: const Duration(seconds: 3),
+        );
 
-      Get.offAll(() => const LoginScreen());
-    } on FirebaseAuthException catch (e) {
-      String message;
-
-      switch (e.code) {
-        case 'invalid-email':
-          message = "Please enter a valid email address.";
-          break;
-
-        case 'user-not-found':
-          message = "No account found with this email.";
-          break;
-
-        case 'too-many-requests':
-          message = "Too many requests. Please try again later.";
-          break;
-
-        case 'network-request-failed':
-          message = "Please check your internet connection.";
-          break;
-
-        default:
-          message = e.message ?? "Something went wrong.";
+        Get.offAll(() => const LoginScreen());
+      } else {
+        Get.snackbar(
+          "Error",
+          data['error'] ?? "Something went wrong.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.white,
+          colorText: Colors.black,
+        );
       }
+    } catch (e) {
+      if (!mounted) return;
 
-      Get.snackbar("Error", message, snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar(
+        "Error",
+        "Network error. Please check your internet connection.",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+      );
     } finally {
       if (mounted) {
         setState(() {
