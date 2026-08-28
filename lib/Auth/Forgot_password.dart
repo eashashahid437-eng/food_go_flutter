@@ -1,10 +1,10 @@
-import 'dart:convert';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Auth/login_screen.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Constants/app_fonts.dart';
 import 'package:get/get.dart';
-import 'package:http/http.dart' as http;
 
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});
@@ -54,40 +54,43 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     });
 
     try {
-      // ---- Humara custom backend call kar rahe hain (Gmail SMTP se email bhejta hai) ----
-      final response = await http.post(
-        Uri.parse(
-          'https://food-delivery-backend-ivory.vercel.app/api/send-reset-email',
-        ),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
-      );
-
-      final data = jsonDecode(response.body);
+      // ---- Firebase Auth khud email bhejta hai, koi custom backend nahi chahiye ----
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
 
       if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        Get.snackbar(
-          "Email Sent",
-          data['message'] ??
-              "Password reset link has been sent to your email.",
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.white,
-          colorText: Colors.black,
-          duration: const Duration(seconds: 3),
-        );
+      Get.snackbar(
+        "Email Sent",
+        "Password reset link has been sent to your email.",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+        duration: const Duration(seconds: 3),
+      );
 
-        Get.offAll(() => const LoginScreen());
-      } else {
-        Get.snackbar(
-          "Error",
-          data['error'] ?? "Something went wrong.",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.white,
-          colorText: Colors.black,
-        );
+      Get.offAll(() => const LoginScreen());
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      String errorMessage;
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = "No account found with this email address.";
+          break;
+        case 'invalid-email':
+          errorMessage = "Please enter a valid email address.";
+          break;
+        default:
+          errorMessage = e.message ?? "Something went wrong.";
       }
+
+      Get.snackbar(
+        "Error",
+        errorMessage,
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+      );
     } catch (e) {
       if (!mounted) return;
 
@@ -184,7 +187,6 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         ),
                       ),
                     ),
-
                     Positioned(
                       top: 25,
                       right: -35,
@@ -197,7 +199,6 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         ),
                       ),
                     ),
-
                     Positioned(
                       bottom: -15,
                       left: -35,
@@ -210,7 +211,6 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         ),
                       ),
                     ),
-
                     Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -236,18 +236,14 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               color: AppColors.Pink,
                             ),
                           ),
-
                           const SizedBox(height: 18),
-
                           Text(
                             "Forgot Password?",
                             style: AppFonts.lobster(
                               fontSize: 34,
                             ).copyWith(color: Colors.white),
                           ),
-
                           const SizedBox(height: 5),
-
                           Text(
                             "Don't worry, we've got you!",
                             style: AppFonts.poppinsMedium(
@@ -260,7 +256,6 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                   ],
                 ),
               ),
-
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
                 child: Column(
@@ -274,9 +269,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         ).copyWith(color: Colors.black87),
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     Center(
                       child: Text(
                         "Enter the email address associated\nwith your account.",
@@ -286,25 +279,19 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         ).copyWith(color: Colors.grey),
                       ),
                     ),
-
                     const SizedBox(height: 30),
-
                     Text(
                       "Email address",
                       style: AppFonts.poppinsMedium(fontSize: 16),
                     ),
-
                     const SizedBox(height: 10),
-
                     TextField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
                       style: AppFonts.poppinsMedium(fontSize: 17),
                       decoration: emailDecoration(),
                     ),
-
                     const SizedBox(height: 28),
-
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
@@ -331,9 +318,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         ],
                       ),
                     ),
-
                     const SizedBox(height: 30),
-
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -375,9 +360,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               ),
                       ),
                     ),
-
                     const SizedBox(height: 18),
-
                     Center(
                       child: TextButton(
                         onPressed: () {

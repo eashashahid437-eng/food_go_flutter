@@ -1,3 +1,4 @@
+
 {
   "project_info": {
     "project_number": "81379324972",
@@ -14,11 +15,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "81379324972-mvu7un1eqtpgaccs9tch5qtojg36ogq1.apps.googleusercontent.com",
+          "client_id": "81379324972-0h3a0let4hq17q20hpccbkcqa5hdqpp0.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.food_go",
-            "certificate_hash": "320ae40331efb7d9030fd1a69b63d8c3b50dd2e8"
+            "certificate_hash": "25c3372aa886d6e35674cad4252f9516134c158d"
           }
         },
         {
@@ -52,5 +53,3 @@
   ],
   "configuration_version": "1"
 }
-
-

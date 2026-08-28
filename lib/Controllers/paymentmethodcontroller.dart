@@ -286,7 +286,7 @@ class PaymentController extends GetxController {
                       ),
                     ),
                     child: const Text(
-                      "Done",
+                      "Go Back",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
