@@ -159,9 +159,9 @@ class _StylishFingerprintScreenState extends State<StylishFingerprintScreen>
       Get.snackbar(
         "Incorrect PIN",
         "The 4-digit PIN you entered is wrong.",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+        snackPosition: SnackPosition.TOP,
         margin: const EdgeInsets.all(15),
       );
     }
@@ -174,8 +174,8 @@ class _StylishFingerprintScreenState extends State<StylishFingerprintScreen>
       Get.snackbar(
         "Error",
         "No email found for this user.",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
       return;
     }
@@ -185,17 +185,17 @@ class _StylishFingerprintScreenState extends State<StylishFingerprintScreen>
       Get.snackbar(
         "Reset Link Sent",
         "A password/PIN reset link has been sent to ${user.email}",
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
+        snackPosition: SnackPosition.TOP,
         duration: const Duration(seconds: 4),
       );
     } catch (e) {
       Get.snackbar(
         "Error",
         "Failed to send reset email: $e",
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
+        backgroundColor: Colors.white,
+        colorText: Colors.black,
       );
     }
   }

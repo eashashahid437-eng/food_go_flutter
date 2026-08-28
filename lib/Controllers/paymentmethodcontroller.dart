@@ -1,3 +1,4 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -10,9 +11,11 @@ class PaymentController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Backend URL seedha yahan define — koi alag file nahi chahiye
+  // Backend URLs seedha yahan define — koi alag file nahi chahiye
   static const String _backendUrl =
       'https://food-delivery-backend-ivory.vercel.app/api/create-payment-intent';
+  static const String _notifyAdminUrl =
+      'https://food-delivery-backend-ivory.vercel.app/api/notify-admin';
 
   final List<Map<String, dynamic>> orderItems;
 
@@ -39,6 +42,22 @@ class PaymentController extends GetxController {
 
   void selectPaymentMethod(String method) {
     selectedMethod.value = method;
+  }
+
+  Future<void> _notifyAdminNewOrder(String orderTitle, double totalAmount, String orderId) async {
+    try {
+      await http.post(
+        Uri.parse(_notifyAdminUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'orderTitle': orderTitle,
+          'totalAmount': totalAmount,
+          'orderId': orderId,
+        }),
+      );
+    } catch (e) {
+      debugPrint("Admin notify failed: $e");
+    }
   }
 
   Future<void> processPayment(BuildContext context) async {
@@ -158,6 +177,9 @@ class PaymentController extends GetxController {
       };
 
       await orderRef.set(orderData);
+
+      // 5. Admin ko naye order ka notification bhejo
+      await _notifyAdminNewOrder(firstItemName, totalAmount, orderId);
 
       debugPrint("======================================");
       debugPrint("ORDER & PAYMENT SUCCESSFUL");
