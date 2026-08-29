@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:food_go/Constants/app_colors.dart';
 import 'package:food_go/Controllers/paymentmethodcontroller.dart';
@@ -48,9 +47,13 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     final Size screenSize = MediaQuery.sizeOf(context);
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       appBar: AppBar(
-        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        backgroundColor: isDark
+            ? AppColors.surfaceDark
+            : AppColors.surfaceLight,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
@@ -70,10 +73,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 10,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -81,9 +81,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             Text(
               "Order summary",
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+                fontSize: 15,
+                fontWeight: FontWeight.w300,
+                color: isDark
+                    ? AppColors.lightwhite
+                    : AppColors.textPrimaryLight,
               ),
             ),
             const SizedBox(height: 15),
@@ -96,11 +98,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ),
             const SizedBox(height: 8),
             Obx(
-              () => _summaryRow(
-                "Taxes",
-                controller.taxes.value,
-                isDark: isDark,
-              ),
+              () =>
+                  _summaryRow("Taxes", controller.taxes.value, isDark: isDark),
             ),
             const SizedBox(height: 8),
             Obx(
@@ -111,9 +110,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               ),
             ),
             const Padding(
-              padding: EdgeInsets.symmetric(
-                vertical: 12,
-              ),
+              padding: EdgeInsets.symmetric(vertical: 12),
               child: Divider(color: Colors.grey),
             ),
             Obx(
@@ -125,13 +122,34 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              "Estimated delivery time: 15 - 30 mins",
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Estimated delivery time:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.brown.shade900,
+                  ),
+                ),
+                Text(
+                  '15 - 30mins',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Colors.brown.shade900,
+                  ),
+                ),
+              ],
             ),
+            // const Text(
+            //   "Estimated delivery time:         15 - 30 mins",
+            //   style: TextStyle(
+            //     fontSize: 13,
+            //     color: Colors.grey,
+            //   ),
+            // ),
             const SizedBox(height: 25),
 
             // Stylish Secure Payment Banner
@@ -140,9 +158,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               decoration: BoxDecoration(
                 color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Colors.grey.withOpacity(0.2),
-                ),
+                border: Border.all(color: Colors.grey.withOpacity(0.2)),
               ),
               child: Row(
                 children: [
@@ -173,10 +189,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                         SizedBox(height: 3),
                         Text(
                           "Tap 'Pay Now' to enter your card details securely.",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ],
                     ),
@@ -196,10 +209,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   children: [
                     const Text(
                       "Total price",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                     const SizedBox(height: 2),
                     Obx(
@@ -225,7 +235,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                               controller.processPayment(context);
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isDark ? AppColors.surfaceDark : const Color(0xFF2C2424),
+                        backgroundColor: isDark
+                            ? AppColors.surfaceDark
+                            : const Color(0xFF2C2424),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

@@ -1,3 +1,4 @@
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -21,7 +22,9 @@ android {
 
     kotlin {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            jvmTarget.set(
+                org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+            )
         }
     }
 
@@ -31,8 +34,14 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
         ndk {
-            abiFilters.addAll(listOf("arm64-v8a", "x86_64"))
+            abiFilters.addAll(
+                listOf(
+                    "arm64-v8a",
+                    "x86_64"
+                )
+            )
         }
     }
 
@@ -50,5 +59,11 @@ flutter {
 }
 
 dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    coreLibraryDesugaring(
+        "com.android.tools:desugar_jdk_libs:2.0.4"
+    )
+
+    implementation(
+        "com.google.firebase:firebase-messaging:24.1.2"
+    )
 }

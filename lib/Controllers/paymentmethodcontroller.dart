@@ -2,6 +2,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:food_go/Constants/app_colors.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_stripe/flutter_stripe.dart';
@@ -233,11 +234,13 @@ class PaymentController extends GetxController {
                   width: 70,
                   height: 70,
                   decoration: const BoxDecoration(
-                    color: Colors.red,
+                    color:AppColors.darkpink,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.check,
-                      color: Color.fromARGB(255, 44, 36, 36), size: 40),
+                      color: Colors.white,
+                      size: 40,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 const Text(
@@ -245,7 +248,7 @@ class PaymentController extends GetxController {
                   style: TextStyle(
                     fontSize: 23,
                     fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                    color:AppColors.darkpink,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -266,7 +269,7 @@ class PaymentController extends GetxController {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                    color:AppColors.darkpink,
                   ),
                 ),
                 const SizedBox(height: 25),
@@ -279,7 +282,7 @@ class PaymentController extends GetxController {
                       Get.back();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
+                    backgroundColor:AppColors.darkpink,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),

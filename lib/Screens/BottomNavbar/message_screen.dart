@@ -1,3 +1,4 @@
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -25,7 +26,8 @@ class UserChatScreen extends StatefulWidget {
 }
 
 class _UserChatScreenState extends State<UserChatScreen> {
-  final TextEditingController _messageController = TextEditingController();
+  final TextEditingController _messageController =
+      TextEditingController();
 
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
@@ -49,7 +51,6 @@ class _UserChatScreenState extends State<UserChatScreen> {
   void initState() {
     super.initState();
 
-    // Chat screen khulte hi badge/unread count clear karo
     _clearUnreadBadge();
 
     if (currentUser != null) {
@@ -57,6 +58,75 @@ class _UserChatScreenState extends State<UserChatScreen> {
       _loadSelectedOrder();
       _listenForAdminMessages();
       _markAdminMessagesAsSeen();
+    }
+  }
+
+  // ============================================================
+  // APP BADGE
+  // ============================================================
+
+  Future<void> _clearUnreadBadge() async {
+    try {
+      final bool supported = await AppBadgePlus.isSupported();
+
+      if (supported) {
+        await AppBadgePlus.updateBadge(0);
+      }
+
+      if (currentUser != null) {
+        await FirebaseFirestore.instance
+            .collection('chats')
+            .doc(currentUser!.uid)
+            .set(
+          {
+            'unreadAdminCount': 0,
+          },
+          SetOptions(merge: true),
+        );
+      }
+
+      debugPrint('App badge cleared successfully.');
+    } catch (e) {
+      debugPrint('Badge Clear Error: $e');
+    }
+  }
+
+  Future<void> _updateAppBadgeFromFirestore() async {
+    if (currentUser == null) return;
+
+    try {
+      final chatDoc = await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(currentUser!.uid)
+          .get();
+
+      int unreadCount = 0;
+
+      if (chatDoc.exists) {
+        final data = chatDoc.data();
+
+        final dynamic count = data?['unreadAdminCount'];
+
+        if (count is int) {
+          unreadCount = count;
+        } else if (count is num) {
+          unreadCount = count.toInt();
+        }
+      }
+
+      if (unreadCount < 0) {
+        unreadCount = 0;
+      }
+
+      final bool supported = await AppBadgePlus.isSupported();
+
+      if (supported) {
+        await AppBadgePlus.updateBadge(unreadCount);
+      }
+
+      debugPrint('App badge updated: $unreadCount');
+    } catch (e) {
+      debugPrint('Badge Update Error: $e');
     }
   }
 
@@ -73,8 +143,12 @@ class _UserChatScreenState extends State<UserChatScreen> {
           .get();
 
       for (final doc in unreadAdminMessages.docs) {
-        await doc.reference.update({'isSeen': true});
+        await doc.reference.update({
+          'isSeen': true,
+        });
       }
+
+      await _clearUnreadBadge();
     } catch (e) {
       debugPrint('Error marking admin messages as seen: $e');
     }
@@ -83,7 +157,6 @@ class _UserChatScreenState extends State<UserChatScreen> {
   void _listenForAdminMessages() {
     if (currentUser == null) return;
 
-    // Purana listener cancel karo (agar exist karta ho) taake duplicate na bane
     _adminMessagesSubscription?.cancel();
 
     _adminMessagesSubscription = FirebaseFirestore.instance
@@ -93,11 +166,12 @@ class _UserChatScreenState extends State<UserChatScreen> {
         .orderBy('timestamp', descending: true)
         .limit(1)
         .snapshots()
-        .listen((snapshot) {
+        .listen((snapshot) async {
       if (_isInitialLoad) {
         if (snapshot.docs.isNotEmpty) {
           _lastNotifiedMessageId = snapshot.docs.first.id;
         }
+
         _isInitialLoad = false;
         return;
       }
@@ -117,66 +191,15 @@ class _UserChatScreenState extends State<UserChatScreen> {
             messageId != _lastNotifiedMessageId) {
           _lastNotifiedMessageId = messageId;
 
-          _incrementAppBadge();
+          await _updateAppBadgeFromFirestore();
         }
       }
     });
   }
 
-  Future<void> _clearUnreadBadge() async {
-    try {
-      final bool isSupported = await AppBadgePlus.isSupported();
-
-      if (isSupported) {
-        await AppBadgePlus.updateBadge(0);
-      }
-
-      if (currentUser != null) {
-        await FirebaseFirestore.instance
-            .collection('chats')
-            .doc(currentUser!.uid)
-            .set({'unreadAdminCount': 0}, SetOptions(merge: true));
-      }
-    } catch (e) {
-      debugPrint('Badge Clear Error: $e');
-    }
-  }
-
-  Future<void> _incrementAppBadge() async {
-    try {
-      if (currentUser == null) return;
-
-      final bool isSupported = await AppBadgePlus.isSupported();
-
-      final chatDoc = await FirebaseFirestore.instance
-          .collection('chats')
-          .doc(currentUser!.uid)
-          .get();
-
-      int unreadCount = 1;
-
-      if (chatDoc.exists) {
-        final data = chatDoc.data();
-        final dynamic count = data?['unreadAdminCount'];
-
-        if (count is int) {
-          unreadCount = count;
-        } else if (count is num) {
-          unreadCount = count.toInt();
-        }
-
-        if (unreadCount <= 0) {
-          unreadCount = 1;
-        }
-      }
-
-      if (isSupported) {
-        await AppBadgePlus.updateBadge(unreadCount);
-      }
-    } catch (e) {
-      debugPrint('Badge Update Error: $e');
-    }
-  }
+  // ============================================================
+  // USER SETTINGS
+  // ============================================================
 
   Future<void> _loadUserSettings() async {
     if (currentUser == null) return;
@@ -195,7 +218,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
 
       setState(() {
         isDarkMode = data['darkMode'] ?? false;
-        notificationsEnabled = data['notificationsEnabled'] ?? true;
+        notificationsEnabled =
+            data['notificationsEnabled'] ?? true;
         biometricEnabled = data['biometricEnabled'] ?? false;
       });
     } catch (e) {
@@ -221,11 +245,18 @@ class _UserChatScreenState extends State<UserChatScreen> {
       await FirebaseFirestore.instance
           .collection('users')
           .doc(currentUser!.uid)
-          .set(updateData, SetOptions(merge: true));
+          .set(
+        updateData,
+        SetOptions(merge: true),
+      );
     } catch (e) {
       debugPrint('Save Settings Error: $e');
     }
   }
+
+  // ============================================================
+  // PIN / SECURITY
+  // ============================================================
 
   void _showPinSetupDialog() {
     String tempPin = '';
@@ -236,10 +267,12 @@ class _UserChatScreenState extends State<UserChatScreen> {
           return Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color:
-                  isDarkMode ? AppColors.surfaceDark : AppColors.lightwhite,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(30)),
+              color: isDarkMode
+                  ? AppColors.surfaceDark
+                  : AppColors.lightwhite,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(30),
+              ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -264,8 +297,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color:
-                        isDarkMode ? AppColors.lightwhite : Colors.black87,
+                    color: isDarkMode
+                        ? AppColors.lightwhite
+                        : Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -273,7 +307,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
                   'Enter a secure PIN for app protection',
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDarkMode ? Colors.white60 : Colors.black54,
+                    color: isDarkMode
+                        ? Colors.white60
+                        : Colors.black54,
                   ),
                 ),
                 const SizedBox(height: 25),
@@ -283,108 +319,144 @@ class _UserChatScreenState extends State<UserChatScreen> {
                     final bool isFilled = index < tempPin.length;
 
                     return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      margin:
+                          const EdgeInsets.symmetric(horizontal: 8),
                       width: 14,
                       height: 14,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color:
-                            isFilled ? AppColors.Pink : Colors.transparent,
-                        border: Border.all(color: AppColors.Pink, width: 2),
+                        color: isFilled
+                            ? AppColors.Pink
+                            : Colors.transparent,
+                        border: Border.all(
+                          color: AppColors.Pink,
+                          width: 2,
+                        ),
                       ),
                     );
                   }),
                 ),
                 const SizedBox(height: 25),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20),
                   child: Column(
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment:
+                            MainAxisAlignment.spaceEvenly,
                         children: [
                           _buildPinKey(
                             '1',
                             tempPin,
-                            (val) => setBottomSheetState(() => tempPin = val),
+                            (val) => setBottomSheetState(
+                              () => tempPin = val,
+                            ),
                           ),
                           _buildPinKey(
                             '2',
                             tempPin,
-                            (val) => setBottomSheetState(() => tempPin = val),
+                            (val) => setBottomSheetState(
+                              () => tempPin = val,
+                            ),
                           ),
                           _buildPinKey(
                             '3',
                             tempPin,
-                            (val) => setBottomSheetState(() => tempPin = val),
+                            (val) => setBottomSheetState(
+                              () => tempPin = val,
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment:
+                            MainAxisAlignment.spaceEvenly,
                         children: [
                           _buildPinKey(
                             '4',
                             tempPin,
-                            (val) => setBottomSheetState(() => tempPin = val),
+                            (val) => setBottomSheetState(
+                              () => tempPin = val,
+                            ),
                           ),
                           _buildPinKey(
                             '5',
                             tempPin,
-                            (val) => setBottomSheetState(() => tempPin = val),
+                            (val) => setBottomSheetState(
+                              () => tempPin = val,
+                            ),
                           ),
                           _buildPinKey(
                             '6',
                             tempPin,
-                            (val) => setBottomSheetState(() => tempPin = val),
+                            (val) => setBottomSheetState(
+                              () => tempPin = val,
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment:
+                            MainAxisAlignment.spaceEvenly,
                         children: [
                           _buildPinKey(
                             '7',
                             tempPin,
-                            (val) => setBottomSheetState(() => tempPin = val),
+                            (val) => setBottomSheetState(
+                              () => tempPin = val,
+                            ),
                           ),
                           _buildPinKey(
                             '8',
                             tempPin,
-                            (val) => setBottomSheetState(() => tempPin = val),
+                            (val) => setBottomSheetState(
+                              () => tempPin = val,
+                            ),
                           ),
                           _buildPinKey(
                             '9',
                             tempPin,
-                            (val) => setBottomSheetState(() => tempPin = val),
+                            (val) => setBottomSheetState(
+                              () => tempPin = val,
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        mainAxisAlignment:
+                            MainAxisAlignment.spaceEvenly,
                         children: [
-                          const SizedBox(width: 60, height: 60),
+                          const SizedBox(
+                            width: 60,
+                            height: 60,
+                          ),
                           _buildPinKey(
                             '0',
                             tempPin,
-                            (val) => setBottomSheetState(() => tempPin = val),
+                            (val) => setBottomSheetState(
+                              () => tempPin = val,
+                            ),
                           ),
                           IconButton(
                             onPressed: () {
                               if (tempPin.isNotEmpty) {
                                 setBottomSheetState(() {
-                                  tempPin =
-                                      tempPin.substring(0, tempPin.length - 1);
+                                  tempPin = tempPin.substring(
+                                    0,
+                                    tempPin.length - 1,
+                                  );
                                 });
                               }
                             },
                             icon: Icon(
                               Icons.backspace_outlined,
-                              color:
-                                  isDarkMode ? Colors.white : Colors.black87,
+                              color: isDarkMode
+                                  ? Colors.white
+                                  : Colors.black87,
                             ),
                           ),
                         ],
@@ -417,25 +489,28 @@ class _UserChatScreenState extends State<UserChatScreen> {
           HapticFeedback.lightImpact();
 
           if (newPin.length == 4) {
-            Future.delayed(const Duration(milliseconds: 200), () async {
-              Get.back();
+            Future.delayed(
+              const Duration(milliseconds: 200),
+              () async {
+                Get.back();
 
-              if (!mounted) return;
+                if (!mounted) return;
 
-              setState(() {
-                biometricEnabled = true;
-              });
+                setState(() {
+                  biometricEnabled = true;
+                });
 
-              await _saveUserSettings(newPin);
+                await _saveUserSettings(newPin);
 
-              Get.snackbar(
-                'Success',
-                'App Security & Custom PIN enabled',
-                backgroundColor: AppColors.Pink,
-                colorText: Colors.white,
-                snackPosition: SnackPosition.TOP,
-              );
-            });
+                Get.snackbar(
+                  'Success',
+                  'App Security & Custom PIN enabled',
+                  backgroundColor: AppColors.Pink,
+                  colorText: Colors.white,
+                  snackPosition: SnackPosition.TOP,
+                );
+              },
+            );
           }
         }
       },
@@ -455,7 +530,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
           style: TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.bold,
-            color: isDarkMode ? AppColors.lightwhite : Colors.black87,
+            color: isDarkMode
+                ? AppColors.lightwhite
+                : Colors.black87,
           ),
         ),
       ),
@@ -481,14 +558,20 @@ class _UserChatScreenState extends State<UserChatScreen> {
     }
   }
 
+  // ============================================================
+  // ORDER
+  // ============================================================
+
   Future<void> _loadSelectedOrder() async {
     final uid = currentUser?.uid;
 
     if (uid == null) return;
 
     try {
-      final chatDoc =
-          await FirebaseFirestore.instance.collection('chats').doc(uid).get();
+      final chatDoc = await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(uid)
+          .get();
 
       if (!chatDoc.exists) return;
 
@@ -512,13 +595,67 @@ class _UserChatScreenState extends State<UserChatScreen> {
       if (mounted) {
         setState(() {
           selectedOrderId = orderDoc.id;
-          selectedOrder = orderDoc.data() as Map<String, dynamic>;
+          selectedOrder =
+              orderDoc.data() as Map<String, dynamic>;
         });
       }
     } catch (e) {
       debugPrint('Order Load Error: $e');
     }
   }
+
+  Stream<QuerySnapshot> _ordersStream() {
+    return FirebaseFirestore.instance
+        .collection('orders')
+        .where(
+          'userId',
+          isEqualTo: currentUser!.uid,
+        )
+        .snapshots();
+  }
+
+  Future<void> _selectOrder(
+    String orderId,
+    Map<String, dynamic> data,
+  ) async {
+    if (currentUser == null) return;
+
+    setState(() {
+      selectedOrderId = orderId;
+      selectedOrder = data;
+    });
+
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(currentUser!.uid)
+        .set(
+      {
+        'activeOrderId': orderId,
+        'activeOrderTitle': data['orderTitle'] ??
+            data['productName'] ??
+            data['title'] ??
+            'Order',
+        'activeOrderTotal': data['totalAmount'] ?? 0,
+        'customerEmail': currentUser!.email ?? '',
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+
+    Get.back();
+
+    Get.snackbar(
+      'Order Selected',
+      'This order is now selected for support.',
+      backgroundColor: Colors.white,
+      colorText: Colors.black,
+      snackPosition: SnackPosition.TOP,
+    );
+  }
+
+  // ============================================================
+  // SEND MESSAGE
+  // ============================================================
 
   Future<void> _sendMessage() async {
     if (currentUser == null) return;
@@ -532,7 +669,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
     _messageController.clear();
 
     try {
-      await FirebaseFirestore.instance
+      // FIX:
+      // Pehle message document create karo aur uska actual ID save karo.
+      final messageRef = await FirebaseFirestore.instance
           .collection('chats')
           .doc(uid)
           .collection('messages')
@@ -549,19 +688,42 @@ class _UserChatScreenState extends State<UserChatScreen> {
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      await _updateChatDocument(uid: uid, lastMessage: text);
+      await _updateChatDocument(
+        uid: uid,
+        lastMessage: text,
+      );
 
       try {
-        await http.post(
+        final response = await http.post(
           Uri.parse(
             'https://food-delivery-backend-ivory.vercel.app/api/notify-chat-message',
           ),
-          headers: {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+          },
           body: jsonEncode({
             'recipientType': 'admin',
+
+            // IMPORTANT:
+            // Admin notification ko user identify karne ke liye.
+            'userId': uid,
+
             'messageText': text,
-            'senderName': currentUser?.email ?? 'Customer',
+
+            'senderName':
+                currentUser?.email ?? 'Customer',
+
+            // IMPORTANT:
+            // Firestore message ka actual document ID.
+            'messageId': messageRef.id,
           }),
+        );
+
+        debugPrint(
+          'Chat notification response: ${response.statusCode}',
+        );
+        debugPrint(
+          'Chat notification body: ${response.body}',
         );
       } catch (e) {
         debugPrint('Chat notify failed: $e');
@@ -580,60 +742,31 @@ class _UserChatScreenState extends State<UserChatScreen> {
     required String uid,
     required String lastMessage,
   }) async {
-    await FirebaseFirestore.instance.collection('chats').doc(uid).set({
-      'userId': uid,
-      'lastMessage': lastMessage,
-      'updatedAt': FieldValue.serverTimestamp(),
-      'activeOrderId': selectedOrderId,
-      'activeOrderTitle': selectedOrder?['orderTitle'] ??
-          selectedOrder?['productName'] ??
-          selectedOrder?['title'] ??
-          'Order',
-      'activeOrderTotal': selectedOrder?['totalAmount'] ?? 0,
-      'customerEmail': currentUser?.email ?? '',
-      'unreadAdminCount': FieldValue.increment(1),
-    }, SetOptions(merge: true));
-  }
-
-  Stream<QuerySnapshot> _ordersStream() {
-    return FirebaseFirestore.instance
-        .collection('orders')
-        .where('userId', isEqualTo: currentUser!.uid)
-        .snapshots();
-  }
-
-  Future<void> _selectOrder(String orderId, Map<String, dynamic> data) async {
-    if (currentUser == null) return;
-
-    setState(() {
-      selectedOrderId = orderId;
-      selectedOrder = data;
-    });
-
     await FirebaseFirestore.instance
         .collection('chats')
-        .doc(currentUser!.uid)
-        .set({
-      'activeOrderId': orderId,
-      'activeOrderTitle': data['orderTitle'] ??
-          data['productName'] ??
-          data['title'] ??
-          'Order',
-      'activeOrderTotal': data['totalAmount'] ?? 0,
-      'customerEmail': currentUser!.email ?? '',
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-
-    Get.back();
-
-    Get.snackbar(
-      'Order Selected',
-      'This order is now selected for support.',
-      backgroundColor: Colors.white,
-      colorText: Colors.black,
-      snackPosition: SnackPosition.TOP,
+        .doc(uid)
+        .set(
+      {
+        'userId': uid,
+        'lastMessage': lastMessage,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'activeOrderId': selectedOrderId,
+        'activeOrderTitle': selectedOrder?['orderTitle'] ??
+            selectedOrder?['productName'] ??
+            selectedOrder?['title'] ??
+            'Order',
+        'activeOrderTotal':
+            selectedOrder?['totalAmount'] ?? 0,
+        'customerEmail':
+            currentUser?.email ?? '',
+      },
+      SetOptions(merge: true),
     );
   }
+
+  // ============================================================
+  // CAMERA / IMAGE
+  // ============================================================
 
   Future<void> _takePhoto() async {
     try {
@@ -656,17 +789,24 @@ class _UserChatScreenState extends State<UserChatScreen> {
         'https://api.cloudinary.com/v1_1/eyncqf0n/image/upload',
       );
 
-      final request = http.MultipartRequest('POST', uri);
+      final request = http.MultipartRequest(
+        'POST',
+        uri,
+      );
 
       request.fields['upload_preset'] = 'ml_default';
 
       request.files.add(
-        await http.MultipartFile.fromPath('file', imageFile.path),
+        await http.MultipartFile.fromPath(
+          'file',
+          imageFile.path,
+        ),
       );
 
       final streamedResponse = await request.send();
 
-      final response = await http.Response.fromStream(streamedResponse);
+      final response =
+          await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode != 200) {
         throw Exception('Cloudinary upload failed');
@@ -674,7 +814,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
 
       final responseData = jsonDecode(response.body);
 
-      final String imageUrl = responseData['secure_url'];
+      final String imageUrl =
+          responseData['secure_url'];
 
       await _sendImageMessage(imageUrl);
 
@@ -711,7 +852,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
 
     final uid = currentUser!.uid;
 
-    await FirebaseFirestore.instance
+    // FIX:
+    // Image message ka bhi actual Firestore ID save kar rahe hain.
+    final messageRef = await FirebaseFirestore.instance
         .collection('chats')
         .doc(uid)
         .collection('messages')
@@ -726,23 +869,47 @@ class _UserChatScreenState extends State<UserChatScreen> {
           selectedOrder?['productName'] ??
           selectedOrder?['title'] ??
           'Order',
-      'orderTotal': selectedOrder?['totalAmount'] ?? 0,
+      'orderTotal':
+          selectedOrder?['totalAmount'] ?? 0,
       'timestamp': FieldValue.serverTimestamp(),
     });
 
-    await _updateChatDocument(uid: uid, lastMessage: '📷 Image');
+    await _updateChatDocument(
+      uid: uid,
+      lastMessage: '📷 Image',
+    );
 
     try {
-      await http.post(
+      final response = await http.post(
         Uri.parse(
           'https://food-delivery-backend-ivory.vercel.app/api/notify-chat-message',
         ),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: jsonEncode({
           'recipientType': 'admin',
+
+          // IMPORTANT:
+          // User ID notification ke saath jayegi.
+          'userId': uid,
+
           'messageText': '📷 Sent an image',
-          'senderName': currentUser?.email ?? 'Customer',
+
+          'senderName':
+              currentUser?.email ?? 'Customer',
+
+          // IMPORTANT:
+          // Image message ka actual Firestore ID.
+          'messageId': messageRef.id,
         }),
+      );
+
+      debugPrint(
+        'Image notification response: ${response.statusCode}',
+      );
+      debugPrint(
+        'Image notification body: ${response.body}',
       );
     } catch (e) {
       debugPrint('Chat notify failed: $e');
@@ -760,11 +927,19 @@ class _UserChatScreenState extends State<UserChatScreen> {
         .delete();
   }
 
+  // ============================================================
+  // LOGOUT
+  // ============================================================
+
   Future<void> _logout() async {
     try {
+      await _clearUnreadBadge();
+
       await FirebaseAuth.instance.signOut();
 
-      Get.offAll(() => const LoginScreen());
+      Get.offAll(
+        () => const LoginScreen(),
+      );
     } catch (e) {
       Get.snackbar(
         'Error',
@@ -775,6 +950,10 @@ class _UserChatScreenState extends State<UserChatScreen> {
     }
   }
 
+  // ============================================================
+  // DRAWER
+  // ============================================================
+
   Widget _drawerItem({
     required IconData icon,
     required String title,
@@ -782,7 +961,11 @@ class _UserChatScreenState extends State<UserChatScreen> {
     bool danger = false,
   }) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+      contentPadding:
+          const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 2,
+      ),
       leading: Container(
         width: 42,
         height: 42,
@@ -790,7 +973,11 @@ class _UserChatScreenState extends State<UserChatScreen> {
           color: AppColors.Pink.withOpacity(0.08),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: AppColors.Pink, size: 21),
+        child: Icon(
+          icon,
+          color: AppColors.Pink,
+          size: 21,
+        ),
       ),
       title: Text(
         title,
@@ -808,7 +995,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
           ? null
           : Icon(
               Icons.chevron_right,
-              color: isDarkMode ? Colors.white54 : AppColors.lightgrey,
+              color: isDarkMode
+                  ? Colors.white54
+                  : AppColors.lightgrey,
             ),
       onTap: onTap,
     );
@@ -819,7 +1008,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
 
     return Drawer(
       width: MediaQuery.of(context).size.width * 0.82,
-      backgroundColor: dark ? AppColors.backgroundDark : AppColors.lightwhite,
+      backgroundColor: dark
+          ? AppColors.backgroundDark
+          : AppColors.lightwhite,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(25),
@@ -837,19 +1028,31 @@ class _UserChatScreenState extends State<UserChatScreen> {
               builder: (context, snapshot) {
                 String? profileImg;
 
-                if (snapshot.hasData && snapshot.data!.exists) {
+                if (snapshot.hasData &&
+                    snapshot.data!.exists) {
                   final data =
-                      snapshot.data!.data() as Map<String, dynamic>;
+                      snapshot.data!.data()
+                          as Map<String, dynamic>;
 
-                  profileImg = data['profileImage'] ?? data['image'];
+                  profileImg = data['profileImage'] ??
+                      data['image'];
                 }
 
                 return Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 25),
+                  padding:
+                      const EdgeInsets.fromLTRB(
+                    20,
+                    28,
+                    20,
+                    25,
+                  ),
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.darkpink, AppColors.Pink],
+                      colors: [
+                        AppColors.darkpink,
+                        AppColors.Pink,
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -862,16 +1065,22 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       Container(
                         width: 82,
                         height: 82,
-                        decoration: const BoxDecoration(
+                        decoration:
+                            const BoxDecoration(
                           color: Colors.white24,
                           shape: BoxShape.circle,
                         ),
                         child: ClipOval(
-                          child: profileImg != null && profileImg.isNotEmpty
+                          child: profileImg != null &&
+                                  profileImg.isNotEmpty
                               ? Image.network(
                                   profileImg,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
+                                  errorBuilder: (
+                                    context,
+                                    error,
+                                    stackTrace,
+                                  ) =>
                                       const Icon(
                                     Icons.person,
                                     color: Colors.white,
@@ -887,10 +1096,12 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       ),
                       const SizedBox(height: 14),
                       Text(
-                        currentUser?.email ?? 'Food Go User',
+                        currentUser?.email ??
+                            'Food Go User',
                         textAlign: TextAlign.center,
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        overflow:
+                            TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -899,14 +1110,23 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       ),
                       const SizedBox(height: 6),
                       const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment:
+                            MainAxisAlignment.center,
                         children: [
                           Text(
                             'Food Go Customer',
-                            style: TextStyle(color: Colors.white70, fontSize: 13),
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
                           ),
                           SizedBox(width: 5),
-                          Text('👑', style: TextStyle(fontSize: 15)),
+                          Text(
+                            '👑',
+                            style: TextStyle(
+                              fontSize: 15,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -914,9 +1134,13 @@ class _UserChatScreenState extends State<UserChatScreen> {
                 );
               },
             ),
+
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.only(top: 12, bottom: 10),
+                padding: const EdgeInsets.only(
+                  top: 12,
+                  bottom: 10,
+                ),
                 children: [
                   _drawerItem(
                     icon: Icons.bookmark_border,
@@ -949,13 +1173,20 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       Navigator.pop(context);
                     },
                   ),
+
                   Padding(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
                     child: Divider(
-                      color: dark ? AppColors.surfaceDark : AppColors.lightgrey,
+                      color: dark
+                          ? AppColors.surfaceDark
+                          : AppColors.lightgrey,
                     ),
                   ),
+
                   _drawerItem(
                     icon: Icons.camera_alt_outlined,
                     title: 'Camera',
@@ -964,18 +1195,25 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       _takePhoto();
                     },
                   ),
+
                   ListTile(
                     contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                        const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 2,
+                    ),
                     leading: Container(
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: AppColors.Pink.withOpacity(0.08),
+                        color: AppColors.Pink
+                            .withOpacity(0.08),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        dark ? Icons.dark_mode : Icons.nightlight_outlined,
+                        dark
+                            ? Icons.dark_mode
+                            : Icons.nightlight_outlined,
                         color: AppColors.Pink,
                         size: 21,
                       ),
@@ -985,33 +1223,43 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: dark ? AppColors.lightwhite : Colors.black87,
+                        color: dark
+                            ? AppColors.lightwhite
+                            : Colors.black87,
                       ),
                     ),
                     trailing: Switch(
                       value: isDarkMode,
-                      activeThumbColor: AppColors.Pink,
+                      activeThumbColor:
+                          AppColors.Pink,
                       onChanged: (value) async {
                         setState(() {
                           isDarkMode = value;
                         });
 
                         Get.changeThemeMode(
-                          value ? ThemeMode.dark : ThemeMode.light,
+                          value
+                              ? ThemeMode.dark
+                              : ThemeMode.light,
                         );
 
                         await _saveUserSettings(null);
                       },
                     ),
                   ),
+
                   ListTile(
                     contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                        const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 2,
+                    ),
                     leading: Container(
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: AppColors.Pink.withOpacity(0.08),
+                        color: AppColors.Pink
+                            .withOpacity(0.08),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -1025,29 +1273,38 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: dark ? AppColors.lightwhite : Colors.black87,
+                        color: dark
+                            ? AppColors.lightwhite
+                            : Colors.black87,
                       ),
                     ),
                     trailing: Switch(
                       value: notificationsEnabled,
-                      activeThumbColor: AppColors.Pink,
+                      activeThumbColor:
+                          AppColors.Pink,
                       onChanged: (value) async {
                         setState(() {
-                          notificationsEnabled = value;
+                          notificationsEnabled =
+                              value;
                         });
 
                         await _saveUserSettings(null);
                       },
                     ),
                   ),
+
                   ListTile(
                     contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                        const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 2,
+                    ),
                     leading: Container(
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: AppColors.Pink.withOpacity(0.08),
+                        color: AppColors.Pink
+                            .withOpacity(0.08),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -1061,22 +1318,36 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: dark ? AppColors.lightwhite : Colors.black87,
+                        color: dark
+                            ? AppColors.lightwhite
+                            : Colors.black87,
                       ),
                     ),
                     trailing: Switch(
                       value: biometricEnabled,
-                      activeThumbColor: AppColors.Pink,
-                      onChanged: (value) => _handleBiometricToggle(value),
+                      activeThumbColor:
+                          AppColors.Pink,
+                      onChanged:
+                          (value) =>
+                              _handleBiometricToggle(
+                        value,
+                      ),
                     ),
                   ),
+
                   Padding(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
                     child: Divider(
-                      color: dark ? AppColors.surfaceDark : AppColors.lightgrey,
+                      color: dark
+                          ? AppColors.surfaceDark
+                          : AppColors.lightgrey,
                     ),
                   ),
+
                   _drawerItem(
                     icon: Icons.shield_outlined,
                     title: 'Privacy Policy',
@@ -1085,6 +1356,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       _showPrivacyPolicy();
                     },
                   ),
+
                   _drawerItem(
                     icon: Icons.description_outlined,
                     title: 'Terms & Conditions',
@@ -1093,13 +1365,20 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       _showTerms();
                     },
                   ),
+
                   Padding(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 8,
+                    ),
                     child: Divider(
-                      color: dark ? AppColors.surfaceDark : AppColors.lightgrey,
+                      color: dark
+                          ? AppColors.surfaceDark
+                          : AppColors.lightgrey,
                     ),
                   ),
+
                   _drawerItem(
                     icon: Icons.logout,
                     title: 'Logout',
@@ -1118,14 +1397,25 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
+  // ============================================================
+  // ORDER HISTORY
+  // ============================================================
+
   void _showOrderHistory() {
     Get.bottomSheet(
       Container(
-        height: MediaQuery.of(context).size.height * 0.78,
+        height:
+            MediaQuery.of(context).size.height * 0.78,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: darkColorThemeCheck(AppColors.surfaceDark, AppColors.lightwhite),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+          color: darkColorThemeCheck(
+            AppColors.surfaceDark,
+            AppColors.lightwhite,
+          ),
+          borderRadius:
+              const BorderRadius.vertical(
+            top: Radius.circular(25),
+          ),
         ),
         child: Column(
           children: [
@@ -1134,7 +1424,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
               height: 5,
               decoration: BoxDecoration(
                 color: AppColors.lightgrey,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius:
+                    BorderRadius.circular(10),
               ),
             ),
             const SizedBox(height: 18),
@@ -1143,7 +1434,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
               style: TextStyle(
                 fontSize: 21,
                 fontWeight: FontWeight.bold,
-                color: isDarkMode ? AppColors.lightwhite : Colors.black,
+                color: isDarkMode
+                    ? AppColors.lightwhite
+                    : Colors.black,
               ),
             ),
             const SizedBox(height: 15),
@@ -1151,9 +1444,13 @@ class _UserChatScreenState extends State<UserChatScreen> {
               child: StreamBuilder<QuerySnapshot>(
                 stream: _ordersStream(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
                     return Center(
-                      child: CircularProgressIndicator(color: AppColors.Pink),
+                      child:
+                          CircularProgressIndicator(
+                        color: AppColors.Pink,
+                      ),
                     );
                   }
 
@@ -1162,75 +1459,115 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       child: Text(
                         'Unable to load orders.',
                         style: TextStyle(
-                          color: isDarkMode ? AppColors.lightwhite : Colors.black,
+                          color: isDarkMode
+                              ? AppColors.lightwhite
+                              : Colors.black,
                         ),
                       ),
                     );
                   }
 
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  if (!snapshot.hasData ||
+                      snapshot.data!.docs.isEmpty) {
                     return Center(
                       child: Text(
                         'No orders found.',
                         style: TextStyle(
-                          color: isDarkMode ? Colors.white70 : Colors.black54,
+                          color: isDarkMode
+                              ? Colors.white70
+                              : Colors.black54,
                         ),
                       ),
                     );
                   }
 
-                  final orders = snapshot.data!.docs;
+                  final orders =
+                      snapshot.data!.docs;
 
                   return ListView.builder(
                     itemCount: orders.length,
-                    itemBuilder: (context, index) {
+                    itemBuilder:
+                        (context, index) {
                       final doc = orders[index];
 
-                      final data = doc.data() as Map<String, dynamic>;
+                      final data = doc.data()
+                          as Map<String, dynamic>;
 
-                      final title = data['orderTitle'] ??
-                          data['productName'] ??
-                          data['title'] ??
-                          'Food Order';
+                      final title =
+                          data['orderTitle'] ??
+                              data['productName'] ??
+                              data['title'] ??
+                              'Food Order';
 
-                      final total = data['totalAmount'] ?? 0;
+                      final total =
+                          data['totalAmount'] ?? 0;
 
-                      final status = data['status'] ?? 'Pending';
+                      final status =
+                          data['status'] ??
+                              'Pending';
 
-                      String formattedDateTime = '';
+                      String formattedDateTime =
+                          '';
 
-                      if (data['timestamp'] != null) {
-                        final Timestamp timestamp = data['timestamp'];
+                      if (data['timestamp'] !=
+                              null &&
+                          data['timestamp']
+                              is Timestamp) {
+                        final Timestamp timestamp =
+                            data['timestamp'];
 
-                        final DateTime dateTime = timestamp.toDate();
+                        final DateTime dateTime =
+                            timestamp.toDate();
 
                         formattedDateTime =
-                            DateFormat('dd MMM yyyy, hh:mm a').format(dateTime);
+                            DateFormat(
+                          'dd MMM yyyy, hh:mm a',
+                        ).format(dateTime);
                       }
 
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
+                        margin:
+                            const EdgeInsets.only(
+                          bottom: 12,
+                        ),
+                        decoration:
+                            BoxDecoration(
                           color: isDarkMode
                               ? AppColors.surfaceDark
                               : AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(15),
+                          borderRadius:
+                              BorderRadius.circular(
+                            15,
+                          ),
                           border: Border.all(
-                            color: AppColors.lightgrey.withOpacity(0.3),
+                            color: AppColors
+                                .lightgrey
+                                .withOpacity(0.3),
                           ),
                         ),
                         child: ListTile(
-                          contentPadding: const EdgeInsets.all(10),
-                          leading: const CircleAvatar(
-                            backgroundColor: AppColors.Pink,
-                            child: Icon(Icons.fastfood, color: Colors.white),
+                          contentPadding:
+                              const EdgeInsets.all(
+                            10,
+                          ),
+                          leading:
+                              const CircleAvatar(
+                            backgroundColor:
+                                AppColors.Pink,
+                            child: Icon(
+                              Icons.fastfood,
+                              color: Colors.white,
+                            ),
                           ),
                           title: Text(
                             title.toString(),
                             style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color:
-                                  isDarkMode ? AppColors.lightwhite : Colors.black,
+                              fontWeight:
+                                  FontWeight.bold,
+                              color: isDarkMode
+                                  ? AppColors
+                                      .lightwhite
+                                  : Colors.black,
                             ),
                           ),
                           subtitle: Text(
@@ -1238,22 +1575,39 @@ class _UserChatScreenState extends State<UserChatScreen> {
                             'Status: $status'
                             '${formattedDateTime.isNotEmpty ? '\nDate: $formattedDateTime' : ''}',
                             style: TextStyle(
-                              color: isDarkMode ? Colors.white70 : Colors.black54,
+                              color: isDarkMode
+                                  ? Colors.white70
+                                  : Colors.black54,
                             ),
                           ),
-                          trailing: ElevatedButton(
+                          trailing:
+                              ElevatedButton(
                             onPressed: () {
-                              _selectOrder(doc.id, data);
+                              _selectOrder(
+                                doc.id,
+                                data,
+                              );
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.Pink,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                            style:
+                                ElevatedButton
+                                    .styleFrom(
+                              backgroundColor:
+                                  AppColors.Pink,
+                              shape:
+                                  RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius
+                                        .circular(
+                                  12,
+                                ),
                               ),
                             ),
                             child: const Text(
                               'Chat',
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(
+                                color:
+                                    Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -1270,31 +1624,51 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  Color darkColorThemeCheck(Color darkColor, Color lightColor) {
+  Color darkColorThemeCheck(
+    Color darkColor,
+    Color lightColor,
+  ) {
     return isDarkMode ? darkColor : lightColor;
   }
+
+  // ============================================================
+  // ADDRESSES
+  // ============================================================
 
   void _showAddresses() {
     if (currentUser == null) return;
 
     Get.bottomSheet(
       Container(
-        height: MediaQuery.of(context).size.height * 0.65,
+        height:
+            MediaQuery.of(context).size.height * 0.65,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: darkColorThemeCheck(AppColors.surfaceDark, AppColors.lightwhite),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+          color: darkColorThemeCheck(
+            AppColors.surfaceDark,
+            AppColors.lightwhite,
+          ),
+          borderRadius:
+              const BorderRadius.vertical(
+            top: Radius.circular(25),
+          ),
         ),
         child: Column(
           children: [
-            Icon(Icons.location_on, color: AppColors.Pink, size: 32),
+            Icon(
+              Icons.location_on,
+              color: AppColors.Pink,
+              size: 32,
+            ),
             const SizedBox(height: 8),
             Text(
               'Addresses',
               style: TextStyle(
                 fontSize: 21,
                 fontWeight: FontWeight.bold,
-                color: isDarkMode ? AppColors.lightwhite : Colors.black,
+                color: isDarkMode
+                    ? AppColors.lightwhite
+                    : Colors.black,
               ),
             ),
             const SizedBox(height: 15),
@@ -1306,9 +1680,13 @@ class _UserChatScreenState extends State<UserChatScreen> {
                     .collection('addresses')
                     .snapshots(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
+                  if (snapshot.connectionState ==
+                      ConnectionState.waiting) {
                     return Center(
-                      child: CircularProgressIndicator(color: AppColors.Pink),
+                      child:
+                          CircularProgressIndicator(
+                        color: AppColors.Pink,
+                      ),
                     );
                   }
 
@@ -1317,46 +1695,68 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       child: Text(
                         'Unable to load addresses.',
                         style: TextStyle(
-                          color: isDarkMode ? AppColors.lightwhite : Colors.black,
+                          color: isDarkMode
+                              ? AppColors.lightwhite
+                              : Colors.black,
                         ),
                       ),
                     );
                   }
 
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  if (!snapshot.hasData ||
+                      snapshot.data!.docs.isEmpty) {
                     return Center(
                       child: Text(
                         'No saved addresses.',
                         style: TextStyle(
-                          color: isDarkMode ? Colors.white70 : Colors.black54,
+                          color: isDarkMode
+                              ? Colors.white70
+                              : Colors.black54,
                         ),
                       ),
                     );
                   }
 
                   return ListView.builder(
-                    itemCount: snapshot.data!.docs.length,
-                    itemBuilder: (context, index) {
-                      final data = snapshot.data!.docs[index].data()
-                          as Map<String, dynamic>;
+                    itemCount:
+                        snapshot.data!.docs.length,
+                    itemBuilder:
+                        (context, index) {
+                      final data =
+                          snapshot.data!.docs[index]
+                                  .data()
+                              as Map<String, dynamic>;
 
                       return Card(
-                        color: darkColorThemeCheck(
+                        color:
+                            darkColorThemeCheck(
                           AppColors.surfaceDark,
                           AppColors.lightwhite,
                         ),
                         child: ListTile(
-                          leading: Icon(Icons.location_on, color: AppColors.Pink),
+                          leading: Icon(
+                            Icons.location_on,
+                            color: AppColors.Pink,
+                          ),
                           title: Text(
-                            data['title'] ?? data['address'] ?? 'Address',
+                            data['title'] ??
+                                data['address'] ??
+                                'Address',
                             style: TextStyle(
-                              color: isDarkMode ? AppColors.lightwhite : Colors.black,
+                              color: isDarkMode
+                                  ? AppColors
+                                      .lightwhite
+                                  : Colors.black,
                             ),
                           ),
                           subtitle: Text(
-                            data['address'] ?? data['location'] ?? '',
+                            data['address'] ??
+                                data['location'] ??
+                                '',
                             style: TextStyle(
-                              color: isDarkMode ? Colors.white70 : Colors.black54,
+                              color: isDarkMode
+                                  ? Colors.white70
+                                  : Colors.black54,
                             ),
                           ),
                         ),
@@ -1373,6 +1773,10 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
+  // ============================================================
+  // PAYMENT
+  // ============================================================
+
   Future<void> _showPaymentDetails() async {
     if (currentUser == null) return;
 
@@ -1380,8 +1784,14 @@ class _UserChatScreenState extends State<UserChatScreen> {
       Container(
         padding: const EdgeInsets.all(25),
         decoration: BoxDecoration(
-          color: darkColorThemeCheck(AppColors.surfaceDark, AppColors.lightwhite),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+          color: darkColorThemeCheck(
+            AppColors.surfaceDark,
+            AppColors.lightwhite,
+          ),
+          borderRadius:
+              const BorderRadius.vertical(
+            top: Radius.circular(25),
+          ),
         ),
         child: FutureBuilder<DocumentSnapshot>(
           future: FirebaseFirestore.instance
@@ -1389,47 +1799,64 @@ class _UserChatScreenState extends State<UserChatScreen> {
               .doc(currentUser!.uid)
               .get(),
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (snapshot.connectionState ==
+                ConnectionState.waiting) {
               return SizedBox(
                 height: 180,
                 child: Center(
-                  child: CircularProgressIndicator(color: AppColors.Pink),
+                  child:
+                      CircularProgressIndicator(
+                    color: AppColors.Pink,
+                  ),
                 ),
               );
             }
 
-            final data = snapshot.data?.data() as Map<String, dynamic>?;
+            final data = snapshot.data?.data()
+                as Map<String, dynamic>?;
 
-            final payment = data?['paymentMethod'] ??
-                data?['paymentDetails'] ??
-                'No payment method saved';
+            final payment =
+                data?['paymentMethod'] ??
+                    data?['paymentDetails'] ??
+                    'No payment method saved';
 
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.credit_card, color: AppColors.Pink, size: 38),
+                Icon(
+                  Icons.credit_card,
+                  color: AppColors.Pink,
+                  size: 38,
+                ),
                 const SizedBox(height: 10),
                 Text(
                   'Payment Details',
                   style: TextStyle(
                     fontSize: 21,
                     fontWeight: FontWeight.bold,
-                    color: isDarkMode ? AppColors.lightwhite : Colors.black,
+                    color: isDarkMode
+                        ? AppColors.lightwhite
+                        : Colors.black,
                   ),
                 ),
                 const SizedBox(height: 20),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(18),
+                  padding:
+                      const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: AppColors.Pink.withOpacity(0.06),
-                    borderRadius: BorderRadius.circular(15),
+                    color: AppColors.Pink
+                        .withOpacity(0.06),
+                    borderRadius:
+                        BorderRadius.circular(15),
                   ),
                   child: Text(
                     payment.toString(),
                     style: TextStyle(
                       fontSize: 15,
-                      color: isDarkMode ? AppColors.lightwhite : Colors.black87,
+                      color: isDarkMode
+                          ? AppColors.lightwhite
+                          : Colors.black87,
                     ),
                   ),
                 ),
@@ -1441,6 +1868,10 @@ class _UserChatScreenState extends State<UserChatScreen> {
       ),
     );
   }
+
+  // ============================================================
+  // PRIVACY / TERMS
+  // ============================================================
 
   void _showPrivacyPolicy() {
     _showInfoDialog(
@@ -1456,120 +1887,204 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  void _showInfoDialog(String title, String text) {
+  void _showInfoDialog(
+    String title,
+    String text,
+  ) {
     Get.dialog(
       AlertDialog(
-        backgroundColor: darkColorThemeCheck(AppColors.surfaceDark, AppColors.lightwhite),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor:
+            darkColorThemeCheck(
+          AppColors.surfaceDark,
+          AppColors.lightwhite,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
         title: Text(
           title,
           style: TextStyle(
-            color: isDarkMode ? AppColors.lightwhite : Colors.black,
+            color: isDarkMode
+                ? AppColors.lightwhite
+                : Colors.black,
             fontWeight: FontWeight.bold,
           ),
         ),
         content: Text(
           text,
           style: TextStyle(
-            color: isDarkMode ? Colors.white70 : Colors.black87,
+            color: isDarkMode
+                ? Colors.white70
+                : Colors.black87,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text('Close', style: TextStyle(color: AppColors.Pink)),
+            child: Text(
+              'Close',
+              style: TextStyle(
+                color: AppColors.Pink,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
+  // ============================================================
+  // MESSAGE WIDGET
+  // ============================================================
+
   String _formatNumber(dynamic value) {
     if (value is num) {
       return value.toStringAsFixed(2);
     }
 
-    return double.tryParse(value.toString())?.toStringAsFixed(2) ?? '0.00';
+    return double.tryParse(
+              value.toString(),
+            )?.toStringAsFixed(2) ??
+        '0.00';
   }
 
-  Widget _buildMessage(DocumentSnapshot message) {
-    final data = message.data() as Map<String, dynamic>;
+  Widget _buildMessage(
+    DocumentSnapshot message,
+  ) {
+    final data =
+        message.data() as Map<String, dynamic>;
 
-    final bool isMe = data['sender'] == 'user';
+    final bool isMe =
+        data['sender'] == 'user';
 
-    final bool isSeen = data['isSeen'] ?? false;
+    final bool isSeen =
+        data['isSeen'] ?? false;
 
-    final String? imageUrl = data['imageUrl'];
+    final String? imageUrl =
+        data['imageUrl'];
 
     return GestureDetector(
-      onLongPress: isMe ? () => _deleteMessage(message.id) : null,
+      onLongPress:
+          isMe ? () => _deleteMessage(message.id) : null,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 5,
+        ),
         child: Row(
-          mainAxisAlignment:
-              isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: isMe
+              ? MainAxisAlignment.end
+              : MainAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.end,
           children: [
             if (!isMe) ...[
               const CircleAvatar(
                 radius: 16,
                 backgroundColor: Colors.grey,
-                child: Icon(Icons.support_agent, size: 18, color: Colors.white),
+                child: Icon(
+                  Icons.support_agent,
+                  size: 18,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(width: 8),
             ],
+
             Flexible(
               child: Container(
-                padding: const EdgeInsets.all(10),
+                padding:
+                    const EdgeInsets.all(10),
                 constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                  maxWidth:
+                      MediaQuery.of(context)
+                              .size
+                              .width *
+                          0.75,
                 ),
                 decoration: BoxDecoration(
                   color: isMe
                       ? AppColors.Pink
                       : isDarkMode
                           ? AppColors.surfaceDark
-                          : AppColors.lightgrey.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(18),
+                          : AppColors.lightgrey
+                              .withOpacity(0.3),
+                  borderRadius:
+                      BorderRadius.circular(18),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     if (data['orderId'] != null)
                       Container(
-                        padding: const EdgeInsets.all(7),
-                        margin: const EdgeInsets.only(bottom: 7),
-                        decoration: BoxDecoration(
+                        padding:
+                            const EdgeInsets.all(7),
+                        margin:
+                            const EdgeInsets.only(
+                          bottom: 7,
+                        ),
+                        decoration:
+                            BoxDecoration(
                           color: isMe
-                              ? Colors.white.withOpacity(0.15)
-                              : Colors.black.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(8),
+                              ? Colors.white
+                                  .withOpacity(
+                                  0.15,
+                                )
+                              : Colors.black
+                                  .withOpacity(
+                                  0.05,
+                                ),
+                          borderRadius:
+                              BorderRadius.circular(
+                            8,
+                          ),
                         ),
                         child: Text(
                           'Order: ${data['orderTitle'] ?? 'Order'}\n'
                           'ID: ${data['orderId']}',
                           style: TextStyle(
                             fontSize: 10,
-                            color: isMe ? Colors.white : Colors.black87,
+                            color: isMe
+                                ? Colors.white
+                                : Colors.black87,
                           ),
                         ),
                       ),
-                    if (imageUrl != null && imageUrl.isNotEmpty)
+
+                    if (imageUrl != null &&
+                        imageUrl.isNotEmpty)
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius:
+                            BorderRadius.circular(
+                          12,
+                        ),
                         child: Image.network(
                           imageUrl,
                           width: 220,
                           height: 180,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.broken_image, size: 60),
+                          errorBuilder: (
+                            context,
+                            error,
+                            stackTrace,
+                          ) =>
+                              const Icon(
+                            Icons.broken_image,
+                            size: 60,
+                          ),
                         ),
                       ),
-                    if ((data['text'] ?? '').toString().isNotEmpty)
+
+                    if ((data['text'] ?? '')
+                        .toString()
+                        .isNotEmpty)
                       Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize:
+                            MainAxisSize.min,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.end,
                         children: [
                           Flexible(
                             child: Text(
@@ -1578,7 +2093,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
                                 color: isMe
                                     ? Colors.white
                                     : isDarkMode
-                                        ? AppColors.lightwhite
+                                        ? AppColors
+                                            .lightwhite
                                         : Colors.black,
                                 fontSize: 15,
                               ),
@@ -1590,7 +2106,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
                             size: 14,
                             color: isSeen
                                 ? Colors.blue
-                                : (isMe ? Colors.white60 : Colors.grey),
+                                : (isMe
+                                    ? Colors.white60
+                                    : Colors.grey),
                           ),
                         ],
                       ),
@@ -1598,6 +2116,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
                 ),
               ),
             ),
+
             if (isMe) ...[
               const SizedBox(width: 8),
               StreamBuilder<DocumentSnapshot>(
@@ -1605,33 +2124,52 @@ class _UserChatScreenState extends State<UserChatScreen> {
                     .collection('users')
                     .doc(currentUser!.uid)
                     .snapshots(),
-                builder: (context, snapshot) {
+                builder: (
+                  context,
+                  snapshot,
+                ) {
                   String? profileImg;
 
-                  if (snapshot.hasData && snapshot.data!.exists) {
+                  if (snapshot.hasData &&
+                      snapshot.data!.exists) {
                     final userData =
-                        snapshot.data!.data() as Map<String, dynamic>;
+                        snapshot.data!.data()
+                            as Map<String, dynamic>;
 
-                    profileImg = userData['profileImage'] ?? userData['image'];
+                    profileImg =
+                        userData['profileImage'] ??
+                            userData['image'];
                   }
 
                   return CircleAvatar(
                     radius: 16,
-                    backgroundColor: AppColors.lightgrey,
+                    backgroundColor:
+                        AppColors.lightgrey,
                     child: ClipOval(
-                      child: profileImg != null && profileImg.isNotEmpty
+                      child: profileImg != null &&
+                              profileImg.isNotEmpty
                           ? Image.network(
                               profileImg,
                               width: 32,
                               height: 32,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Icon(
+                              errorBuilder: (
+                                context,
+                                error,
+                                stackTrace,
+                              ) =>
+                                  Icon(
                                 Icons.person,
                                 size: 18,
-                                color: AppColors.Pink,
+                                color:
+                                    AppColors.Pink,
                               ),
                             )
-                          : Icon(Icons.person, size: 18, color: AppColors.Pink),
+                          : Icon(
+                              Icons.person,
+                              size: 18,
+                              color: AppColors.Pink,
+                            ),
                     ),
                   );
                 },
@@ -1643,26 +2181,45 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
     if (currentUser == null) {
       return const Scaffold(
-        body: Center(child: Text('Please login first.')),
+        body: Center(
+          child: Text(
+            'Please login first.',
+          ),
+        ),
       );
     }
 
     final uid = currentUser!.uid;
 
     return Scaffold(
-      backgroundColor: darkColorThemeCheck(AppColors.backgroundDark, AppColors.lightwhite),
+      backgroundColor: darkColorThemeCheck(
+        AppColors.backgroundDark,
+        AppColors.lightwhite,
+      ),
       endDrawer: _buildDrawer(),
       appBar: AppBar(
-        backgroundColor: darkColorThemeCheck(AppColors.backgroundDark, AppColors.lightwhite),
-        foregroundColor: isDarkMode ? AppColors.lightwhite : Colors.black,
+        backgroundColor:
+            darkColorThemeCheck(
+          AppColors.backgroundDark,
+          AppColors.lightwhite,
+        ),
+        foregroundColor: isDarkMode
+            ? AppColors.lightwhite
+            : Colors.black,
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(
+            Icons.arrow_back,
+          ),
           onPressed: () => Get.back(),
         ),
         title: const SizedBox(),
@@ -1670,9 +2227,13 @@ class _UserChatScreenState extends State<UserChatScreen> {
           Builder(
             builder: (context) {
               return IconButton(
-                icon: const Icon(Icons.menu, size: 30),
+                icon: const Icon(
+                  Icons.menu,
+                  size: 30,
+                ),
                 onPressed: () {
-                  Scaffold.of(context).openEndDrawer();
+                  Scaffold.of(context)
+                      .openEndDrawer();
                 },
               );
             },
@@ -1680,6 +2241,7 @@ class _UserChatScreenState extends State<UserChatScreen> {
           const SizedBox(width: 8),
         ],
       ),
+
       body: Column(
         children: [
           Expanded(
@@ -1688,12 +2250,22 @@ class _UserChatScreenState extends State<UserChatScreen> {
                   .collection('chats')
                   .doc(uid)
                   .collection('messages')
-                  .orderBy('timestamp', descending: true)
+                  .orderBy(
+                    'timestamp',
+                    descending: true,
+                  )
                   .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+              builder: (
+                context,
+                snapshot,
+              ) {
+                if (snapshot.connectionState ==
+                    ConnectionState.waiting) {
                   return Center(
-                    child: CircularProgressIndicator(color: AppColors.Pink),
+                    child:
+                        CircularProgressIndicator(
+                      color: AppColors.Pink,
+                    ),
                   );
                 }
 
@@ -1702,7 +2274,9 @@ class _UserChatScreenState extends State<UserChatScreen> {
                     child: Text(
                       'Chat error: ${snapshot.error}',
                       style: TextStyle(
-                        color: isDarkMode ? AppColors.lightwhite : Colors.black,
+                        color: isDarkMode
+                            ? AppColors.lightwhite
+                            : Colors.black,
                       ),
                     ),
                   );
@@ -1712,14 +2286,17 @@ class _UserChatScreenState extends State<UserChatScreen> {
                   return const SizedBox();
                 }
 
-                final messages = snapshot.data!.docs;
+                final messages =
+                    snapshot.data!.docs;
 
                 if (messages.isEmpty) {
                   return Center(
                     child: Text(
                       'Start chatting with support.',
                       style: TextStyle(
-                        color: isDarkMode ? Colors.white54 : Colors.grey,
+                        color: isDarkMode
+                            ? Colors.white54
+                            : Colors.grey,
                       ),
                     ),
                   );
@@ -1727,24 +2304,39 @@ class _UserChatScreenState extends State<UserChatScreen> {
 
                 return ListView.builder(
                   reverse: true,
-                  padding: const EdgeInsets.only(top: 10, bottom: 10),
+                  padding:
+                      const EdgeInsets.only(
+                    top: 10,
+                    bottom: 10,
+                  ),
                   itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    return _buildMessage(messages[index]);
+                  itemBuilder:
+                      (context, index) {
+                    return _buildMessage(
+                      messages[index],
+                    );
                   },
                 );
               },
             ),
           ),
+
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 5, 12, 10),
+              padding:
+                  const EdgeInsets.fromLTRB(
+                12,
+                5,
+                12,
+                10,
+              ),
               child: Row(
                 children: [
                   Container(
                     width: 45,
                     height: 45,
-                    decoration: const BoxDecoration(
+                    decoration:
+                        const BoxDecoration(
                       color: AppColors.Pink,
                       shape: BoxShape.circle,
                     ),
@@ -1753,50 +2345,82 @@ class _UserChatScreenState extends State<UserChatScreen> {
                           ? const SizedBox(
                               width: 19,
                               height: 19,
-                              child: CircularProgressIndicator(
+                              child:
+                                  CircularProgressIndicator(
                                 strokeWidth: 2,
                                 color: Colors.white,
                               ),
                             )
-                          : const Icon(Icons.camera_alt, color: Colors.white, size: 21),
-                      onPressed: isUploadingImage ? null : _takePhoto,
+                          : const Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 21,
+                            ),
+                      onPressed:
+                          isUploadingImage
+                              ? null
+                              : _takePhoto,
                     ),
                   ),
+
                   const SizedBox(width: 8),
+
                   Expanded(
                     child: Container(
-                      decoration: BoxDecoration(
-                        color: darkColorThemeCheck(
+                      decoration:
+                          BoxDecoration(
+                        color:
+                            darkColorThemeCheck(
                           AppColors.surfaceDark,
                           AppColors.surfaceLight,
                         ),
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius:
+                            BorderRadius.circular(
+                          30,
+                        ),
                       ),
                       child: TextField(
-                        controller: _messageController,
+                        controller:
+                            _messageController,
                         style: TextStyle(
-                          color: isDarkMode ? AppColors.lightwhite : Colors.black,
+                          color: isDarkMode
+                              ? AppColors
+                                  .lightwhite
+                              : Colors.black,
                         ),
-                        decoration: const InputDecoration(
+                        decoration:
+                            const InputDecoration(
                           hintText: 'Type here...',
-                          border: InputBorder.none,
+                          border:
+                              InputBorder.none,
                           contentPadding:
-                              EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+                              EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 13,
+                          ),
                         ),
-                        onSubmitted: (_) => _sendMessage(),
+                        onSubmitted: (_) =>
+                            _sendMessage(),
                       ),
                     ),
                   ),
+
                   const SizedBox(width: 8),
+
                   Container(
                     width: 50,
                     height: 50,
-                    decoration: const BoxDecoration(
+                    decoration:
+                        const BoxDecoration(
                       color: AppColors.Pink,
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.send, color: Colors.white, size: 23),
+                      icon: const Icon(
+                        Icons.send,
+                        color: Colors.white,
+                        size: 23,
+                      ),
                       onPressed: _sendMessage,
                     ),
                   ),
