@@ -80,9 +80,8 @@ class BottomNavbar extends StatelessWidget {
             // Index 2 aur 3 par Message aur Profile hain, un par click hotay hi Get.to() chal jaye ga
             if (index == 2) {
               Get.to(
-                () => const Scaffold(
-                  body: Center(child: Text('Messages')),
-                ),
+                () => const UserChatScreen(),
+                
               );
             } else if (index == 3) {
               Get.to(() => const PersonScreen());

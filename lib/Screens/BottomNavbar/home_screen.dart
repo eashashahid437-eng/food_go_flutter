@@ -72,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             'Foodgo',
                             style: GoogleFonts.lobster(
                               color: isDark ? Colors.white : Colors.black,
-                              fontSize: 40,
+                              fontSize: 34,
                               fontWeight: FontWeight.bold,
                               fontStyle: FontStyle.italic,
                             ),
@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: screenHeight * 0.002,
                           ),
                           Text(
-                            'Order Your Favorite Food!',
+                            'Order your favorite food!',
                             style: GoogleFonts.poppins(
                               color: isDark
                                   ? Colors.grey.shade400
@@ -163,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.transparent,
-                            hintText: 'Search for food...',
+                            hintText: 'Search ',
                             hintStyle: GoogleFonts.poppins(
                               color: isDark
                                   ? Colors.grey.shade400

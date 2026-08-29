@@ -1,9 +1,11 @@
+
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:label="food_go"
@@ -56,6 +58,17 @@
 
         </activity>
 
+        <!-- Firebase Messaging Service -->
+        <service
+            android:name=".FoodGoFirebaseMessagingService"
+            android:exported="false">
+
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+
+        </service>
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2"/>
@@ -63,10 +76,13 @@
     </application>
 
     <queries>
+
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+
     </queries>
 
 </manifest>
+
