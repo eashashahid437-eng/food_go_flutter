@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +11,7 @@ class PaymentController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Backend URLs seedha yahan define — koi alag file nahi chahiye
+  // Backend URLs
   static const String _backendUrl =
       'https://food-delivery-backend-ivory.vercel.app/api/create-payment-intent';
   static const String _notifyAdminUrl =
@@ -21,20 +20,15 @@ class PaymentController extends GetxController {
   final List<Map<String, dynamic>> orderItems;
 
   final RxDouble orderAmount = 0.0.obs;
-
   final RxDouble taxes = 0.30.obs;
-
   final RxDouble deliveryFees = 1.50.obs;
 
   double get totalAmount {
     return orderAmount.value + taxes.value + deliveryFees.value;
   }
 
-  // Ab yahan default 'Stripe Card' set kar diya hai taake database mein theek save ho
   final RxString selectedMethod = 'Stripe Card'.obs;
-
   final RxBool saveCard = true.obs;
-
   final RxBool isProcessing = false.obs;
 
   PaymentController(double price, {this.orderItems = const []}) {
@@ -45,7 +39,14 @@ class PaymentController extends GetxController {
     selectedMethod.value = method;
   }
 
-  Future<void> _notifyAdminNewOrder(String orderTitle, double totalAmount, String orderId) async {
+  // Updated Admin Notification Method (includes userName and userId)
+  Future<void> _notifyAdminNewOrder({
+    required String orderTitle,
+    required double totalAmount,
+    required String orderId,
+    required String userId,
+    required String userName,
+  }) async {
     try {
       await http.post(
         Uri.parse(_notifyAdminUrl),
@@ -54,6 +55,8 @@ class PaymentController extends GetxController {
           'orderTitle': orderTitle,
           'totalAmount': totalAmount,
           'orderId': orderId,
+          'userId': userId,
+          'userName': userName,
         }),
       );
     } catch (e) {
@@ -77,7 +80,6 @@ class PaymentController extends GetxController {
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
         );
-
         return;
       }
 
@@ -89,17 +91,11 @@ class PaymentController extends GetxController {
           colorText: Colors.white,
           snackPosition: SnackPosition.BOTTOM,
         );
-
         return;
       }
 
       // 1. Call Vercel Backend to Create Payment Intent
       final int amountInCents = (totalAmount * 100).round();
-
-      debugPrint("======================================");
-      debugPrint("SENDING PAYMENT REQUEST TO: $_backendUrl");
-      debugPrint("AMOUNT IN CENTS: $amountInCents");
-      debugPrint("======================================");
 
       final response = await http.post(
         Uri.parse(_backendUrl),
@@ -109,9 +105,6 @@ class PaymentController extends GetxController {
           'currency': 'usd',
         }),
       );
-
-      debugPrint("RESPONSE STATUS CODE: ${response.statusCode}");
-      debugPrint("RESPONSE BODY: ${response.body}");
 
       if (response.statusCode != 200) {
         throw Exception('Failed to create payment intent: ${response.body}');
@@ -150,15 +143,19 @@ class PaymentController extends GetxController {
       }).toList();
 
       String firstItemName = 'Food Order';
-
       if (cleanItems.isNotEmpty) {
         firstItemName =
             cleanItems.first['productName']?.toString() ?? 'Food Order';
       }
 
+      // User details extract for Admin reference
+      final String userName =
+          user.displayName ?? user.email?.split('@').first ?? 'Customer';
+
       final Map<String, dynamic> orderData = {
         'orderId': orderId,
         'userId': user.uid,
+        'userName': userName,
         'email': user.email ?? '',
         'items': cleanItems,
         'orderTitle': firstItemName,
@@ -170,7 +167,7 @@ class PaymentController extends GetxController {
         'taxes': taxes.value,
         'deliveryFees': deliveryFees.value,
         'totalAmount': totalAmount,
-        'paymentMethod': selectedMethod.value, // Ab yahan 'Stripe Card' save hoga
+        'paymentMethod': selectedMethod.value,
         'saveCardDetails': saveCard.value,
         'status': 'Pending',
         'paymentStatus': 'Paid',
@@ -179,16 +176,17 @@ class PaymentController extends GetxController {
 
       await orderRef.set(orderData);
 
-      // 5. Admin ko naye order ka notification bhejo
-      await _notifyAdminNewOrder(firstItemName, totalAmount, orderId);
-
-      debugPrint("======================================");
-      debugPrint("ORDER & PAYMENT SUCCESSFUL");
-      debugPrint("ORDER ID: $orderId");
-      debugPrint("======================================");
+      // 5. Admin ko naye order ka notification bhejo (with User info)
+      await _notifyAdminNewOrder(
+        orderTitle: firstItemName,
+        totalAmount: totalAmount,
+        orderId: orderId,
+        userId: user.uid,
+        userName: userName,
+      );
 
       if (context.mounted) {
-        _showSuccessDialog(context, orderId);
+        _showSuccessDialog(context);
       }
     } on StripeException catch (e) {
       debugPrint("STRIPE ERROR: ${e.error.localizedMessage}");
@@ -201,7 +199,6 @@ class PaymentController extends GetxController {
       );
     } catch (e) {
       debugPrint("ORDER ERROR: $e");
-
       Get.snackbar(
         "Order Error",
         "Something went wrong while processing your payment.",
@@ -215,7 +212,8 @@ class PaymentController extends GetxController {
     }
   }
 
-  void _showSuccessDialog(BuildContext context, String orderId) {
+  // Exact Figma Template Dialog
+  void _showSuccessDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -223,69 +221,66 @@ class PaymentController extends GetxController {
         return Dialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(24),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(25),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Icon
                 Container(
-                  width: 70,
-                  height: 70,
+                  width: 75,
+                  height: 75,
                   decoration: const BoxDecoration(
-                    color:AppColors.darkpink,
+                    color: AppColors.darkpink,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check,
-                      color: Colors.white,
-                      size: 40,
+                  child: const Icon(
+                    Icons.check,
+                    color: Colors.white,
+                    size: 45,
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                // Title
                 const Text(
-                  "Success!",
+                  "Success !",
                   style: TextStyle(
-                    fontSize: 23,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color:AppColors.darkpink,
+                    color: AppColors.darkpink,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
+
+                // Subtitle (Exact Figma Text)
                 const Text(
-                  "Your order has been placed successfully.",
+                  "Your payment was successful.\nA receipt for this purchase has been sent to your email.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 15),
-                const Text(
-                  "Order ID",
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  orderId,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color:AppColors.darkpink,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: Colors.grey,
                   ),
                 ),
-                const SizedBox(height: 25),
+                const SizedBox(height: 30),
+
+                // Button
                 SizedBox(
                   width: double.infinity,
-                  height: 45,
+                  height: 48,
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.of(dialogContext).pop();
                       Get.back();
                     },
                     style: ElevatedButton.styleFrom(
-                    backgroundColor:AppColors.darkpink,
+                      backgroundColor: AppColors.darkpink,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: const Text(
@@ -310,7 +305,6 @@ class PaymentController extends GetxController {
     if (value is num) {
       return value.toDouble();
     }
-
     return double.tryParse(value?.toString() ?? '') ?? 0.0;
   }
 
@@ -318,7 +312,6 @@ class PaymentController extends GetxController {
     if (value is num) {
       return value.toInt();
     }
-
     return int.tryParse(value?.toString() ?? '') ?? 1;
   }
 }
