@@ -40,7 +40,9 @@ class _PersonScreenState extends State<PersonScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ProfileController controller = Get.put(ProfileController());
+    final ProfileController controller =
+        Get.put(ProfileController());
+
     final bool isDark = Get.isDarkMode;
     final Size screenSize = MediaQuery.sizeOf(context);
 
@@ -52,29 +54,106 @@ class _PersonScreenState extends State<PersonScreen> {
         child: Obx(() {
           if (controller.isLoading.value) {
             return const Center(
-              child: CircularProgressIndicator(color: AppColors.darkpink),
+              child: CircularProgressIndicator(
+                color: AppColors.darkpink,
+              ),
             );
           }
 
-          final User? user = FirebaseAuth.instance.currentUser;
+          // ============================================================
+          // CURRENT FIREBASE USER
+          // ============================================================
+
+          final User? user =
+              FirebaseAuth.instance.currentUser;
+
+          // ============================================================
+          // NAME
+          //
+          // Priority:
+          // 1. ProfileController name
+          // 2. Firebase displayName
+          // 3. "Not available"
+          // ============================================================
+
+          String profileName =
+              controller.nameController.text.trim();
+
+          if (profileName.isEmpty) {
+            profileName =
+                user?.displayName?.trim() ?? '';
+          }
+
+          if (profileName.isEmpty) {
+            profileName = 'Not available';
+          }
+
+          // ============================================================
+          // EMAIL
+          // ============================================================
+
+          final String profileEmail =
+              user?.email?.trim().isNotEmpty == true
+                  ? user!.email!.trim()
+                  : controller.email.value;
+
+          // ============================================================
+          // GOOGLE / FIREBASE PHOTO
+          //
+          // Priority:
+          // 1. Uploaded profile image
+          // 2. Firebase Google photoURL
+          // ============================================================
+
+          final String firebasePhotoUrl =
+              user?.photoURL?.trim() ?? '';
+
+          final String controllerPhotoUrl =
+              controller.profileImageUrl.value.trim();
+
+          final String profilePhotoUrl =
+              controllerPhotoUrl.isNotEmpty
+                  ? controllerPhotoUrl
+                  : firebasePhotoUrl;
 
           return SingleChildScrollView(
             child: Column(
               children: [
+                // ========================================================
+                // HEADER
+                // ========================================================
+
                 SizedBox(
                   height:
-                      (screenSize.height < 700 ? 180 : 200) +
-                      (screenSize.height < 700 ? 110 : 125) / 2,
+                      (screenSize.height < 700
+                              ? 180
+                              : 200) +
+                          (screenSize.height < 700
+                                  ? 110
+                                  : 125) /
+                              2,
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
+                      // --------------------------------------------------
+                      // PINK BACKGROUND
+                      // --------------------------------------------------
+
                       Container(
-                        height: screenSize.height < 700 ? 180 : 200,
+                        height:
+                            screenSize.height < 700
+                                ? 180
+                                : 200,
                         width: double.infinity,
                         decoration: const BoxDecoration(
                           color: AppColors.darkpink,
                         ),
                       ),
+
+                      // --------------------------------------------------
+                      // LEFT BURGER
+                      // --------------------------------------------------
+
                       Positioned(
                         left: -60,
                         top: 5,
@@ -87,6 +166,11 @@ class _PersonScreenState extends State<PersonScreen> {
                           ),
                         ),
                       ),
+
+                      // --------------------------------------------------
+                      // RIGHT BURGER
+                      // --------------------------------------------------
+
                       Positioned(
                         right: -60,
                         top: 5,
@@ -99,48 +183,80 @@ class _PersonScreenState extends State<PersonScreen> {
                           ),
                         ),
                       ),
+
+                      // --------------------------------------------------
+                      // OVERLAY
+                      // --------------------------------------------------
+
                       Container(
-                        height: screenSize.height < 700 ? 180 : 200,
+                        height:
+                            screenSize.height < 700
+                                ? 180
+                                : 200,
                         width: double.infinity,
-                        color: AppColors.darkpink.withOpacity(0.48),
+                        color: AppColors.darkpink
+                            .withOpacity(0.48),
                       ),
+
+                      // --------------------------------------------------
+                      // WHITE CONTENT BACKGROUND
+                      // --------------------------------------------------
+
                       Positioned(
                         left: 0,
                         right: 0,
-                        top: screenSize.height < 700 ? 165 : 185,
+                        top:
+                            screenSize.height < 700
+                                ? 165
+                                : 185,
                         bottom: -1000,
                         child: Container(
-                          decoration: const BoxDecoration(
+                          decoration:
+                              const BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(35),
-                              topRight: Radius.circular(35),
+                            borderRadius:
+                                BorderRadius.only(
+                              topLeft:
+                                  Radius.circular(35),
+                              topRight:
+                                  Radius.circular(35),
                             ),
                           ),
                         ),
                       ),
+
+                      // ==================================================
+                      // BACK + SETTINGS
+                      // ==================================================
+
                       Positioned(
                         top: 15,
                         left: 20,
                         right: 20,
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment:
+                              MainAxisAlignment
+                                  .spaceBetween,
                           children: [
                             Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                borderRadius: BorderRadius.circular(30),
+                                borderRadius:
+                                    BorderRadius.circular(
+                                  30,
+                                ),
                                 onTap: () {
-                           Get.offAll(() =>  BottomNavbar());
+                                  Get.offAll(
+                                    () => BottomNavbar(),
+                                  );
                                 },
-                                // onTap: () {
-                                //   Get.back();
-                                // },
                                 child: Container(
                                   width: 48,
                                   height: 48,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.transparent,
+                                  decoration:
+                                      const BoxDecoration(
+                                    color:
+                                        Colors.transparent,
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
@@ -151,18 +267,27 @@ class _PersonScreenState extends State<PersonScreen> {
                                 ),
                               ),
                             ),
+
                             Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                borderRadius: BorderRadius.circular(30),
+                                borderRadius:
+                                    BorderRadius.circular(
+                                  30,
+                                ),
                                 onTap: () {
-                                  Get.to(() => const SettingsScreen());
+                                  Get.to(
+                                    () =>
+                                        const SettingsScreen(),
+                                  );
                                 },
                                 child: Container(
                                   width: 48,
                                   height: 48,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.transparent,
+                                  decoration:
+                                      const BoxDecoration(
+                                    color:
+                                        Colors.transparent,
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
@@ -176,39 +301,19 @@ class _PersonScreenState extends State<PersonScreen> {
                           ],
                         ),
                       ),
-                      // Positioned(
-                      //   top: 15,
-                      //   right: 20,
-                      //   child: Material(
-                      //     color: Colors.transparent,
-                      //     child: InkWell(
-                      //       borderRadius: BorderRadius.circular(30),
-                      //       onTap: () {
-                      //         Get.to(() => const SettingsScreen());
-                      //       },
-                      //       child: Container(
-                      //         width: 48,
-                      //         height: 48,
-                      //         decoration: const BoxDecoration(
-                      //           color: Colors.transparent,
-                      //           shape: BoxShape.circle,
-                      //         ),
-                      //         child: const Icon(
-                      //           Icons.settings_outlined,
-                      //           color: Colors.white,
-                      //           size: 28,
-                      //         ),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
+
+                      // ==================================================
+                      // PROFILE IMAGE
+                      // ==================================================
+
                       Positioned(
                         left: 0,
                         right: 0,
                         bottom: 0,
                         child: Center(
                           child: GestureDetector(
-                            onTap: controller.isUploadingImage.value
+                            onTap: controller
+                                    .isUploadingImage.value
                                 ? null
                                 : () {
                                     _showImageOptions(
@@ -218,74 +323,120 @@ class _PersonScreenState extends State<PersonScreen> {
                                     );
                                   },
                             child: Container(
-                              width: screenSize.height < 700 ? 110 : 125,
-                              height: screenSize.height < 700 ? 110 : 125,
+                              width:
+                                  screenSize.height < 700
+                                      ? 110
+                                      : 125,
+                              height:
+                                  screenSize.height < 700
+                                      ? 110
+                                      : 125,
                               padding: EdgeInsets.zero,
                               decoration: BoxDecoration(
                                 color: isDark
                                     ? AppColors.surfaceDark
                                     : AppColors.surfaceLight,
-                                borderRadius: BorderRadius.circular(25),
+                                borderRadius:
+                                    BorderRadius.circular(
+                                  25,
+                                ),
                                 border: Border.all(
-                                  color: AppColors.darkpink,
+                                  color:
+                                      AppColors.darkpink,
                                   width: 3,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: isDark
-                                        ? Colors.black.withOpacity(0.5)
+                                        ? Colors.black
+                                            .withOpacity(0.5)
                                         : Colors.black26,
                                     blurRadius: 10,
-                                    offset: const Offset(0, 5),
+                                    offset:
+                                        const Offset(0, 5),
                                   ),
                                 ],
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(22),
+                                borderRadius:
+                                    BorderRadius.circular(
+                                  22,
+                                ),
                                 child:
-                                    controller.profileImageUrl.value.isNotEmpty
-                                    ? CachedNetworkImage(
-                                        imageUrl:
-                                            controller.profileImageUrl.value,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) =>
-                                            const Center(
-                                              child: CircularProgressIndicator(
-                                                color: AppColors.darkpink,
-                                                strokeWidth: 2.5,
-                                              ),
-                                            ),
-                                        errorWidget: (context, url, error) =>
-                                            Container(
-                                              color: isDark
-                                                  ? AppColors.backgroundDark
-                                                  : Colors.grey[100],
-                                              child: const Icon(
-                                                Icons.person,
-                                                size: 50,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                      )
-                                    : Container(
-                                        color: isDark
-                                            ? AppColors.backgroundDark
-                                            : Colors.grey[100],
-                                        child: controller.isUploadingImage.value
-                                            ? const Padding(
-                                                padding: EdgeInsets.all(30),
+                                    // ==================================================
+                                    // SHOW PROFILE IMAGE
+                                    // ==================================================
+                                    profilePhotoUrl.isNotEmpty
+                                        ? CachedNetworkImage(
+                                            imageUrl:
+                                                profilePhotoUrl,
+                                            fit: BoxFit.cover,
+                                            placeholder:
+                                                (
+                                              context,
+                                              url,
+                                            ) {
+                                              return const Center(
                                                 child:
                                                     CircularProgressIndicator(
-                                                      color: AppColors.darkpink,
-                                                      strokeWidth: 2.5,
+                                                  color:
+                                                      AppColors.darkpink,
+                                                  strokeWidth:
+                                                      2.5,
+                                                ),
+                                              );
+                                            },
+                                            errorWidget:
+                                                (
+                                              context,
+                                              url,
+                                              error,
+                                            ) {
+                                              return Container(
+                                                color: isDark
+                                                    ? AppColors
+                                                        .backgroundDark
+                                                    : Colors
+                                                        .grey[100],
+                                                child:
+                                                    const Icon(
+                                                  Icons.person,
+                                                  size: 50,
+                                                  color:
+                                                      Colors.grey,
+                                                ),
+                                              );
+                                            },
+                                          )
+                                        : Container(
+                                            color: isDark
+                                                ? AppColors
+                                                    .backgroundDark
+                                                : Colors
+                                                    .grey[100],
+                                            child: controller
+                                                    .isUploadingImage
+                                                    .value
+                                                ? const Padding(
+                                                    padding:
+                                                        EdgeInsets.all(
+                                                      30,
                                                     ),
-                                              )
-                                            : const Icon(
-                                                Icons.person,
-                                                size: 50,
-                                                color: Colors.grey,
-                                              ),
-                                      ),
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      color:
+                                                          AppColors.darkpink,
+                                                      strokeWidth:
+                                                          2.5,
+                                                    ),
+                                                  )
+                                                : const Icon(
+                                                    Icons.person,
+                                                    size: 50,
+                                                    color:
+                                                        Colors.grey,
+                                                  ),
+                                          ),
                               ),
                             ),
                           ),
@@ -294,28 +445,55 @@ class _PersonScreenState extends State<PersonScreen> {
                     ],
                   ),
                 ),
+
+                // ========================================================
+                // PROFILE INFORMATION
+                // ========================================================
+
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 20,
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 15),
+
+                      // ==================================================
+                      // NAME
+                      // ==================================================
+
                       _field(
                         'Name',
                         controller.nameController,
                         Icons.person_outline,
                         isDark,
                         compact: true,
+                        initialValue: profileName,
                       ),
+
                       const SizedBox(height: 10),
+
+                      // ==================================================
+                      // EMAIL
+                      // ==================================================
+
                       _readOnly(
                         'Email',
-                        user?.email ?? controller.email.value,
+                        profileEmail,
                         Icons.email_outlined,
                         isDark,
                         compact: true,
                       ),
+
                       const SizedBox(height: 10),
+
+                      // ==================================================
+                      // DELIVERY ADDRESS
+                      // ==================================================
+
                       _field(
                         'Delivery Address',
                         controller.addressController,
@@ -324,15 +502,9 @@ class _PersonScreenState extends State<PersonScreen> {
                         maxLines: 1,
                         compact: true,
                       ),
-                      const SizedBox(height: 10),
-                      _readOnly(
-                        'Password',
-                        '••••••••',
-                        Icons.lock_outline,
-                        isDark,
-                        compact: true,
-                      ),
+
                       const SizedBox(height: 14),
+
                       Divider(
                         color: isDark
                             ? AppColors.surfaceDark
@@ -340,21 +512,39 @@ class _PersonScreenState extends State<PersonScreen> {
                         thickness: 1,
                         height: 1,
                       ),
+
                       const SizedBox(height: 4),
+
+                      // ==================================================
+                      // PAYMENT DETAILS
+                      // ==================================================
+
                       _figmaStyleAction(
                         title: 'Payment Details',
                         isDark: isDark,
                         onTap: () {
-                          Get.to(() => const PaymentDetailsScreen());
+                          Get.to(
+                            () =>
+                                const PaymentDetailsScreen(),
+                          );
                         },
                       ),
+
+                      // ==================================================
+                      // ORDER HISTORY
+                      // ==================================================
+
                       _figmaStyleAction(
                         title: 'Order history',
                         isDark: isDark,
                         onTap: () {
-                          Get.to(() => const OrderHistoryScreen());
+                          Get.to(
+                            () =>
+                                const OrderHistoryScreen(),
+                          );
                         },
                       ),
+
                       Divider(
                         color: isDark
                             ? AppColors.surfaceDark
@@ -362,51 +552,80 @@ class _PersonScreenState extends State<PersonScreen> {
                         thickness: 1,
                         height: 1,
                       ),
+
                       const SizedBox(height: 14),
+
+                      // ==================================================
+                      // EDIT + LOGOUT
+                      // ==================================================
+
                       Row(
                         children: [
                           Expanded(
                             child: SizedBox(
                               height: 48,
-                              child: ElevatedButton.icon(
-                                onPressed: controller.isSaving.value
+                              child:
+                                  ElevatedButton.icon(
+                                onPressed: controller
+                                        .isSaving.value
                                     ? null
                                     : () async {
-                                        await controller.saveUserData();
+                                        await controller
+                                            .saveUserData();
                                       },
-                                icon: controller.isSaving.value
+                                icon: controller
+                                        .isSaving.value
                                     ? const SizedBox(
                                         width: 17,
                                         height: 17,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.white,
+                                        child:
+                                            CircularProgressIndicator(
+                                          color:
+                                              Colors.white,
                                           strokeWidth: 2,
                                         ),
                                       )
-                                    : const Icon(Icons.edit_outlined, size: 18),
+                                    : const Icon(
+                                        Icons
+                                            .edit_outlined,
+                                        size: 18,
+                                      ),
                                 label: Text(
-                                  controller.isSaving.value
+                                  controller
+                                          .isSaving.value
                                       ? 'Saving...'
                                       : 'Edit Profile',
                                 ),
-                                style: ElevatedButton.styleFrom(
+                                style:
+                                    ElevatedButton
+                                        .styleFrom(
                                   backgroundColor: isDark
-                                      ? AppColors.primaryLight
+                                      ? AppColors
+                                          .primaryLight
                                       : Colors.black87,
-                                  foregroundColor: Colors.white,
+                                  foregroundColor:
+                                      Colors.white,
                                   elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                  shape:
+                                      RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius
+                                            .circular(
+                                      12,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
+
                           const SizedBox(width: 12),
+
                           Expanded(
                             child: SizedBox(
                               height: 48,
-                              child: OutlinedButton.icon(
+                              child:
+                                  OutlinedButton.icon(
                                 onPressed: () {
                                   _showLogoutDialog(
                                     context,
@@ -414,16 +633,30 @@ class _PersonScreenState extends State<PersonScreen> {
                                     isDark,
                                   );
                                 },
-                                icon: const Icon(Icons.logout, size: 18),
-                                label: const Text('Log Out'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.darkpink,
-                                  side: const BorderSide(
-                                    color: AppColors.darkpink,
+                                icon: const Icon(
+                                  Icons.logout,
+                                  size: 18,
+                                ),
+                                label:
+                                    const Text('Log Out'),
+                                style:
+                                    OutlinedButton
+                                        .styleFrom(
+                                  foregroundColor:
+                                      AppColors.darkpink,
+                                  side:
+                                      const BorderSide(
+                                    color:
+                                        AppColors.darkpink,
                                     width: 1,
                                   ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
+                                  shape:
+                                      RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius
+                                            .circular(
+                                      12,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -431,6 +664,7 @@ class _PersonScreenState extends State<PersonScreen> {
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 30),
                     ],
                   ),
@@ -443,6 +677,10 @@ class _PersonScreenState extends State<PersonScreen> {
     );
   }
 
+  // ============================================================
+  // ACTION ROW
+  // ============================================================
+
   static Widget _figmaStyleAction({
     required String title,
     required bool isDark,
@@ -451,9 +689,13 @@ class _PersonScreenState extends State<PersonScreen> {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+        padding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 4,
+        ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment:
+              MainAxisAlignment.spaceBetween,
           children: [
             Text(
               title,
@@ -465,12 +707,20 @@ class _PersonScreenState extends State<PersonScreen> {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, size: 13, color: Colors.grey),
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 13,
+              color: Colors.grey,
+            ),
           ],
         ),
       ),
     );
   }
+
+  // ============================================================
+  // EDITABLE FIELD
+  // ============================================================
 
   static Widget _field(
     String title,
@@ -479,57 +729,103 @@ class _PersonScreenState extends State<PersonScreen> {
     bool isDark, {
     int maxLines = 1,
     bool compact = false,
+    String? initialValue,
   }) {
+    // ============================================================
+    // IMPORTANT:
+    // Agar controller empty hai aur Firebase se Google name mila
+    // hai, to controller mein Google name set kar do.
+    // ============================================================
+
+    if (initialValue != null &&
+        initialValue.isNotEmpty &&
+        controller.text.trim().isEmpty) {
+      controller.text = initialValue;
+    }
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         Text(
           title,
           style: TextStyle(
-            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+            color: isDark
+                ? AppColors.lightwhite
+                : AppColors.textPrimaryLight,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
         ),
+
         const SizedBox(height: 3),
+
         TextField(
           controller: controller,
           maxLines: maxLines,
           style: TextStyle(
-            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+            color: isDark
+                ? AppColors.lightwhite
+                : AppColors.textPrimaryLight,
             fontSize: 14,
           ),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: Colors.grey, size: 22),
+            prefixIcon: Icon(
+              icon,
+              color: Colors.grey,
+              size: 22,
+            ),
             filled: true,
-            fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-            contentPadding: EdgeInsets.symmetric(
+            fillColor: isDark
+                ? AppColors.surfaceDark
+                : AppColors.surfaceLight,
+            contentPadding:
+                EdgeInsets.symmetric(
               horizontal: 14,
-              vertical: compact ? 10 : 14,
+              vertical:
+                  compact ? 10 : 14,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius:
+                  BorderRadius.circular(18),
               borderSide: BorderSide(
-                color: isDark ? AppColors.surfaceDark : Colors.grey.shade300,
+                color: isDark
+                    ? AppColors.surfaceDark
+                    : Colors.grey.shade300,
                 width: 1,
               ),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
+            enabledBorder:
+                OutlineInputBorder(
+              borderRadius:
+                  BorderRadius.circular(18),
               borderSide: BorderSide(
-                color: isDark ? AppColors.surfaceDark : Colors.grey.shade300,
+                color: isDark
+                    ? AppColors.surfaceDark
+                    : Colors.grey.shade300,
                 width: 1,
               ),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: const BorderSide(color: AppColors.darkpink, width: 1),
+            focusedBorder:
+                OutlineInputBorder(
+              borderRadius:
+                  BorderRadius.circular(18),
+              borderSide:
+                  const BorderSide(
+                color:
+                    AppColors.darkpink,
+                width: 1,
+              ),
             ),
           ),
         ),
       ],
     );
   }
+
+  // ============================================================
+  // READ ONLY FIELD
+  // ============================================================
 
   static Widget _readOnly(
     String title,
@@ -539,44 +835,67 @@ class _PersonScreenState extends State<PersonScreen> {
     bool compact = false,
   }) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         Text(
           title,
           style: TextStyle(
-            color: isDark ? AppColors.lightwhite : AppColors.textPrimaryLight,
+            color: isDark
+                ? AppColors.lightwhite
+                : AppColors.textPrimaryLight,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
         ),
+
         const SizedBox(height: 3),
+
         Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(
+          padding:
+              EdgeInsets.symmetric(
             horizontal: 14,
-            vertical: compact ? 11 : 14,
+            vertical:
+                compact ? 11 : 14,
           ),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-            borderRadius: BorderRadius.circular(18),
+          decoration:
+              BoxDecoration(
+            color: isDark
+                ? AppColors.surfaceDark
+                : AppColors.surfaceLight,
+            borderRadius:
+                BorderRadius.circular(18),
             border: Border.all(
-              color: isDark ? AppColors.surfaceDark : Colors.grey.shade300,
+              color: isDark
+                  ? AppColors.surfaceDark
+                  : Colors.grey.shade300,
               width: 1,
             ),
           ),
           child: Row(
             children: [
-              Icon(icon, color: Colors.grey[500], size: 22),
+              Icon(
+                icon,
+                color: Colors.grey[500],
+                size: 22,
+              ),
+
               const SizedBox(width: 12),
+
               Expanded(
                 child: Text(
-                  value.isEmpty ? 'Not available' : value,
+                  value.isEmpty
+                      ? 'Not available'
+                      : value,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow:
+                      TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isDark
                         ? AppColors.lightwhite
-                        : AppColors.textPrimaryLight,
+                        : AppColors
+                            .textPrimaryLight,
                     fontSize: 14,
                   ),
                 ),
@@ -588,6 +907,10 @@ class _PersonScreenState extends State<PersonScreen> {
     );
   }
 
+  // ============================================================
+  // IMAGE OPTIONS
+  // ============================================================
+
   static void _showImageOptions(
     BuildContext context,
     ProfileController controller,
@@ -595,119 +918,224 @@ class _PersonScreenState extends State<PersonScreen> {
   ) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      backgroundColor: isDark
+          ? AppColors.surfaceDark
+          : AppColors.surfaceLight,
+      shape:
+          const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(
+          top: Radius.circular(25),
+        ),
       ),
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.only(top: 10, bottom: 15),
+            padding:
+                const EdgeInsets.only(
+              top: 10,
+              bottom: 15,
+            ),
             child: Wrap(
               children: [
                 Center(
                   child: Container(
                     width: 45,
                     height: 5,
-                    decoration: BoxDecoration(
+                    decoration:
+                        BoxDecoration(
                       color: Colors.grey[700],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(15),
-                    child: Text(
-                      'Change Profile Picture',
-                      style: TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? AppColors.lightwhite : Colors.black,
+                      borderRadius:
+                          BorderRadius.circular(
+                        10,
                       ),
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 12),
+
+                Center(
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.all(
+                      15,
+                    ),
+                    child: Text(
+                      'Change Profile Picture',
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight:
+                            FontWeight.bold,
+                        color: isDark
+                            ? AppColors
+                                .lightwhite
+                            : Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ======================================================
+                // CAMERA
+                // ======================================================
+
                 ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 25),
+                  contentPadding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 25,
+                  ),
                   leading: Container(
                     width: 45,
                     height: 45,
-                    decoration: BoxDecoration(
-                      color: AppColors.darkpink.withOpacity(0.10),
-                      shape: BoxShape.circle,
+                    decoration:
+                        BoxDecoration(
+                      color: AppColors
+                          .darkpink
+                          .withOpacity(0.10),
+                      shape:
+                          BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.camera_alt_outlined,
-                      color: AppColors.darkpink,
+                    child:
+                        const Icon(
+                      Icons
+                          .camera_alt_outlined,
+                      color:
+                          AppColors.darkpink,
                     ),
                   ),
                   title: Text(
                     'Take Photo',
                     style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.lightwhite : Colors.black,
+                      fontWeight:
+                          FontWeight.w600,
+                      color: isDark
+                          ? AppColors
+                              .lightwhite
+                          : Colors.black,
                     ),
                   ),
                   subtitle: Text(
                     'Use your camera',
-                    style: TextStyle(color: Colors.grey[400]),
+                    style: TextStyle(
+                      color:
+                          Colors.grey[400],
+                    ),
                   ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
+                  trailing:
+                      const Icon(
+                    Icons
+                        .arrow_forward_ios,
                     size: 15,
-                    color: Colors.grey,
+                    color:
+                        Colors.grey,
                   ),
                   onTap: () {
-                    Navigator.pop(context);
-                    controller.pickImage(ImageSource.camera);
+                    Navigator.pop(
+                      context,
+                    );
+
+                    controller
+                        .pickImage(
+                      ImageSource
+                          .camera,
+                    );
                   },
                 ),
+
+                // ======================================================
+                // GALLERY
+                // ======================================================
+
                 ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 25),
+                  contentPadding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 25,
+                  ),
                   leading: Container(
                     width: 45,
                     height: 45,
-                    decoration: BoxDecoration(
-                      color: AppColors.darkpink.withOpacity(0.10),
-                      shape: BoxShape.circle,
+                    decoration:
+                        BoxDecoration(
+                      color: AppColors
+                          .darkpink
+                          .withOpacity(0.10),
+                      shape:
+                          BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.photo_library_outlined,
-                      color: AppColors.darkpink,
+                    child:
+                        const Icon(
+                      Icons
+                          .photo_library_outlined,
+                      color:
+                          AppColors.darkpink,
                     ),
                   ),
                   title: Text(
                     'Choose from Gallery',
                     style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.lightwhite : Colors.black,
+                      fontWeight:
+                          FontWeight.w600,
+                      color: isDark
+                          ? AppColors
+                              .lightwhite
+                          : Colors.black,
                     ),
                   ),
                   subtitle: Text(
                     'Select an existing photo',
-                    style: TextStyle(color: Colors.grey[400]),
+                    style: TextStyle(
+                      color:
+                          Colors.grey[400],
+                    ),
                   ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
+                  trailing:
+                      const Icon(
+                    Icons
+                        .arrow_forward_ios,
                     size: 15,
-                    color: Colors.grey,
+                    color:
+                        Colors.grey,
                   ),
                   onTap: () {
-                    Navigator.pop(context);
-                    controller.pickImage(ImageSource.gallery);
+                    Navigator.pop(
+                      context,
+                    );
+
+                    controller
+                        .pickImage(
+                      ImageSource
+                          .gallery,
+                    );
                   },
                 ),
+
+                // ======================================================
+                // CANCEL
+                // ======================================================
+
                 ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 25),
-                  leading: const Icon(Icons.close, color: Colors.grey),
-                  title: const Text(
+                  contentPadding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 25,
+                  ),
+                  leading:
+                      const Icon(
+                    Icons.close,
+                    color: Colors.grey,
+                  ),
+                  title:
+                      const Text(
                     'Cancel',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(
+                      color:
+                          Colors.grey,
+                    ),
                   ),
                   onTap: () {
-                    Navigator.pop(context);
+                    Navigator.pop(
+                      context,
+                    );
                   },
                 ),
               ],
@@ -717,6 +1145,10 @@ class _PersonScreenState extends State<PersonScreen> {
       },
     );
   }
+
+  // ============================================================
+  // LOGOUT DIALOG
+  // ============================================================
 
   static void _showLogoutDialog(
     BuildContext context,
@@ -728,35 +1160,57 @@ class _PersonScreenState extends State<PersonScreen> {
         backgroundColor: isDark
             ? AppColors.surfaceDark
             : AppColors.surfaceLight,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape:
+            RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(18),
+        ),
         title: Text(
           'Logout',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isDark ? AppColors.lightwhite : Colors.black,
+            fontWeight:
+                FontWeight.bold,
+            color: isDark
+                ? AppColors.lightwhite
+                : Colors.black,
           ),
         ),
         content: Text(
           'Are you sure you want to logout?',
-          style: TextStyle(color: isDark ? Colors.grey[300] : Colors.black87),
+          style: TextStyle(
+            color: isDark
+                ? Colors.grey[300]
+                : Colors.black87,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () {
               Get.back();
             },
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.grey,
+              ),
+            ),
           ),
+
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.darkpink,
-              foregroundColor: Colors.white,
+            style:
+                ElevatedButton.styleFrom(
+              backgroundColor:
+                  AppColors.darkpink,
+              foregroundColor:
+                  Colors.white,
             ),
             onPressed: () async {
               Get.back();
+
               await controller.logout();
             },
-            child: const Text('Logout'),
+            child:
+                const Text('Logout'),
           ),
         ],
       ),
