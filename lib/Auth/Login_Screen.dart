@@ -1,4 +1,6 @@
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
@@ -36,11 +38,14 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ============================================================
-  // FACEBOOK LOGIN
+  // FACEBOOK SIGN IN
   // ============================================================
-
   Future<void> signInWithFacebook() async {
     try {
+      setState(() {
+        isLoading = true;
+      });
+
       final LoginResult result = await FacebookAuth.instance.login(
         permissions: ['email', 'public_profile'],
       );
@@ -51,169 +56,134 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       final AccessToken accessToken = result.accessToken!;
-
-      final OAuthCredential facebookCredential =
-          FacebookAuthProvider.credential(
+      final OAuthCredential facebookCredential = FacebookAuthProvider.credential(
         accessToken.tokenString,
       );
 
-      try {
-        final UserCredential userCredential =
-            await auth.signInWithCredential(facebookCredential);
+      final UserCredential userCredential =
+          await auth.signInWithCredential(facebookCredential);
 
-        final User? user = userCredential.user;
+      User? user = userCredential.user;
 
-        print("================================");
-        print("Facebook Login Successful");
-        print("Name: ${user?.displayName}");
-        print("Email: ${user?.email}");
-        print("Photo: ${user?.photoURL}");
-        print("================================");
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection("users")
+            .doc(user.uid)
+            .get();
 
-        Get.offAll(() => BottomNavbar());
-      } on FirebaseAuthException catch (e) {
-        if (e.code == 'account-exists-with-different-credential') {
-          final String existingEmail = e.email ?? '';
-
-          if (existingEmail.isEmpty) {
-            Get.snackbar(
-              "Login Failed",
-              "This Facebook account is already registered with another login method.",
-              snackPosition: SnackPosition.TOP,
-              backgroundColor: Colors.white,
-              colorText: Colors.black,
-            );
-            return;
-          }
-
-          Get.snackbar(
-            "Account Already Exists",
-            "Please login with your existing Email/Password account first.",
-            snackPosition: SnackPosition.TOP,
-            backgroundColor: Colors.white,
-            colorText: Colors.black,
-          );
-
-          return;
+        if (!userDoc.exists) {
+          await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
+            "uid": user.uid,
+            "name": user.displayName ?? "",
+            "email": user.email ?? "",
+            "phone": user.phoneNumber ?? "",
+            "photoUrl": user.photoURL ?? "",
+            "authProvider": "facebook",
+            "createdAt": FieldValue.serverTimestamp(),
+          });
         }
 
-        rethrow;
+        print("Facebook Login Successful: ${user.email}");
+        Get.offAll(() => BottomNavbar());
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'account-exists-with-different-credential') {
+        Get.snackbar(
+          "Account Exists",
+          "This email is already linked with another sign-in provider.",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Theme.of(context).cardColor,
+          colorText: Theme.of(context).textTheme.bodyLarge?.color,
+        );
+      } else {
+        Get.snackbar(
+          "Facebook Login Failed",
+          e.message ?? "Authentication failed",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Theme.of(context).cardColor,
+          colorText: Theme.of(context).textTheme.bodyLarge?.color,
+        );
       }
     } catch (e) {
       print("Facebook Login Error: $e");
-
-      Get.snackbar(
-        "Facebook Login Failed",
-        e.toString(),
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
-      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
   // ============================================================
-  // GOOGLE LOGIN
+  // GOOGLE SIGN IN
   // ============================================================
-
   Future<void> signInWithGoogle() async {
     try {
-      print("Google Sign-In started...");
+      setState(() {
+        isLoading = true;
+      });
 
-      // Google account select karein
-      final GoogleSignInAccount? googleUser =
-          await GoogleSignIn().signIn();
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-      // User ne Google popup cancel kar diya
-      if (googleUser == null) {
-        print("Google Sign-In cancelled");
-        return;
-      }
+      if (googleUser != null) {
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
 
-      print("Google Account Selected");
-      print("Google Name: ${googleUser.displayName}");
-      print("Google Email: ${googleUser.email}");
-      print("Google Photo: ${googleUser.photoUrl}");
+        final OAuthCredential credential = GoogleAuthProvider.credential(
+          idToken: googleAuth.idToken,
+          accessToken: googleAuth.accessToken,
+        );
 
-      // Google authentication
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+        final UserCredential userCredential =
+            await auth.signInWithCredential(credential);
 
-      // Firebase credential
-      final OAuthCredential credential =
-          GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-        accessToken: googleAuth.accessToken,
-      );
+        User? user = userCredential.user;
 
-      // Firebase mein sign in
-      final UserCredential userCredential =
-          await auth.signInWithCredential(credential);
+        if (user != null) {
+          final userDoc = await FirebaseFirestore.instance
+              .collection("users")
+              .doc(user.uid)
+              .get();
 
-      User? user = userCredential.user;
+          if (!userDoc.exists) {
+            await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
+              "uid": user.uid,
+              "name": user.displayName ?? googleUser.displayName ?? "",
+              "email": user.email ?? googleUser.email,
+              "phone": user.phoneNumber ?? "",
+              "photoUrl": user.photoURL ?? googleUser.photoUrl ?? "",
+              "authProvider": "google",
+              "createdAt": FieldValue.serverTimestamp(),
+            });
+          }
 
-      // ========================================================
-      // GOOGLE NAME FIREBASE USER PROFILE MEIN SAVE KARNA
-      // ========================================================
-
-      if (user != null) {
-        final String googleName =
-            googleUser.displayName?.trim() ?? '';
-
-        if (googleName.isNotEmpty) {
-          await user.updateDisplayName(googleName);
+          print("Google Login Successful: ${user.email}");
+          Get.offAll(() => BottomNavbar());
         }
-
-        // Firebase user ko refresh karo
-        await user.reload();
-
-        // Updated user dobara lo
-        user = FirebaseAuth.instance.currentUser;
       }
-
-      // ========================================================
-      // DEBUG INFORMATION
-      // ========================================================
-
-      print("================================");
-      print("Google Login Successful");
-      print("Firebase Name: ${user?.displayName}");
-      print("Firebase Email: ${user?.email}");
-      print("Firebase Photo: ${user?.photoURL}");
-      print("UID: ${user?.uid}");
-      print("================================");
-
-      // Home screen
-      Get.offAll(() => BottomNavbar());
-    } on FirebaseAuthException catch (e) {
-      print("Firebase Google Login Error");
-      print("Code: ${e.code}");
-      print("Message: ${e.message}");
-
+    } catch (e) {
+      print("Google Login Error: $e");
       Get.snackbar(
         "Google Login Failed",
-        e.message ?? "Unable to login with Google",
+        "An error occurred. Please try again.",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
-    } catch (e) {
-      print("Google Sign In Error: $e");
-
-      Get.snackbar(
-        "Error",
-        "Google Sign-In failed",
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
-      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
   // ============================================================
   // EMAIL/PASSWORD LOGIN
   // ============================================================
-
   Future<void> loginUser() async {
     final String emailText = email.text.trim();
     final String passwordText = password.text.trim();
@@ -223,8 +193,8 @@ class _LoginScreenState extends State<LoginScreen> {
         "Error",
         "Please enter your email",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -234,8 +204,8 @@ class _LoginScreenState extends State<LoginScreen> {
         "Error",
         "Please enter a valid email address",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -245,8 +215,8 @@ class _LoginScreenState extends State<LoginScreen> {
         "Error",
         "Please enter your password",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -264,70 +234,53 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final User? user = userCredential.user;
 
-      print("================================");
-      print("Email/Password Login Successful");
-      print("Name: ${user?.displayName}");
-      print("Email: ${user?.email}");
-      print("Photo: ${user?.photoURL}");
-      print("================================");
-
-      Get.snackbar(
-        "Success",
-        "Login successful",
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
-      );
-
-      Get.offAll(() => BottomNavbar());
+      if (user != null) {
+        print("Email Login Successful: ${user.email}");
+        Get.offAll(() => BottomNavbar());
+      }
     } on FirebaseAuthException catch (e) {
-      String message = "Login failed";
+      String message;
 
       switch (e.code) {
         case "invalid-email":
-          message = "Please enter a valid email address";
+          message = "Please enter a valid email address.";
           break;
-
         case "user-not-found":
-          message = "No account found with this email";
+          message = "No account found with this email.";
           break;
-
         case "wrong-password":
-          message = "Incorrect password";
+          message = "Incorrect password.";
           break;
-
         case "invalid-credential":
-          message = "Email or password is incorrect";
+          message = "Email or password is incorrect.";
           break;
-
         case "user-disabled":
-          message = "This account has been disabled";
+          message = "This account has been disabled.";
           break;
-
         case "too-many-requests":
-          message = "Too many attempts. Try again later";
+          message = "Too many attempts. Try again later.";
           break;
-
         case "network-request-failed":
-          message = "Please check your internet connection";
+          message = "Please check your internet connection.";
           break;
-
         default:
-          message = e.message ?? "Login failed";
+          message = e.message ?? "Login failed.";
       }
 
       Get.snackbar(
         "Error",
         message,
         snackPosition: SnackPosition.TOP,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
     } catch (e) {
       Get.snackbar(
         "Error",
-        "Something went wrong. Please try again",
+        "Something went wrong. Please try again.",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
     } finally {
       if (mounted) {
@@ -341,17 +294,18 @@ class _LoginScreenState extends State<LoginScreen> {
   // ============================================================
   // INPUT DECORATION
   // ============================================================
-
   InputDecoration inputDecoration({
     required String hintText,
     required IconData icon,
     Widget? suffixIcon,
   }) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InputDecoration(
       hintText: hintText,
       hintStyle: AppFonts.poppinsMedium(
         fontSize: 16,
-      ).copyWith(color: Colors.grey),
+      ).copyWith(color: isDark ? Colors.white38 : Colors.grey),
       prefixIcon: Icon(
         icon,
         color: AppColors.Pink,
@@ -363,8 +317,8 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(
-          color: Colors.grey,
+        borderSide: BorderSide(
+          color: isDark ? Colors.white24 : Colors.grey,
           width: 1.5,
         ),
       ),
@@ -377,8 +331,8 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(
-          color: Colors.grey,
+        borderSide: BorderSide(
+          color: isDark ? Colors.white24 : Colors.grey,
           width: 1.5,
         ),
       ),
@@ -395,12 +349,14 @@ class _LoginScreenState extends State<LoginScreen> {
   // ============================================================
   // FIELD TITLE
   // ============================================================
-
   Widget fieldTitle(String title) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       title,
       style: AppFonts.poppinsMedium(
         fontSize: 16,
+      ).copyWith(
+        color: isDark ? Colors.white : Colors.black87,
       ),
     );
   }
@@ -408,7 +364,6 @@ class _LoginScreenState extends State<LoginScreen> {
   // ============================================================
   // FIELD SPACE
   // ============================================================
-
   Widget fieldSpace(BuildContext context) {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.018,
@@ -418,11 +373,12 @@ class _LoginScreenState extends State<LoginScreen> {
   // ============================================================
   // SOCIAL BUTTON
   // ============================================================
-
   Widget socialButton({
     required String image,
     required VoidCallback onTap,
   }) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(50),
@@ -431,13 +387,13 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: AppColors.lightgrey,
+            color: isDark ? Colors.white24 : AppColors.lightgrey,
             width: 1.5,
           ),
         ),
         child: CircleAvatar(
           radius: 20,
-          backgroundColor: Colors.white,
+          backgroundColor: isDark ? Colors.grey[800] : Colors.white,
           backgroundImage: AssetImage(image),
         ),
       ),
@@ -447,9 +403,10 @@ class _LoginScreenState extends State<LoginScreen> {
   // ============================================================
   // BUILD
   // ============================================================
-
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Container(
@@ -523,9 +480,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     22,
                     24,
                   ),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(40),
                       topRight: Radius.circular(40),
                     ),
@@ -542,6 +499,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         keyboardType: TextInputType.emailAddress,
                         style: AppFonts.poppinsMedium(
                           fontSize: 18,
+                        ).copyWith(
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                         decoration: inputDecoration(
                           hintText: "davidjonson@gmail.com",
@@ -560,9 +519,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         obscureText: obscure,
                         style: AppFonts.poppinsMedium(
                           fontSize: 18,
+                        ).copyWith(
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                         decoration: inputDecoration(
-                          hintText: "xxxxxxxx",
+                          hintText: "••••••••",
                           icon: Icons.lock_outline,
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -587,6 +548,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           Checkbox(
                             value: remember,
                             activeColor: AppColors.Pink,
+                            side: BorderSide(
+                              color: isDark ? Colors.white54 : Colors.grey,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(4),
                             ),
@@ -601,6 +565,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             "Remember me",
                             style: AppFonts.poppinsMedium(
                               fontSize: 13,
+                            ).copyWith(
+                              color: isDark ? Colors.white70 : Colors.black87,
                             ),
                           ),
 
@@ -628,8 +594,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       Center(
                         child: SizedBox(
-                          width:
-                              MediaQuery.of(context).size.width * 0.7,
+                          width: MediaQuery.of(context).size.width * 0.7,
                           height: 48,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
@@ -637,26 +602,22 @@ class _LoginScreenState extends State<LoginScreen> {
                               foregroundColor: Colors.white,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(10),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            onPressed:
-                                isLoading ? null : loginUser,
+                            onPressed: isLoading ? null : loginUser,
                             child: isLoading
                                 ? const SizedBox(
                                     height: 22,
                                     width: 22,
-                                    child:
-                                        CircularProgressIndicator(
+                                    child: CircularProgressIndicator(
                                       strokeWidth: 2,
                                       color: Colors.white,
                                     ),
                                   )
                                 : Text(
                                     "Log In",
-                                    style:
-                                        AppFonts.poppinsMedium(
+                                    style: AppFonts.poppinsMedium(
                                       fontSize: 18,
                                     ).copyWith(
                                       color: Colors.white,
@@ -670,26 +631,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       Row(
                         children: [
-                          const Expanded(
-                            child: Divider(),
+                          Expanded(
+                            child: Divider(
+                              color: isDark ? Colors.white24 : Colors.grey[300],
+                            ),
                           ),
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 12,
                             ),
                             child: Text(
                               "Log in with",
-                              style:
-                                  AppFonts.poppinsMedium(
+                              style: AppFonts.poppinsMedium(
                                 fontSize: 14,
                               ).copyWith(
-                                color: Colors.grey,
+                                color: isDark ? Colors.white54 : Colors.grey,
                               ),
                             ),
                           ),
-                          const Expanded(
-                            child: Divider(),
+                          Expanded(
+                            child: Divider(
+                              color: isDark ? Colors.white24 : Colors.grey[300],
+                            ),
                           ),
                         ],
                       ),
@@ -697,8 +660,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 20),
 
                       Row(
-                        mainAxisAlignment:
-                            MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           socialButton(
                             image: ImagePath.Google,
@@ -706,9 +668,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
 
                           SizedBox(
-                            width:
-                                MediaQuery.of(context).size.width *
-                                    0.05,
+                            width: MediaQuery.of(context).size.width * 0.05,
                           ),
 
                           socialButton(
@@ -717,16 +677,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               Get.snackbar(
                                 "Apple Login",
                                 "Apple login is currently unavailable.",
-                                snackPosition:
-                                    SnackPosition.BOTTOM,
+                                snackPosition: SnackPosition.TOP,
+                                backgroundColor: Theme.of(context).cardColor,
+                                colorText: Theme.of(context).textTheme.bodyLarge?.color,
                               );
                             },
                           ),
 
                           SizedBox(
-                            width:
-                                MediaQuery.of(context).size.width *
-                                    0.05,
+                            width: MediaQuery.of(context).size.width * 0.05,
                           ),
 
                           socialButton(
@@ -745,31 +704,26 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: AppFonts.poppinsMedium(
                               fontSize: 14,
                             ).copyWith(
-                              color: Colors.black,
+                              color: isDark ? Colors.white70 : Colors.black,
                             ),
                             children: [
                               const TextSpan(
-                                text:
-                                    "Don't have an account? ",
+                                text: "Don't have an account? ",
                               ),
                               TextSpan(
                                 text: "Sign Up",
-                                style:
-                                    AppFonts.poppinsMedium(
+                                style: AppFonts.poppinsMedium(
                                   fontSize: 14,
                                 ).copyWith(
                                   color: AppColors.Pink,
-                                  fontWeight:
-                                      FontWeight.w600,
+                                  fontWeight: FontWeight.w600,
                                 ),
-                                recognizer:
-                                    TapGestureRecognizer()
-                                      ..onTap = () {
-                                        Get.to(
-                                          () =>
-                                              const SignUpScreen(),
-                                        );
-                                      },
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    Get.to(
+                                      () => const SignUpScreen(),
+                                    );
+                                  },
                               ),
                             ],
                           ),

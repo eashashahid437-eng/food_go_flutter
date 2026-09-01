@@ -1195,58 +1195,105 @@ class _UserChatScreenState extends State<UserChatScreen> {
                       _takePhoto();
                     },
                   ),
-
                   ListTile(
-                    contentPadding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 2,
-                    ),
-                    leading: Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: AppColors.Pink
-                            .withOpacity(0.08),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        dark
-                            ? Icons.dark_mode
-                            : Icons.nightlight_outlined,
-                        color: AppColors.Pink,
-                        size: 21,
-                      ),
-                    ),
-                    title: Text(
-                      'Dark Mode',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: dark
-                            ? AppColors.lightwhite
-                            : Colors.black87,
-                      ),
-                    ),
-                    trailing: Switch(
-                      value: isDarkMode,
-                      activeThumbColor:
-                          AppColors.Pink,
-                      onChanged: (value) async {
-                        setState(() {
-                          isDarkMode = value;
-                        });
+  contentPadding: const EdgeInsets.symmetric(
+    horizontal: 20,
+    vertical: 2,
+  ),
+  leading: Container(
+    width: 42,
+    height: 42,
+    decoration: BoxDecoration(
+      color: AppColors.Pink.withOpacity(0.08),
+      shape: BoxShape.circle,
+    ),
+    child: Icon(
+      isDarkMode ? Icons.dark_mode : Icons.nightlight_outlined,
+      color: AppColors.Pink,
+      size: 21,
+    ),
+  ),
+  title: Text(
+    'Dark Mode',
+    style: TextStyle(
+      fontSize: 16,
+      fontWeight: FontWeight.w500,
+      color: Get.isDarkMode ? AppColors.lightwhite : Colors.black87,
+    ),
+  ),
+  trailing: Switch(
+    value: isDarkMode,
+    activeThumbColor: AppColors.Pink,
+    onChanged: (value) async {
+      setState(() {
+        isDarkMode = value;
+      });
 
-                        Get.changeThemeMode(
-                          value
-                              ? ThemeMode.dark
-                              : ThemeMode.light,
-                        );
+      // 1. Theme change karein
+      Get.changeThemeMode(
+        value ? ThemeMode.dark : ThemeMode.light,
+      );
 
-                        await _saveUserSettings(null);
-                      },
-                    ),
-                  ),
+      // 2. Settings save karein
+      await _saveUserSettings(null);
+
+      // 3. Force rebuild for all active screens
+      Get.forceAppUpdate();
+    },
+  ),
+),
+
+                  // ListTile(
+                  //   contentPadding:
+                  //       const EdgeInsets.symmetric(
+                  //     horizontal: 20,
+                  //     vertical: 2,
+                  //   ),
+                  //   leading: Container(
+                  //     width: 42,
+                  //     height: 42,
+                  //     decoration: BoxDecoration(
+                  //       color: AppColors.Pink
+                  //           .withOpacity(0.08),
+                  //       shape: BoxShape.circle,
+                  //     ),
+                  //     child: Icon(
+                  //       dark
+                  //           ? Icons.dark_mode
+                  //           : Icons.nightlight_outlined,
+                  //       color: AppColors.Pink,
+                  //       size: 21,
+                  //     ),
+                  //   ),
+                  //   title: Text(
+                  //     'Dark Mode',
+                  //     style: TextStyle(
+                  //       fontSize: 16,
+                  //       fontWeight: FontWeight.w500,
+                  //       color: dark
+                  //           ? AppColors.lightwhite
+                  //           : Colors.black87,
+                  //     ),
+                  //   ),
+                  //   trailing: Switch(
+                  //     value: isDarkMode,
+                  //     activeThumbColor:
+                  //         AppColors.Pink,
+                  //     onChanged: (value) async {
+                  //       setState(() {
+                  //         isDarkMode = value;
+                  //       });
+
+                  //       Get.changeThemeMode(
+                  //         value
+                  //             ? ThemeMode.dark
+                  //             : ThemeMode.light,
+                  //       );
+
+                  //       await _saveUserSettings(null);
+                  //     },
+                  //   ),
+                  // ),
 
                   ListTile(
                     contentPadding:
@@ -1397,9 +1444,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  // ============================================================
-  // ORDER HISTORY
-  // ============================================================
+ 
+ 
 
   void _showOrderHistory() {
     Get.bottomSheet(
@@ -1631,9 +1677,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
     return isDarkMode ? darkColor : lightColor;
   }
 
-  // ============================================================
-  // ADDRESSES
-  // ============================================================
+  
+  
 
   void _showAddresses() {
     if (currentUser == null) return;
@@ -1773,9 +1818,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  // ============================================================
-  // PAYMENT
-  // ============================================================
+  
+  
 
   Future<void> _showPaymentDetails() async {
     if (currentUser == null) return;
@@ -1869,9 +1913,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  // ============================================================
-  // PRIVACY / TERMS
-  // ============================================================
+  
+  
 
   void _showPrivacyPolicy() {
     _showInfoDialog(
@@ -1933,9 +1976,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  // ============================================================
-  // MESSAGE WIDGET
-  // ============================================================
+ 
+ 
 
   String _formatNumber(dynamic value) {
     if (value is num) {
@@ -2181,9 +2223,8 @@ class _UserChatScreenState extends State<UserChatScreen> {
     );
   }
 
-  // ============================================================
-  // BUILD
-  // ============================================================
+ 
+ 
 
   @override
   Widget build(BuildContext context) {

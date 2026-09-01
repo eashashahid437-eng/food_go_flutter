@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -16,10 +15,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
 import 'firebase_options.dart';
 
-// ============================================================
-// NOTIFICATION CHANNELS
-// ============================================================
-
 const String kOrderChannelId = 'orders_channel';
 const String kOrderChannelName = 'Order Notifications';
 const int kOrderNotificationId = 2001;
@@ -27,18 +22,13 @@ const int kOrderNotificationId = 2001;
 const String kChatChannelId = 'chat_channel';
 const String kChatChannelName = 'Chat Notifications';
 
-final FlutterLocalNotificationsPlugin
-    flutterLocalNotificationsPlugin =
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
 const MethodChannel _notificationChannel =
     MethodChannel('food_go/notifications');
 
 bool _openChatAfterLaunch = false;
-
-// ============================================================
-// APP ICON BADGE
-// ============================================================
 
 Future<void> updateAppBadge(int count) async {
   try {
@@ -63,10 +53,6 @@ Future<void> clearAppBadge() async {
   }
 }
 
-// ============================================================
-// CREATE NOTIFICATION CHANNELS
-// ============================================================
-
 Future<void> _createNotificationChannels() async {
   final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
       flutterLocalNotificationsPlugin
@@ -77,59 +63,41 @@ Future<void> _createNotificationChannels() async {
     return;
   }
 
-  const AndroidNotificationChannel orderChannel =
-      AndroidNotificationChannel(
+  const AndroidNotificationChannel orderChannel = AndroidNotificationChannel(
     kOrderChannelId,
     kOrderChannelName,
-    description:
-        'Notifications for Food Go order updates.',
+    description: 'Notifications for Food Go order updates.',
     importance: Importance.max,
     playSound: true,
     enableVibration: true,
   );
 
-  const AndroidNotificationChannel chatChannel =
-      AndroidNotificationChannel(
+  const AndroidNotificationChannel chatChannel = AndroidNotificationChannel(
     kChatChannelId,
     kChatChannelName,
-    description:
-        'Notifications for Food Go chat messages.',
+    description: 'Notifications for Food Go chat messages.',
     importance: Importance.max,
     playSound: true,
     enableVibration: true,
   );
 
-  await androidPlugin.createNotificationChannel(
-    orderChannel,
-  );
-
-  await androidPlugin.createNotificationChannel(
-    chatChannel,
-  );
-
+  await androidPlugin.createNotificationChannel(orderChannel);
+  await androidPlugin.createNotificationChannel(chatChannel);
   await androidPlugin.requestNotificationsPermission();
 }
-
-// ============================================================
-// LOCAL NOTIFICATION INITIALIZATION
-// ============================================================
 
 Future<void> _initializeLocalNotifications() async {
   const AndroidInitializationSettings androidSettings =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
-  const InitializationSettings settings =
-      InitializationSettings(
+  const InitializationSettings settings = InitializationSettings(
     android: androidSettings,
   );
 
   await flutterLocalNotificationsPlugin.initialize(
     settings,
-    onDidReceiveNotificationResponse:
-        (NotificationResponse response) {
-      debugPrint(
-        'LOCAL NOTIFICATION TAP: ${response.payload}',
-      );
+    onDidReceiveNotificationResponse: (NotificationResponse response) {
+      debugPrint('LOCAL NOTIFICATION TAP: ${response.payload}');
 
       if (response.payload == 'chat_message') {
         clearAppBadge();
@@ -141,16 +109,12 @@ Future<void> _initializeLocalNotifications() async {
   await _createNotificationChannels();
 
   final NotificationAppLaunchDetails? launchDetails =
-      await flutterLocalNotificationsPlugin
-          .getNotificationAppLaunchDetails();
+      await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
 
   if (launchDetails?.didNotificationLaunchApp == true) {
-    final String? payload =
-        launchDetails?.notificationResponse?.payload;
+    final String? payload = launchDetails?.notificationResponse?.payload;
 
-    debugPrint(
-      'APP LAUNCHED FROM LOCAL NOTIFICATION: $payload',
-    );
+    debugPrint('APP LAUNCHED FROM LOCAL NOTIFICATION: $payload');
 
     if (payload == 'chat_message') {
       _openChatAfterLaunch = true;
@@ -158,13 +122,8 @@ Future<void> _initializeLocalNotifications() async {
   }
 }
 
-// ============================================================
-// BACKGROUND FCM MESSAGE
-// ============================================================
-
 @pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(
-    RemoteMessage message) async {
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -178,19 +137,14 @@ Future<void> _firebaseMessagingBackgroundHandler(
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const InitializationSettings settings =
-        InitializationSettings(
+    const InitializationSettings settings = InitializationSettings(
       android: androidSettings,
     );
 
-    await flutterLocalNotificationsPlugin.initialize(
-      settings,
-    );
-
+    await flutterLocalNotificationsPlugin.initialize(settings);
     await _createNotificationChannels();
 
-    final String type =
-        message.data['type']?.toString() ?? '';
+    final String type = message.data['type']?.toString() ?? '';
 
     if (type == 'chat_message') {
       await _showChatNotification(message);
@@ -202,24 +156,14 @@ Future<void> _firebaseMessagingBackgroundHandler(
       return;
     }
   } catch (e) {
-    debugPrint(
-      'Background FCM error: $e',
-    );
+    debugPrint('Background FCM error: $e');
   }
 }
 
-// ============================================================
-// SHOW ORDER NOTIFICATION
-// ============================================================
-
-Future<void> _showOrderNotification(
-    RemoteMessage message) async {
+Future<void> _showOrderNotification(RemoteMessage message) async {
   try {
-    final String status =
-        message.data['status']?.toString() ?? 'Updated';
-
-    final String orderId =
-        message.data['orderId']?.toString() ?? '';
+    final String status = message.data['status']?.toString() ?? 'Updated';
+    final String orderId = message.data['orderId']?.toString() ?? '';
 
     String emoji = '📦';
 
@@ -246,30 +190,24 @@ Future<void> _showOrderNotification(
         break;
     }
 
-    final String title =
-        '$emoji Order $status';
+    final String title = '$emoji Order $status';
 
-    final String shortOrderId =
-        orderId.isNotEmpty
-            ? orderId.substring(
-                0,
-                orderId.length > 6
-                    ? 6
-                    : orderId.length,
-              )
-            : '';
+    final String shortOrderId = orderId.isNotEmpty
+        ? orderId.substring(
+            0,
+            orderId.length > 6 ? 6 : orderId.length,
+          )
+        : '';
 
-    final String body =
-        shortOrderId.isNotEmpty
-            ? 'Your order #$shortOrderId is now $status.'
-            : 'Your order is now $status.';
+    final String body = shortOrderId.isNotEmpty
+        ? 'Your order #$shortOrderId is now $status.'
+        : 'Your order is now $status.';
 
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       kOrderChannelId,
       kOrderChannelName,
-      channelDescription:
-          'Notifications for Food Go order updates.',
+      channelDescription: 'Notifications for Food Go order updates.',
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
@@ -287,102 +225,53 @@ Future<void> _showOrderNotification(
       payload: 'order_notification',
     );
 
-    debugPrint(
-      'ORDER NOTIFICATION SHOWN: $status',
-    );
+    debugPrint('ORDER NOTIFICATION SHOWN: $status');
   } catch (e) {
-    debugPrint(
-      'Order notification error: $e',
-    );
+    debugPrint('Order notification error: $e');
   }
 }
 
-// ============================================================
-// SHOW CHAT NOTIFICATION
-// ============================================================
-
-Future<void> _showChatNotification(
-    RemoteMessage message) async {
+Future<void> _showChatNotification(RemoteMessage message) async {
   try {
     final String senderName =
-        message.data['senderName']
-                    ?.toString()
-                    .trim()
-                    .isNotEmpty ==
-                true
+        message.data['senderName']?.toString().trim().isNotEmpty == true
             ? message.data['senderName'].toString()
             : 'Food Go Support';
 
-    final String messageText =
-        message.data['messageText']?.toString() ?? '';
+    final String messageText = message.data['messageText']?.toString() ?? '';
 
-    final String body =
-        messageText.length > 120
-            ? '${messageText.substring(0, 120)}…'
-            : messageText;
+    final String body = messageText.length > 120
+        ? '${messageText.substring(0, 120)}…'
+        : messageText;
 
-    // ----------------------------------------------------------
-    // MESSAGE ID
-    // ----------------------------------------------------------
+    final String messageId = message.data['messageId']?.toString() ?? '';
 
-    final String messageId =
-        message.data['messageId']?.toString() ?? '';
-
-    // ----------------------------------------------------------
-    // BADGE COUNT FROM BACKEND
-    // ----------------------------------------------------------
-
-    final int badgeCount =
-        int.tryParse(
-              message.data['badgeCount']?.toString() ?? '',
-            ) ??
-            1;
-
-    // ----------------------------------------------------------
-    // APP ICON BADGE
-    // ----------------------------------------------------------
+    final int badgeCount = int.tryParse(
+          message.data['badgeCount']?.toString() ?? '',
+        ) ??
+        1;
 
     await updateAppBadge(badgeCount);
 
-    // ----------------------------------------------------------
-    // UNIQUE NOTIFICATION ID
-    // ----------------------------------------------------------
-
-    final int notificationId =
-        messageId.isNotEmpty
-            ? messageId.hashCode.abs()
-            : DateTime.now()
-                .millisecondsSinceEpoch
-                .remainder(100000);
-
-    // ----------------------------------------------------------
-    // CHAT NOTIFICATION DETAILS
-    // ----------------------------------------------------------
+    final int notificationId = messageId.isNotEmpty
+        ? messageId.hashCode.abs()
+        : DateTime.now().millisecondsSinceEpoch.remainder(100000);
 
     final AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
       kChatChannelId,
       kChatChannelName,
-      channelDescription:
-          'Notifications for Food Go chat messages.',
+      channelDescription: 'Notifications for Food Go chat messages.',
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
       enableVibration: true,
       autoCancel: true,
-
-      // Notification number
       number: badgeCount,
-
-      styleInformation:
-          BigTextStyleInformation(
+      styleInformation: BigTextStyleInformation(
         body.isEmpty ? 'New message' : body,
       ),
     );
-
-    // ----------------------------------------------------------
-    // SHOW CHAT NOTIFICATION
-    // ----------------------------------------------------------
 
     await flutterLocalNotificationsPlugin.show(
       notificationId,
@@ -394,53 +283,35 @@ Future<void> _showChatNotification(
       payload: 'chat_message',
     );
 
-    debugPrint(
-      'CHAT NOTIFICATION SHOWN - BADGE COUNT: $badgeCount',
-    );
+    debugPrint('CHAT NOTIFICATION SHOWN - BADGE COUNT: $badgeCount');
   } catch (e) {
-    debugPrint(
-      'Chat notification error: $e',
-    );
+    debugPrint('Chat notification error: $e');
   }
 }
-
-// ============================================================
-// SAVE USER FCM TOKEN
-// ============================================================
 
 Future<void> saveUserFCMToken({
   String? providedToken,
 }) async {
   try {
-    final User? user =
-        FirebaseAuth.instance.currentUser;
+    final User? user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      debugPrint(
-        'FCM TOKEN NOT SAVED: No logged-in user.',
-      );
+      debugPrint('FCM TOKEN NOT SAVED: No logged-in user.');
       return;
     }
 
     final String? token =
-        providedToken ??
-            await FirebaseMessaging.instance.getToken();
+        providedToken ?? await FirebaseMessaging.instance.getToken();
 
     if (token == null || token.isEmpty) {
-      debugPrint(
-        'FCM TOKEN NOT SAVED: Token is null/empty.',
-      );
+      debugPrint('FCM TOKEN NOT SAVED: Token is null/empty.');
       return;
     }
 
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .set(
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
       {
         'fcmToken': token,
-        'tokenUpdatedAt':
-            FieldValue.serverTimestamp(),
+        'tokenUpdatedAt': FieldValue.serverTimestamp(),
       },
       SetOptions(merge: true),
     );
@@ -448,27 +319,17 @@ Future<void> saveUserFCMToken({
     debugPrint('==========================================');
     debugPrint('USER FCM TOKEN');
     debugPrint(token);
-    debugPrint(
-      'USER FCM TOKEN SAVED SUCCESSFULLY',
-    );
+    debugPrint('USER FCM TOKEN SAVED SUCCESSFULLY');
     debugPrint('==========================================');
   } catch (e) {
-    debugPrint(
-      'USER FCM TOKEN SAVE ERROR: $e',
-    );
+    debugPrint('USER FCM TOKEN SAVE ERROR: $e');
   }
 }
 
-// ============================================================
-// FCM INITIALIZATION
-// ============================================================
-
 Future<void> _initializeFCM() async {
-  final FirebaseMessaging messaging =
-      FirebaseMessaging.instance;
+  final FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-  final NotificationSettings permission =
-      await messaging.requestPermission(
+  final NotificationSettings permission = await messaging.requestPermission(
     alert: true,
     badge: true,
     sound: true,
@@ -476,9 +337,7 @@ Future<void> _initializeFCM() async {
   );
 
   debugPrint(
-    'FCM AUTHORIZATION STATUS: '
-    '${permission.authorizationStatus}',
-  );
+      'FCM AUTHORIZATION STATUS: ${permission.authorizationStatus}');
 
   await messaging.setForegroundNotificationPresentationOptions(
     alert: true,
@@ -486,22 +345,15 @@ Future<void> _initializeFCM() async {
     sound: true,
   );
 
-  // ----------------------------------------------------------
-  // FOREGROUND
-  // ----------------------------------------------------------
-
   FirebaseMessaging.onMessage.listen(
     (RemoteMessage message) async {
       debugPrint('==========================================');
       debugPrint('FOREGROUND FCM RECEIVED');
       debugPrint('DATA: ${message.data}');
-      debugPrint(
-        'NOTIFICATION: ${message.notification?.title}',
-      );
+      debugPrint('NOTIFICATION: ${message.notification?.title}');
       debugPrint('==========================================');
 
-      final String type =
-          message.data['type']?.toString() ?? '';
+      final String type = message.data['type']?.toString() ?? '';
 
       if (type == 'chat_message') {
         await _showChatNotification(message);
@@ -511,18 +363,11 @@ Future<void> _initializeFCM() async {
     },
   );
 
-  // ----------------------------------------------------------
-  // BACKGROUND -> TAP
-  // ----------------------------------------------------------
-
   FirebaseMessaging.onMessageOpenedApp.listen(
     (RemoteMessage message) {
-      debugPrint(
-        'NOTIFICATION OPENED: ${message.data}',
-      );
+      debugPrint('NOTIFICATION OPENED: ${message.data}');
 
-      final String type =
-          message.data['type']?.toString() ?? '';
+      final String type = message.data['type']?.toString() ?? '';
 
       if (type == 'chat_message') {
         clearAppBadge();
@@ -531,32 +376,18 @@ Future<void> _initializeFCM() async {
     },
   );
 
-  // ----------------------------------------------------------
-  // TERMINATED -> FCM TAP
-  // ----------------------------------------------------------
-
-  final RemoteMessage? initialMessage =
-      await messaging.getInitialMessage();
+  final RemoteMessage? initialMessage = await messaging.getInitialMessage();
 
   if (initialMessage != null) {
-    debugPrint(
-      'APP OPENED FROM FCM NOTIFICATION: '
-      '${initialMessage.data}',
-    );
+    debugPrint('APP OPENED FROM FCM NOTIFICATION: ${initialMessage.data}');
 
-    if (initialMessage.data['type'] ==
-        'chat_message') {
+    if (initialMessage.data['type'] == 'chat_message') {
       clearAppBadge();
       _openChatAfterLaunch = true;
     }
   }
 
-  // ----------------------------------------------------------
-  // TOKEN
-  // ----------------------------------------------------------
-
-  final String? token =
-      await messaging.getToken();
+  final String? token = await messaging.getToken();
 
   if (token != null) {
     await saveUserFCMToken(
@@ -564,15 +395,9 @@ Future<void> _initializeFCM() async {
     );
   }
 
-  // ----------------------------------------------------------
-  // TOKEN REFRESH
-  // ----------------------------------------------------------
-
   messaging.onTokenRefresh.listen(
     (String newToken) async {
-      debugPrint(
-        'FCM TOKEN REFRESHED',
-      );
+      debugPrint('FCM TOKEN REFRESHED');
 
       await saveUserFCMToken(
         providedToken: newToken,
@@ -581,23 +406,15 @@ Future<void> _initializeFCM() async {
   );
 }
 
-// ============================================================
-// AUTH STATE -> SAVE TOKEN AFTER LOGIN
-// ============================================================
-
 void _listenForAuthAndSaveToken() {
   FirebaseAuth.instance.authStateChanges().listen(
     (User? user) async {
       if (user == null) {
-        debugPrint(
-          'AUTH STATE: No logged-in user.',
-        );
+        debugPrint('AUTH STATE: No logged-in user.');
         return;
       }
 
-      debugPrint(
-        'AUTH STATE: User logged in: ${user.uid}',
-      );
+      debugPrint('AUTH STATE: User logged in: ${user.uid}');
 
       await Future.delayed(
         const Duration(milliseconds: 500),
@@ -608,53 +425,31 @@ void _listenForAuthAndSaveToken() {
   );
 }
 
-// ============================================================
-// NATIVE NOTIFICATION TAP
-// ============================================================
-
 Future<void> _checkNativeNotificationTap() async {
   try {
     final Map<dynamic, dynamic>? data =
-        await _notificationChannel.invokeMethod(
-      'getNotificationData',
-    );
+        await _notificationChannel.invokeMethod('getNotificationData');
 
-    if (data != null &&
-        data['type']?.toString() ==
-            'chat_message') {
+    if (data != null && data['type']?.toString() == 'chat_message') {
       clearAppBadge();
       _openChatScreen();
     }
   } catch (e) {
-    debugPrint(
-      'Notification tap data error: $e',
-    );
+    debugPrint('Notification tap data error: $e');
   }
 }
-
-// ============================================================
-// OPEN CHAT SCREEN
-// ============================================================
 
 void _openChatScreen() {
   WidgetsBinding.instance.addPostFrameCallback(
     (_) {
       try {
-        Get.to(
-          () => const UserChatScreen(),
-        );
+        Get.to(() => const UserChatScreen());
       } catch (e) {
-        debugPrint(
-          'Unable to open chat screen: $e',
-        );
+        debugPrint('Unable to open chat screen: $e');
       }
     },
   );
 }
-
-// ============================================================
-// MAIN
-// ============================================================
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -666,73 +461,30 @@ Future<void> main() async {
 
   await GetStorage.init();
 
-  // ----------------------------------------------------------
-  // FIREBASE
-  // ----------------------------------------------------------
-
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // ----------------------------------------------------------
-  // BACKGROUND FCM
-  // ----------------------------------------------------------
-
-  FirebaseMessaging.onBackgroundMessage(
-    _firebaseMessagingBackgroundHandler,
-  );
-
-  // ----------------------------------------------------------
-  // LOCAL NOTIFICATIONS
-  // ----------------------------------------------------------
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   await _initializeLocalNotifications();
-
-  // ----------------------------------------------------------
-  // FCM
-  // ----------------------------------------------------------
-
   await _initializeFCM();
 
-  // ----------------------------------------------------------
-  // AUTH TOKEN LISTENER
-  // ----------------------------------------------------------
-
   _listenForAuthAndSaveToken();
-
-  // ----------------------------------------------------------
-  // STRIPE
-  // ----------------------------------------------------------
 
   Stripe.publishableKey =
       'pk_test_51U61yA31XAVPYuneJXmxrdbRDy3ZSCoXAgoY2sVRcjZcJHj6UN0D5odYlGaaKHfjMQjOJRU8iKXZG1PQQNmqFCXS00ZxWIkS6Z';
 
-  debugPrint(
-    'Stripe publishable key initialized.',
-  );
+  debugPrint('Stripe publishable key initialized.');
 
   await Stripe.instance.applySettings();
-
-  // ----------------------------------------------------------
-  // CART
-  // --------------------------------------------------
 
   Get.put<CartController>(
     CartController(),
     permanent: true,
   );
 
-  // ----------------------------------------------------------
-  // APP
-  // ----------------------------------------------------------
-
-  runApp(
-    const MyApp(),
-  );
-
-  // ----------------------------------------------------------
-  // OPEN CHAT AFTER LAUNCH
-  // ----------------------------------------------------------
+  runApp(const MyApp());
 
   WidgetsBinding.instance.addPostFrameCallback(
     (_) {
@@ -752,10 +504,6 @@ Future<void> main() async {
   );
 }
 
-// ============================================================
-// MY APP
-// ============================================================
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -763,57 +511,58 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(
-        textScaler:
-            const TextScaler.linear(1.0),
+        textScaler: const TextScaler.linear(1.0),
       ),
       child: GetMaterialApp(
         debugShowCheckedModeBanner: false,
-
-        // ----------------------------------------------------
-        // LIGHT THEME
-        // ----------------------------------------------------
-
         theme: ThemeData(
           brightness: Brightness.light,
           scaffoldBackgroundColor: Colors.white,
+          cardColor: Colors.white,
           colorScheme: ColorScheme.fromSeed(
             seedColor: Colors.red,
+            brightness: Brightness.light,
           ),
           appBarTheme: const AppBarTheme(
             backgroundColor: Colors.white,
             foregroundColor: Colors.black,
           ),
+          inputDecorationTheme: InputDecorationTheme(
+            fillColor: Colors.white,
+            filled: true,
+            hintStyle: const TextStyle(color: Colors.grey),
+            labelStyle: const TextStyle(color: Colors.black87),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.grey),
+            ),
+          ),
         ),
-
-        // ----------------------------------------------------
-        // DARK THEME
-        // ----------------------------------------------------
-
         darkTheme: ThemeData(
           brightness: Brightness.dark,
-          scaffoldBackgroundColor: Colors.black,
+          scaffoldBackgroundColor: const Color(0xFF121212),
+          cardColor: const Color(0xFF1E1E1E),
           colorScheme: ColorScheme.fromSeed(
             seedColor: Colors.red,
             brightness: Brightness.dark,
           ),
           appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.black,
+            backgroundColor: Color(0xFF121212),
             foregroundColor: Colors.white,
           ),
+          inputDecorationTheme: InputDecorationTheme(
+            fillColor: const Color(0xFF1E1E1E),
+            filled: true,
+            hintStyle: const TextStyle(color: Colors.grey),
+            labelStyle: const TextStyle(color: Colors.white70),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.white24),
+            ),
+          ),
         ),
-
-        themeMode: ThemeMode.light,
-
-        // ----------------------------------------------------
-        // HOME
-        // ----------------------------------------------------
-
+        themeMode: ThemeMode.system,
         home: const SplashScreen(),
-
-        // ----------------------------------------------------
-        // ROUTES
-        // ----------------------------------------------------
-
         getPages: [
           GetPage(
             name: '/login',
@@ -824,4 +573,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

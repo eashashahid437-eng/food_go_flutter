@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -51,14 +52,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
         User? user = userCredential.user;
 
         if (user != null) {
-          // Firestore mein check karein ke doc already exist karta hai ya nahi
           final userDoc = await FirebaseFirestore.instance
               .collection("users")
               .doc(user.uid)
               .get();
 
           if (!userDoc.exists) {
-            // Agar new user hai to sara profile data save kar dein
             await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
               "uid": user.uid,
               "name": user.displayName ?? "",
@@ -80,8 +79,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       Get.snackbar(
         "Google Login Failed",
         "An error occurred. Please try again.",
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
     } finally {
       if (mounted) {
@@ -161,8 +160,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       Get.snackbar(
         "Error",
         "Please enter your full name",
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -172,8 +171,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "Error",
         "Please enter your email address",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -183,8 +182,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "Error",
         "Please enter a valid email address",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -194,8 +193,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "Error",
         "Please enter your phone number",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -205,8 +204,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "Error",
         "Please enter your password",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -216,8 +215,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "Weak Password",
         "Password must contain at least 8 characters",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -227,8 +226,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "Weak Password",
         "Password must contain at least 1 uppercase letter",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -238,8 +237,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "Weak Password",
         "Password must contain at least 1 lowercase letter",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -249,8 +248,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "Terms Required",
         "Please agree to Terms & Conditions",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -283,8 +282,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
           "Account Created",
           "Verification email has been sent to $email",
           snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.white,
-          colorText: Colors.black,
+          backgroundColor: Theme.of(context).cardColor,
+          colorText: Theme.of(context).textTheme.bodyLarge?.color,
           duration: const Duration(seconds: 4),
         );
 
@@ -317,16 +316,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "Sign Up Failed",
         message,
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
     } catch (e) {
       Get.snackbar(
         "Error",
         "Something went wrong. Please try again.",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
     } finally {
       if (mounted) {
@@ -352,17 +351,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
     required IconData icon,
     Widget? suffixIcon,
   }) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InputDecoration(
       hintText: hintText,
       hintStyle: AppFonts.poppinsMedium(
         fontSize: 16,
-      ).copyWith(color: Colors.grey),
+      ).copyWith(color: isDark ? Colors.white38 : Colors.grey),
       prefixIcon: Icon(icon, color: AppColors.Pink),
       suffixIcon: suffixIcon,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.grey, width: 1.5),
+        borderSide: BorderSide(
+          color: isDark ? Colors.white24 : Colors.grey,
+          width: 1.5,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
@@ -370,7 +374,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.grey, width: 1.5),
+        borderSide: BorderSide(
+          color: isDark ? Colors.white24 : Colors.grey,
+          width: 1.5,
+        ),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
@@ -380,7 +387,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Widget fieldTitle(String title) {
-    return Text(title, style: AppFonts.poppinsMedium(fontSize: 16));
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    return Text(
+      title,
+      style: AppFonts.poppinsMedium(fontSize: 16).copyWith(
+        color: isDark ? Colors.white : Colors.black87,
+      ),
+    );
   }
 
   Widget fieldSpace(BuildContext context) {
@@ -389,6 +402,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       body: Container(
@@ -428,9 +443,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.fromLTRB(22, 26, 22, 24),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).scaffoldBackgroundColor,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(40),
                       topRight: Radius.circular(40),
                     ),
@@ -444,7 +459,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       TextField(
                         controller: nameController,
                         textCapitalization: TextCapitalization.words,
-                        style: AppFonts.poppinsMedium(fontSize: 18),
+                        style: AppFonts.poppinsMedium(fontSize: 18).copyWith(
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                         decoration: inputDecoration(
                           hintText: "John Doe",
                           icon: Icons.person_outline,
@@ -459,7 +476,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       TextField(
                         controller: emailController,
                         keyboardType: TextInputType.emailAddress,
-                        style: AppFonts.poppinsMedium(fontSize: 18),
+                        style: AppFonts.poppinsMedium(fontSize: 18).copyWith(
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                         decoration: inputDecoration(
                           hintText: "john.doe@example.com",
                           icon: Icons.email_outlined,
@@ -474,7 +493,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       TextField(
                         controller: phoneController,
                         keyboardType: TextInputType.phone,
-                        style: AppFonts.poppinsMedium(fontSize: 18),
+                        style: AppFonts.poppinsMedium(fontSize: 18).copyWith(
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                         decoration: inputDecoration(
                           hintText: "+92 300 1234567",
                           icon: Icons.phone_outlined,
@@ -489,7 +510,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       TextField(
                         controller: passwordController,
                         obscureText: obscure,
-                        style: AppFonts.poppinsMedium(fontSize: 18),
+                        style: AppFonts.poppinsMedium(fontSize: 18).copyWith(
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                         decoration: inputDecoration(
                           hintText: "••••••••",
                           icon: Icons.lock_outline,
@@ -513,7 +536,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         "At least 8 characters, 1 uppercase, 1 lowercase",
                         style: AppFonts.poppinsMedium(
                           fontSize: 12,
-                        ).copyWith(color: Colors.grey),
+                        ).copyWith(color: isDark ? Colors.white54 : Colors.grey),
                       ),
 
                       const SizedBox(height: 6),
@@ -523,6 +546,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           Checkbox(
                             value: remember,
                             activeColor: AppColors.Pink,
+                            side: BorderSide(
+                              color: isDark ? Colors.white54 : Colors.grey,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(4),
                             ),
@@ -536,7 +562,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           Expanded(
                             child: Text(
                               "I agree to the Terms & Conditions and Privacy Policy",
-                              style: AppFonts.poppinsMedium(fontSize: 12),
+                              style: AppFonts.poppinsMedium(fontSize: 12).copyWith(
+                                color: isDark ? Colors.white70 : Colors.black87,
+                              ),
                             ),
                           ),
                         ],
@@ -581,17 +609,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                       Row(
                         children: [
-                          const Expanded(child: Divider()),
+                          Expanded(
+                            child: Divider(
+                              color: isDark ? Colors.white24 : Colors.grey[300],
+                            ),
+                          ),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             child: Text(
                               "Log in with",
                               style: AppFonts.poppinsMedium(
                                 fontSize: 14,
-                              ).copyWith(color: Colors.grey),
+                              ).copyWith(
+                                color: isDark ? Colors.white54 : Colors.grey,
+                              ),
                             ),
                           ),
-                          const Expanded(child: Divider()),
+                          Expanded(
+                            child: Divider(
+                              color: isDark ? Colors.white24 : Colors.grey[300],
+                            ),
+                          ),
                         ],
                       ),
 
@@ -608,12 +646,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: AppColors.lightgrey,
+                                  color: isDark ? Colors.white24 : AppColors.lightgrey,
                                   width: 1.5,
                                 ),
                               ),
                               child: CircleAvatar(
                                 radius: 20,
+                                backgroundColor: isDark ? Colors.grey[800] : Colors.white,
                                 backgroundImage: AssetImage(ImagePath.Google),
                               ),
                             ),
@@ -628,8 +667,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               Get.snackbar(
                                 "Apple Login",
                                 "Apple login is currently unavailable.",
-                                backgroundColor: Colors.white,
-                                colorText: Colors.black,
+                                backgroundColor: Theme.of(context).cardColor,
+                                colorText: Theme.of(context).textTheme.bodyLarge?.color,
                               );
                             },
                             borderRadius: BorderRadius.circular(50),
@@ -638,7 +677,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: AppColors.lightgrey,
+                                  color: isDark ? Colors.white24 : AppColors.lightgrey,
                                   width: 1.5,
                                 ),
                               ),
@@ -647,7 +686,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 backgroundImage: AssetImage(
                                   ImagePath.applelogo,
                                 ),
-                                backgroundColor: Colors.white,
+                                backgroundColor: isDark ? Colors.grey[800] : Colors.white,
                               ),
                             ),
                           ),
@@ -664,14 +703,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: AppColors.lightgrey,
+                                  color: isDark ? Colors.white24 : AppColors.lightgrey,
                                   width: 1.5,
                                 ),
                               ),
                               child: CircleAvatar(
                                 radius: 20,
                                 backgroundImage: AssetImage(ImagePath.Fb),
-                                backgroundColor: Colors.white,
+                                backgroundColor: isDark ? Colors.grey[800] : Colors.white,
                               ),
                             ),
                           ),
@@ -686,7 +725,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           text: TextSpan(
                             style: AppFonts.poppinsMedium(
                               fontSize: 12,
-                            ).copyWith(color: Colors.grey),
+                            ).copyWith(
+                              color: isDark ? Colors.white54 : Colors.grey,
+                            ),
                             children: [
                               const TextSpan(
                                 text: "By signing up you agree to our ",

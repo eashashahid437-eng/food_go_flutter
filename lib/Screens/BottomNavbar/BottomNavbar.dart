@@ -1,13 +1,13 @@
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:food_go/Constants/app_colors.dart';
-import 'package:food_go/Screens/topping_screen.dart';
-import 'package:food_go/utility/responsive.dart';
 import 'package:food_go/Controllers/bottomnavbarcontroller.dart';
 import 'package:food_go/Screens/BottomNavbar/favourite_screen.dart';
 import 'package:food_go/Screens/BottomNavbar/home_screen.dart';
 import 'package:food_go/Screens/BottomNavbar/message_screen.dart';
 import 'package:food_go/Screens/BottomNavbar/person_screen.dart';
+import 'package:food_go/Screens/topping_screen.dart';
+import 'package:food_go/utility/responsive.dart';
 import 'package:get/get.dart';
 
 class BottomNavbar extends StatelessWidget {
@@ -15,7 +15,6 @@ class BottomNavbar extends StatelessWidget {
 
   final BottomNavController controller = Get.put(BottomNavController());
 
-  // Ab yahan sirf wohi screens rakhi hain jo bottom bar ke andar switch honi chahiye (Home aur Favorite)
   final List<Widget> pages = [
     HomeScreen(),
     FavoriteScreen(),
@@ -23,8 +22,17 @@ class BottomNavbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // MediaQuery utility typo fix
     final double screenWidth = MediaQueryu.getScreenWidth(context);
     final double screenHeight = MediaQueryu.getScreenHeight(context);
+
+    // Theme state detection
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Dynamic background matching for FAB ring border
+    final Color notchBorderColor = isDark 
+        ? Theme.of(context).scaffoldBackgroundColor 
+        : Colors.white;
 
     return Obx(
       () => Scaffold(
@@ -33,7 +41,10 @@ class BottomNavbar extends StatelessWidget {
         floatingActionButton: Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 4),
+            border: Border.all(
+              color: notchBorderColor, 
+              width: 4,
+            ),
           ),
           child: FloatingActionButton(
             backgroundColor: AppColors.darkpink,
@@ -77,12 +88,8 @@ class BottomNavbar extends StatelessWidget {
 
           height: screenHeight * 0.08,
           onTap: (index) {
-            // Index 2 aur 3 par Message aur Profile hain, un par click hotay hi Get.to() chal jaye ga
             if (index == 2) {
-              Get.to(
-                () => const UserChatScreen(),
-                
-              );
+              Get.to(() => const UserChatScreen());
             } else if (index == 3) {
               Get.to(() => const PersonScreen());
             } else {

@@ -211,15 +211,16 @@ class PaymentController extends GetxController {
       isProcessing.value = false;
     }
   }
-
-  // Exact Figma Template Dialog
+  // Dynamic Theme Dialog
   void _showSuccessDialog(BuildContext context) {
+    final bool isDark = Get.isDarkMode;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
         return Dialog(
-          backgroundColor: Colors.white,
+          backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
@@ -255,14 +256,14 @@ class PaymentController extends GetxController {
                 ),
                 const SizedBox(height: 12),
 
-                // Subtitle (Exact Figma Text)
-                const Text(
+                // Subtitle
+                Text(
                   "Your payment was successful.\nA receipt for this purchase has been sent to your email.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
                     height: 1.4,
-                    color: Colors.grey,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey,
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -300,6 +301,95 @@ class PaymentController extends GetxController {
       },
     );
   }
+
+  // // Exact Figma Template Dialog
+  // void _showSuccessDialog(BuildContext context) {
+  //   showDialog(
+  //     context: context,
+  //     barrierDismissible: false,
+  //     builder: (dialogContext) {
+  //       return Dialog(
+  //         backgroundColor: Colors.white,
+  //         shape: RoundedRectangleBorder(
+  //           borderRadius: BorderRadius.circular(24),
+  //         ),
+  //         child: Padding(
+  //           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               // Icon
+  //               Container(
+  //                 width: 75,
+  //                 height: 75,
+  //                 decoration: const BoxDecoration(
+  //                   color: AppColors.darkpink,
+  //                   shape: BoxShape.circle,
+  //                 ),
+  //                 child: const Icon(
+  //                   Icons.check,
+  //                   color: Colors.white,
+  //                   size: 45,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 20),
+
+  //               // Title
+  //               const Text(
+  //                 "Success !",
+  //                 style: TextStyle(
+  //                   fontSize: 24,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: AppColors.darkpink,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 12),
+
+  //               // Subtitle (Exact Figma Text)
+  //               const Text(
+  //                 "Your payment was successful.\nA receipt for this purchase has been sent to your email.",
+  //                 textAlign: TextAlign.center,
+  //                 style: TextStyle(
+  //                   fontSize: 13,
+  //                   height: 1.4,
+  //                   color: Colors.grey,
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 30),
+
+  //               // Button
+  //               SizedBox(
+  //                 width: double.infinity,
+  //                 height: 48,
+  //                 child: ElevatedButton(
+  //                   onPressed: () {
+  //                     Navigator.of(dialogContext).pop();
+  //                     Get.back();
+  //                   },
+  //                   style: ElevatedButton.styleFrom(
+  //                     backgroundColor: AppColors.darkpink,
+  //                     elevation: 0,
+  //                     shape: RoundedRectangleBorder(
+  //                       borderRadius: BorderRadius.circular(12),
+  //                     ),
+  //                   ),
+  //                   child: const Text(
+  //                     "Go Back",
+  //                     style: TextStyle(
+  //                       color: Colors.white,
+  //                       fontSize: 16,
+  //                       fontWeight: FontWeight.bold,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   double _toDouble(dynamic value) {
     if (value is num) {

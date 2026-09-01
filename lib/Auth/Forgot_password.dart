@@ -32,8 +32,8 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         "Error",
         "Please enter your email address",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -43,8 +43,8 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         "Error",
         "Please enter a valid email address",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
       return;
     }
@@ -54,7 +54,6 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     });
 
     try {
-      // ---- Firebase Auth khud email bhejta hai, koi custom backend nahi chahiye ----
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
 
       if (!mounted) return;
@@ -63,8 +62,8 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         "Email Sent",
         "Password reset link has been sent to your email.",
         snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
         duration: const Duration(seconds: 3),
       );
 
@@ -88,8 +87,8 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         "Error",
         errorMessage,
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
     } catch (e) {
       if (!mounted) return;
@@ -98,8 +97,8 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         "Error",
         "Network error. Please check your internet connection.",
         snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.white,
-        colorText: Colors.black,
+        backgroundColor: Theme.of(context).cardColor,
+        colorText: Theme.of(context).textTheme.bodyLarge?.color,
       );
     } finally {
       if (mounted) {
@@ -110,12 +109,12 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     }
   }
 
-  InputDecoration emailDecoration() {
+  InputDecoration emailDecoration(bool isDark) {
     return InputDecoration(
       hintText: "john.doe@example.com",
       hintStyle: AppFonts.poppinsMedium(
         fontSize: 15,
-      ).copyWith(color: Colors.grey.shade400),
+      ).copyWith(color: isDark ? Colors.white38 : Colors.grey.shade400),
       prefixIcon: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -125,15 +124,21 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         child: const Icon(Icons.email_outlined, color: AppColors.Pink),
       ),
       filled: true,
-      fillColor: Colors.grey.shade50,
+      fillColor: isDark ? Colors.grey[900] : Colors.grey.shade50,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+        borderSide: BorderSide(
+          color: isDark ? Colors.white24 : Colors.grey.shade200,
+          width: 1,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(color: AppColors.Pink, width: 1.8),
+        borderSide: BorderSide(
+          color: isDark ? Colors.white70 : AppColors.Pink,
+          width: 1.8,
+        ),
       ),
     );
   }
@@ -141,9 +146,10 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -220,7 +226,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                             width: 95,
                             padding: const EdgeInsets.all(18),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: isDark ? Colors.grey[900] : Colors.white,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
@@ -266,7 +272,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         "Reset your password",
                         style: AppFonts.poppinsMedium(
                           fontSize: 22,
-                        ).copyWith(color: Colors.black87),
+                        ).copyWith(
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -276,20 +284,26 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                         textAlign: TextAlign.center,
                         style: AppFonts.poppinsMedium(
                           fontSize: 14,
-                        ).copyWith(color: Colors.grey),
+                        ).copyWith(
+                          color: isDark ? Colors.white54 : Colors.grey,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 30),
                     Text(
                       "Email address",
-                      style: AppFonts.poppinsMedium(fontSize: 16),
+                      style: AppFonts.poppinsMedium(fontSize: 16).copyWith(
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     TextField(
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
-                      style: AppFonts.poppinsMedium(fontSize: 17),
-                      decoration: emailDecoration(),
+                      style: AppFonts.poppinsMedium(fontSize: 17).copyWith(
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                      decoration: emailDecoration(isDark),
                     ),
                     const SizedBox(height: 28),
                     Container(
@@ -312,7 +326,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               "We'll send you a password reset link to your email address.",
                               style: AppFonts.poppinsMedium(
                                 fontSize: 12,
-                              ).copyWith(color: Colors.grey.shade700),
+                              ).copyWith(
+                                color: isDark ? Colors.white70 : Colors.grey.shade700,
+                              ),
                             ),
                           ),
                         ],

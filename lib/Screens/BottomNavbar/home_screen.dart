@@ -45,238 +45,238 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final double screenWidth = MediaQueryu.getScreenWidth(context);
     final double screenHeight = MediaQueryu.getScreenHeight(context);
-    final bool isDark = Get.isDarkMode;
 
-    return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
-      body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  left: screenWidth * 0.05,
-                  right: screenWidth * 0.05,
-                  top: screenHeight * 0.015,
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Foodgo',
-                            style: GoogleFonts.lobster(
-                              color: isDark ? Colors.white : Colors.black,
-                              fontSize: 34,
-                              fontWeight: FontWeight.bold,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                          SizedBox(
-                            height: screenHeight * 0.002,
-                          ),
-                          Text(
-                            'Order your favorite food!',
-                            style: GoogleFonts.poppins(
-                              color: isDark
-                                  ? Colors.grey.shade400
-                                  : AppColors.lightgrey,
-                              fontSize: 18,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ),
+    return GetBuilder<HomeController>(
+      builder: (homeCtrl) {
+        final bool isDark = Get.isDarkMode;
+
+        return Scaffold(
+          backgroundColor:
+              isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+          body: SafeArea(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                // Header Section
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: screenWidth * 0.05,
+                      right: screenWidth * 0.05,
+                      top: screenHeight * 0.015,
                     ),
-                    Obx(
-                      () => GestureDetector(
-                        onTap: () {
-                          Get.to(() => const PersonScreen());
-                        },
-                        child: CircleAvatar(
-                          radius: 20,
-                          backgroundImage: profileController
-                                  .profileImageUrl.value.isNotEmpty
-                              ? NetworkImage(
-                                  profileController.profileImageUrl.value,
-                                )
-                              : AssetImage(
-                                  ImagePath.appbarpic,
-                                ) as ImageProvider,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Foodgo',
+                                style: GoogleFonts.lobster(
+                                  color: isDark ? Colors.white : Colors.black,
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.bold,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                              SizedBox(
+                                height: screenHeight * 0.002,
+                              ),
+                              Text(
+                                'Order your favorite food!',
+                                style: GoogleFonts.poppins(
+                                  color: isDark
+                                      ? Colors.grey.shade400
+                                      : AppColors.lightgrey,
+                                  fontSize: 18,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
+                        Obx(
+                          () => GestureDetector(
+                            onTap: () {
+                              Get.to(() => const PersonScreen());
+                            },
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundImage: profileController
+                                      .profileImageUrl.value.isNotEmpty
+                                  ? NetworkImage(
+                                      profileController.profileImageUrl.value,
+                                    )
+                                  : AssetImage(
+                                      ImagePath.appbarpic,
+                                    ) as ImageProvider,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
 
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: screenHeight * 0.035,
-              ),
-            ),
-
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: screenWidth * 0.05,
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: screenHeight * 0.035,
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 58,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppColors.surfaceDark
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: isDark
-                              ? []
-                              : [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.06),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 3),
+
+                // Search Bar & Filter
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth * 0.05,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 58,
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppColors.surfaceDark
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: isDark
+                                  ? []
+                                  : [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.06),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                            ),
+                            child: TextField(
+                              controller: searchController,
+                              cursorColor: AppColors.darkpink,
+                              onChanged: (value) {
+                                homeCtrl.setSearchQuery(value);
+                              },
+                              style: TextStyle(
+                                color: isDark
+                                    ? AppColors.lightwhite
+                                    : Colors.black,
+                                fontSize: 16,
+                              ),
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: Colors.transparent,
+                                hintText: 'Search ',
+                                hintStyle: GoogleFonts.poppins(
+                                  color: isDark
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade600,
+                                  fontSize: 16,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.search_rounded,
+                                  color: isDark
+                                      ? Colors.grey.shade300
+                                      : Colors.black87,
+                                  size: 30,
+                                ),
+                                suffixIcon: searchController.text.isNotEmpty
+                                    ? IconButton(
+                                        icon: Icon(
+                                          Icons.clear,
+                                          color: isDark
+                                              ? Colors.grey.shade300
+                                              : Colors.black54,
+                                        ),
+                                        onPressed: () {
+                                          searchController.clear();
+                                          homeCtrl.clearSearch();
+                                        },
+                                      )
+                                    : null,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 17,
+                                  horizontal: 8,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide.none,
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: const BorderSide(
+                                    color: AppColors.darkpink,
+                                    width: 1.5,
                                   ),
-                                ],
-                        ),
-                        child: TextField(
-                          controller: searchController,
-                          cursorColor: AppColors.darkpink,
-                          onChanged: (value) {
-                            controller.setSearchQuery(value);
-                            setState(() {});
-                          },
-                          style: TextStyle(
-                            color: isDark
-                                ? AppColors.lightwhite
-                                : Colors.black,
-                            fontSize: 16,
-                          ),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.transparent,
-                            hintText: 'Search ',
-                            hintStyle: GoogleFonts.poppins(
-                              color: isDark
-                                  ? Colors.grey.shade400
-                                  : Colors.grey.shade600,
-                              fontSize: 16,
-                            ),
-                            prefixIcon: Icon(
-                              Icons.search_rounded,
-                              color: isDark
-                                  ? Colors.grey.shade300
-                                  : Colors.black87,
-                              size: 30,
-                            ),
-                            suffixIcon: searchController.text.isNotEmpty
-                                ? IconButton(
-                                    icon: Icon(
-                                      Icons.clear,
-                                      color: isDark
-                                          ? Colors.grey.shade300
-                                          : Colors.black54,
-                                    ),
-                                    onPressed: () {
-                                      searchController.clear();
-                                      controller.clearSearch();
-                                      setState(() {});
-                                    },
-                                  )
-                                : null,
-                            contentPadding: const EdgeInsets.symmetric(
-                              vertical: 17,
-                              horizontal: 8,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(
-                                color: AppColors.darkpink,
-                                width: 1.5,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: screenWidth * 0.025,
-                    ),
-                    SizedBox(
-                      width: 58,
-                      height: 58,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.darkpink,
-                          elevation: 0,
-                          padding: EdgeInsets.zero,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                        SizedBox(
+                          width: screenWidth * 0.025,
+                        ),
+                        SizedBox(
+                          width: 58,
+                          height: 58,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.darkpink,
+                              elevation: 0,
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            onPressed: () {
+                              _showFilterSheet(context, isDark);
+                            },
+                            child: const Icon(
+                              Icons.tune,
+                              size: 25,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                        onPressed: () {
-                          _showFilterSheet(context, isDark);
-                        },
-                        child: const Icon(
-                          Icons.tune,
-                          size: 25,
-                          color: Colors.white,
-                        ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: screenHeight * 0.035,
-              ),
-            ),
-
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 52,
-                child: ListView.builder(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: screenWidth * 0.05,
                   ),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: controller.categories.length,
-                  itemBuilder: (context, index) {
-                    final String category =
-                        controller.categories[index];
+                ),
 
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 15),
-                      child: Obx(
-                        () {
-                          final bool isSelected =
-                              controller.selectedCategory.value ==
-                                  category;
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: screenHeight * 0.035,
+                  ),
+                ),
 
-                          return GestureDetector(
+                // Categories Bar
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 52,
+                    child: ListView.builder(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: screenWidth * 0.05,
+                      ),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: homeCtrl.categories.length,
+                      itemBuilder: (context, index) {
+                        final String category = homeCtrl.categories[index];
+                        final bool isSelected =
+                            homeCtrl.selectedCategory.value == category;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 15),
+                          child: GestureDetector(
                             onTap: () {
-                              controller.selectCategory(category);
+                              homeCtrl.selectCategory(category);
                             },
-                            child: Container(
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
                               padding: EdgeInsets.symmetric(
                                 horizontal: screenWidth * 0.07,
                               ),
@@ -302,31 +302,27 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ),
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    );
-                  },
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
-            ),
 
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: screenHeight * 0.035,
-              ),
-            ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: screenHeight * 0.035,
+                  ),
+                ),
 
-            Obx(
-              () {
-                controller.selectedCategory.value;
-                controller.selectedFilter.value; // Yeh line add ki gayi hai taake filter change par UI update ho
-
-                return StreamBuilder(
-                  stream: controller.productsStream,
+                // Products Stream Grid
+                StreamBuilder(
+                  key: ValueKey(
+                    '${homeCtrl.selectedCategory.value}-${homeCtrl.selectedFilter.value}-${homeCtrl.searchQuery.value}',
+                  ),
+                  stream: homeCtrl.productsStream,
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState ==
-                        ConnectionState.waiting) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
                       return const SliverToBoxAdapter(
                         child: Center(
                           child: Padding(
@@ -351,13 +347,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: Colors.red,
                               ),
                             ),
+
                           ),
                         ),
-                      );
-                    }
+                        );
+                      }
 
-                    if (!snapshot.hasData ||
-                        snapshot.data!.docs.isEmpty) {
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                       return const SliverToBoxAdapter(
                         child: Center(
                           child: Padding(
@@ -371,11 +367,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
-                      );
-                    }
+                        );
+                      }
 
-                    final docs =
-                        controller.getFilteredProducts(snapshot.data!);
+                    final docs = homeCtrl.getFilteredProducts(snapshot.data!);
 
                     if (docs.isEmpty) {
                       return const SliverToBoxAdapter(
@@ -392,7 +387,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       );
-                    }
+                    
+                      }
 
                     return SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -403,36 +399,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
                             final data =
-                                docs[index].data()
-                                    as Map<String, dynamic>;
+                                docs[index].data() as Map<String, dynamic>;
 
                             final FoodModel food = FoodModel(
                               id: index,
-                              image:
-                                  (data['image'] ??
-                                          data['imageUrl'] ??
-                                          '')
-                                      .toString(),
-                              title:
-                                  (data['title'] ?? '').toString(),
-                              subtitle:
-                                  (data['subtitle'] ?? '').toString(),
+                              image: (data['image'] ?? data['imageUrl'] ?? '')
+                                  .toString(),
+                              title: (data['title'] ?? '').toString(),
+                              subtitle: (data['subtitle'] ?? '').toString(),
                               productname:
                                   (data['productname'] ?? '').toString(),
-                              price:
-                                  _toDouble(data['price'], 4.5),
-                              description:
-                                  (data['description'] ??
-                                          'No description available.')
-                                      .toString(),
-                              spicyLevel:
-                                  _toDouble(data['spicyLevel'], 2.0),
-                              rating:
-                                  _toDouble(data['rating'], 4.5),
-                              reviewCount:
-                                  _toInt(data['reviewCount'], 10),
-                              isFavorite:
-                                  data['isFavorite'] ?? false,
+                              price: _toDouble(data['price'], 4.5),
+                              description: (data['description'] ??
+                                      'No description available.')
+                                  .toString(),
+                              spicyLevel: _toDouble(data['spicyLevel'], 2.0),
+                              rating: _toDouble(data['rating'], 4.5),
+                              reviewCount: _toInt(data['reviewCount'], 10),
+                              isFavorite: data['isFavorite'] ?? false,
                             );
 
                             return ProductCard(
@@ -451,18 +435,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   },
-                );
-              },
-            ),
+                ),
 
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: screenHeight * 0.03,
-              ),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: screenHeight * 0.03,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -473,8 +457,7 @@ class _HomeScreenState extends State<HomeScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor:
-          isDark ? AppColors.surfaceDark : Colors.white,
+      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(20),
@@ -486,34 +469,27 @@ class _HomeScreenState extends State<HomeScreen> {
             left: 20,
             right: 20,
             top: 20,
-            bottom:
-                MediaQuery.of(context).viewInsets.bottom + 20,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     "Filter Products",
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: isDark
-                          ? AppColors.lightwhite
-                          : Colors.black,
+                      color: isDark ? AppColors.lightwhite : Colors.black,
                     ),
                   ),
                   IconButton(
                     icon: Icon(
                       Icons.close,
-                      color: isDark
-                          ? AppColors.lightwhite
-                          : Colors.black,
+                      color: isDark ? AppColors.lightwhite : Colors.black,
                     ),
                     onPressed: () {
                       Navigator.pop(context);
@@ -522,9 +498,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               Divider(
-                color: isDark
-                    ? Colors.grey[800]
-                    : Colors.grey[300],
+                color: isDark ? Colors.grey[800] : Colors.grey[300],
               ),
               const SizedBox(height: 10),
               Text(
@@ -532,126 +506,73 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
-                  color: isDark
-                      ? AppColors.lightwhite
-                      : Colors.black,
+                  color: isDark ? AppColors.lightwhite : Colors.black,
                 ),
               ),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 10,
                 children: [
-                  Obx(
-                    () => ChoiceChip(
-                      label:
-                          const Text("Price: Low to High"),
-                      selected:
-                          controller.selectedFilter.value ==
-                              'low',
-                      selectedColor:
-                          AppColors.darkpink.withOpacity(0.2),
-                      backgroundColor: isDark
-                          ? AppColors.backgroundDark
-                          : Colors.grey[100],
-                      labelStyle: TextStyle(
-                        color: controller
-                                    .selectedFilter.value ==
-                                'low'
-                            ? AppColors.darkpink
-                            : (isDark
-                                ? AppColors.lightwhite
-                                : Colors.black87),
-                      ),
-                      onSelected: (selected) {
-                        if (selected) {
-                          controller.selectFilter('low');
-                        }
-                      },
+                  ChoiceChip(
+                    label: const Text("Price: Low to High"),
+                    selected: controller.selectedFilter.value == 'low',
+                    selectedColor: AppColors.darkpink.withOpacity(0.2),
+                    backgroundColor: isDark
+                        ? AppColors.backgroundDark
+                        : Colors.grey[100],
+                    labelStyle: TextStyle(
+                      color: controller.selectedFilter.value == 'low'
+                          ? AppColors.darkpink
+                          : (isDark ? AppColors.lightwhite : Colors.black87),
                     ),
+                    onSelected: (selected) {
+                      if (selected) {
+                        controller.selectFilter('low');
+                        Navigator.pop(context);
+                      }
+                    },
                   ),
-                  Obx(
-                    () => ChoiceChip(
-                      label:
-                          const Text("Price: High to Low"),
-                      selected:
-                          controller.selectedFilter.value ==
-                              'high',
-                      selectedColor:
-                          AppColors.darkpink.withOpacity(0.2),
-                      backgroundColor: isDark
-                          ? AppColors.backgroundDark
-                          : Colors.grey[100],
-                      labelStyle: TextStyle(
-                        color: controller
-                                    .selectedFilter.value ==
-                                'high'
-                            ? AppColors.darkpink
-                            : (isDark
-                                ? AppColors.lightwhite
-                                : Colors.black87),
-                      ),
-                      onSelected: (selected) {
-                        if (selected) {
-                          controller.selectFilter('high');
-                        }
-                      },
+                  ChoiceChip(
+                    label: const Text("Price: High to Low"),
+                    selected: controller.selectedFilter.value == 'high',
+                    selectedColor: AppColors.darkpink.withOpacity(0.2),
+                    backgroundColor: isDark
+                        ? AppColors.backgroundDark
+                        : Colors.grey[100],
+                    labelStyle: TextStyle(
+                      color: controller.selectedFilter.value == 'high'
+                          ? AppColors.darkpink
+                          : (isDark ? AppColors.lightwhite : Colors.black87),
                     ),
+                    onSelected: (selected) {
+                      if (selected) {
+                        controller.selectFilter('high');
+                        Navigator.pop(context);
+                      }
+                    },
                   ),
-                  Obx(
-                    () => ChoiceChip(
-                      label: const Text("Top Rated"),
-                      selected:
-                          controller.selectedFilter.value ==
-                              'rating',
-                      selectedColor:
-                          AppColors.darkpink.withOpacity(0.2),
-                      backgroundColor: isDark
-                          ? AppColors.backgroundDark
-                          : Colors.grey[100],
-                      labelStyle: TextStyle(
-                        color: controller
-                                    .selectedFilter.value ==
-                                'rating'
-                            ? AppColors.darkpink
-                            : (isDark
-                                ? AppColors.lightwhite
-                                : Colors.black87),
-                      ),
-                      onSelected: (selected) {
-                        if (selected) {
-                          controller.selectFilter('rating');
-                        }
-                      },
+                  ChoiceChip(
+                    label: const Text("Top Rated"),
+                    selected: controller.selectedFilter.value == 'rating',
+                    selectedColor: AppColors.darkpink.withOpacity(0.2),
+                    backgroundColor: isDark
+                        ? AppColors.backgroundDark
+                        : Colors.grey[100],
+                    labelStyle: TextStyle(
+                      color: controller.selectedFilter.value == 'rating'
+                          ? AppColors.darkpink
+                          : (isDark ? AppColors.lightwhite : Colors.black87),
                     ),
+                    onSelected: (selected) {
+                      if (selected) {
+                        controller.selectFilter('rating');
+                        Navigator.pop(context);
+                      }
+                    },
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        AppColors.darkpink,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(12),
-                    ),
-                  ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text(
-                    "Apply Filters",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         );
@@ -659,31 +580,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  double _toDouble(
-    dynamic value,
-    double defaultValue,
-  ) {
-    if (value is num) {
-      return value.toDouble();
-    }
-
-    return double.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        defaultValue;
+  double _toDouble(dynamic value, double defaultValue) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '') ?? defaultValue;
   }
 
-  int _toInt(
-    dynamic value,
-    int defaultValue,
-  ) {
-    if (value is num) {
-      return value.toInt();
-    }
-
-    return int.tryParse(
-          value?.toString() ?? '',
-        ) ??
-        defaultValue;
+  int _toInt(dynamic value, int defaultValue) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? defaultValue;
   }
 }
