@@ -29,8 +29,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Future<void> signInWithGoogle() async {
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
+      setState(() {
+        isLoading = true;
+      });
 
+      final GoogleSignIn googleSignIn = GoogleSignIn();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
       if (googleUser != null) {
@@ -45,11 +48,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
         final UserCredential userCredential = await FirebaseAuth.instance
             .signInWithCredential(credential);
 
-        print("Google Login Successful");
-        print("Name: ${userCredential.user?.displayName}");
-        print("Email: ${userCredential.user?.email}");
+        User? user = userCredential.user;
 
-        Get.off(() => BottomNavbar());
+        if (user != null) {
+          // Firestore mein check karein ke doc already exist karta hai ya nahi
+          final userDoc = await FirebaseFirestore.instance
+              .collection("users")
+              .doc(user.uid)
+              .get();
+
+          if (!userDoc.exists) {
+            // Agar new user hai to sara profile data save kar dein
+            await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
+              "uid": user.uid,
+              "name": user.displayName ?? "",
+              "email": user.email ?? "",
+              "phone": user.phoneNumber ?? "",
+              "photoUrl": user.photoURL ?? "",
+              "authProvider": "google",
+              "createdAt": FieldValue.serverTimestamp(),
+            });
+          }
+
+          print("Google Login Successful: ${user.email}");
+          Get.off(() => BottomNavbar());
+        }
       }
     } catch (e) {
       print("Google Login Error: $e");
@@ -60,11 +83,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
         backgroundColor: Colors.white,
         colorText: Colors.black,
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> signInWithFacebook() async {
     try {
+      setState(() {
+        isLoading = true;
+      });
+
       final LoginResult result = await FacebookAuth.instance.login(
         permissions: ['email', 'public_profile'],
       );
@@ -79,19 +112,42 @@ class _SignUpScreenState extends State<SignUpScreen> {
         final UserCredential userCredential = await FirebaseAuth.instance
             .signInWithCredential(credential);
 
-        print("Facebook Login Successful");
-        print("Name: ${userCredential.user?.displayName}");
-        print("Email: ${userCredential.user?.email}");
+        User? user = userCredential.user;
 
-        Get.off(() => BottomNavbar());
+        if (user != null) {
+          final userDoc = await FirebaseFirestore.instance
+              .collection("users")
+              .doc(user.uid)
+              .get();
+
+          if (!userDoc.exists) {
+            await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
+              "uid": user.uid,
+              "name": user.displayName ?? "",
+              "email": user.email ?? "",
+              "phone": user.phoneNumber ?? "",
+              "photoUrl": user.photoURL ?? "",
+              "authProvider": "facebook",
+              "createdAt": FieldValue.serverTimestamp(),
+            });
+          }
+
+          print("Facebook Login Successful: ${user.email}");
+          Get.off(() => BottomNavbar());
+        }
       } else if (result.status == LoginStatus.cancelled) {
         print("Facebook Login Cancelled");
       } else {
-        print("Facebook Login Failed");
-        print(result.message);
+        print("Facebook Login Failed: ${result.message}");
       }
     } catch (e) {
       print("Facebook Login Error: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -211,7 +267,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
       if (user != null) {
         await user.updateDisplayName(name);
-
         await user.sendEmailVerification();
 
         await FirebaseFirestore.instance.collection("users").doc(user.uid).set({
@@ -219,6 +274,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
           "name": name,
           "email": email,
           "phone": phone,
+          "photoUrl": "",
+          "authProvider": "email",
           "createdAt": FieldValue.serverTimestamp(),
         });
 
@@ -240,23 +297,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
         case "email-already-in-use":
           message = "This email is already registered.";
           break;
-
         case "invalid-email":
           message = "The email address is invalid.";
           break;
-
         case "weak-password":
           message = "The password is too weak.";
           break;
-
         case "network-request-failed":
           message = "Please check your internet connection.";
           break;
-
         case "operation-not-allowed":
           message = "Email/Password authentication is disabled.";
           break;
-
         default:
           message = e.message ?? "Something went wrong.";
       }
@@ -265,7 +317,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         "Sign Up Failed",
         message,
         snackPosition: SnackPosition.TOP,
-
         backgroundColor: Colors.white,
         colorText: Colors.black,
       );
