@@ -51,8 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
         final bool isDark = Get.isDarkMode;
 
         return Scaffold(
-          backgroundColor:
-              isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+          backgroundColor: isDark
+              ? AppColors.backgroundDark
+              : AppColors.backgroundLight,
           body: SafeArea(
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
@@ -81,9 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   fontStyle: FontStyle.italic,
                                 ),
                               ),
-                              SizedBox(
-                                height: screenHeight * 0.002,
-                              ),
+                              SizedBox(height: screenHeight * 0.002),
                               Text(
                                 'Order your favorite food!',
                                 style: GoogleFonts.poppins(
@@ -104,26 +103,55 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                             child: CircleAvatar(
                               radius: 20,
-                              backgroundImage: profileController
-                                      .profileImageUrl.value.isNotEmpty
+                              backgroundImage:
+                                  profileController
+                                      .profileImageUrl
+                                      .value
+                                      .isNotEmpty
                                   ? NetworkImage(
                                       profileController.profileImageUrl.value,
                                     )
-                                  : AssetImage(
-                                      ImagePath.appbarpic,
-                                    ) as ImageProvider,
-                            ),
-                          ),
-                        ),
+                                  : null, // Image nahi hone par ise null rakhein
+                              child:
+                                  profileController
+                                      .profileImageUrl
+                                      .value
+                                      .isEmpty
+                                  ? const Icon(
+                                      Icons.person,
+                                      size: 30,
+                                      color: Colors.redAccent,
+                                    )
+                                  : null, // Image hone par child ko null rakhein
+                            ), // CircleAvatar
+                          ), // GestureDetector
+                        ), // Obx
+                        // Obx(
+                        //   () => GestureDetector(
+                        //     onTap: () {
+                        //       Get.to(() => const PersonScreen());
+                        //     },
+                        //     child: CircleAvatar(
+                        //       radius: 20,
+                        //       backgroundImage: profileController
+                        //               .profileImageUrl.value.isNotEmpty
+                        //           ? NetworkImage(
+                        //               profileController.profileImageUrl.value,
+                        //             )
+
+                        //           // : AssetImage(
+                        //           //     ImagePath.appbarpic,
+                        //           //   ) as ImageProvider,
+                        //     ),
+                        //   ),
+                        // ),
                       ],
                     ),
                   ),
                 ),
 
                 SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: screenHeight * 0.035,
-                  ),
+                  child: SizedBox(height: screenHeight * 0.035),
                 ),
 
                 // Search Bar & Filter
@@ -218,9 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
-                        SizedBox(
-                          width: screenWidth * 0.025,
-                        ),
+                        SizedBox(width: screenWidth * 0.025),
                         SizedBox(
                           width: 58,
                           height: 58,
@@ -249,9 +275,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: screenHeight * 0.035,
-                  ),
+                  child: SizedBox(height: screenHeight * 0.035),
                 ),
 
                 // Categories Bar
@@ -284,8 +308,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: isSelected
                                     ? AppColors.darkpink
                                     : (isDark
-                                        ? AppColors.surfaceDark
-                                        : Colors.grey.shade100),
+                                          ? AppColors.surfaceDark
+                                          : Colors.grey.shade100),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               alignment: Alignment.center,
@@ -295,8 +319,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   color: isSelected
                                       ? Colors.white
                                       : (isDark
-                                          ? AppColors.lightwhite
-                                          : Colors.grey.shade700),
+                                            ? AppColors.lightwhite
+                                            : Colors.grey.shade700),
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -310,9 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: screenHeight * 0.035,
-                  ),
+                  child: SizedBox(height: screenHeight * 0.035),
                 ),
 
                 // Products Stream Grid
@@ -343,15 +365,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Text(
                               'Something went wrong:\n${snapshot.error}',
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Colors.red,
-                              ),
+                              style: const TextStyle(color: Colors.red),
                             ),
-
                           ),
                         ),
-                        );
-                      }
+                      );
+                    }
 
                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                       return const SliverToBoxAdapter(
@@ -367,8 +386,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
-                        );
-                      }
+                      );
+                    }
 
                     final docs = homeCtrl.getFilteredProducts(snapshot.data!);
 
@@ -387,8 +406,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       );
-                    
-                      }
+                    }
 
                     return SliverPadding(
                       padding: EdgeInsets.symmetric(
@@ -396,51 +414,44 @@ class _HomeScreenState extends State<HomeScreen> {
                         vertical: 5,
                       ),
                       sliver: SliverGrid(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final data =
-                                docs[index].data() as Map<String, dynamic>;
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final data =
+                              docs[index].data() as Map<String, dynamic>;
 
-                            final FoodModel food = FoodModel(
-                              id: index,
-                              image: (data['image'] ?? data['imageUrl'] ?? '')
-                                  .toString(),
-                              title: (data['title'] ?? '').toString(),
-                              subtitle: (data['subtitle'] ?? '').toString(),
-                              productname:
-                                  (data['productname'] ?? '').toString(),
-                              price: _toDouble(data['price'], 4.5),
-                              description: (data['description'] ??
-                                      'No description available.')
-                                  .toString(),
-                              spicyLevel: _toDouble(data['spicyLevel'], 2.0),
-                              rating: _toDouble(data['rating'], 4.5),
-                              reviewCount: _toInt(data['reviewCount'], 10),
-                              isFavorite: data['isFavorite'] ?? false,
-                            );
+                          final FoodModel food = FoodModel(
+                            id: index,
+                            image: (data['image'] ?? data['imageUrl'] ?? '')
+                                .toString(),
+                            title: (data['title'] ?? '').toString(),
+                            subtitle: (data['subtitle'] ?? '').toString(),
+                            productname: (data['productname'] ?? '').toString(),
+                            price: _toDouble(data['price'], 4.5),
+                            description:
+                                (data['description'] ??
+                                        'No description available.')
+                                    .toString(),
+                            spicyLevel: _toDouble(data['spicyLevel'], 2.0),
+                            rating: _toDouble(data['rating'], 4.5),
+                            reviewCount: _toInt(data['reviewCount'], 10),
+                            isFavorite: data['isFavorite'] ?? false,
+                          );
 
-                            return ProductCard(
-                              food: food,
-                            );
-                          },
-                          childCount: docs.length,
-                        ),
+                          return ProductCard(food: food);
+                        }, childCount: docs.length),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 15,
-                          mainAxisSpacing: 15,
-                          childAspectRatio: 0.82,
-                        ),
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 15,
+                              mainAxisSpacing: 15,
+                              childAspectRatio: 0.82,
+                            ),
                       ),
                     );
                   },
                 ),
 
                 SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: screenHeight * 0.03,
-                  ),
+                  child: SizedBox(height: screenHeight * 0.03),
                 ),
               ],
             ),
@@ -450,18 +461,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showFilterSheet(
-    BuildContext context,
-    bool isDark,
-  ) {
+  void _showFilterSheet(BuildContext context, bool isDark) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(20),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
         return Padding(
@@ -497,9 +503,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              Divider(
-                color: isDark ? Colors.grey[800] : Colors.grey[300],
-              ),
+              Divider(color: isDark ? Colors.grey[800] : Colors.grey[300]),
               const SizedBox(height: 10),
               Text(
                 "Sort By",
