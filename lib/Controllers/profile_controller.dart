@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
@@ -222,12 +223,34 @@ class ProfileController extends GetxController {
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
-
   Future<void> logout() async {
     try {
-      await FirebaseAuth.instance.signOut();
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+
+      // 1. Agar user logged in hai, toh Admin Panel se uski chat history delete karein
+      if (currentUser != null) {
+        await FirebaseFirestore.instance
+            .collection("chats")
+            .doc(currentUser.uid)
+            .delete();
+      }
+
+      // 2. Google Session Clear
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      if (await googleSignIn.isSignedIn()) {
+        await googleSignIn.signOut();
+      }
+
+      // 3. Facebook Session Clear
       await FacebookAuth.instance.logOut();
+
+      // 4. Firebase Auth Sign Out
+      await FirebaseAuth.instance.signOut();
+
+      // 5. Local Profile Data Clear
       clearProfileData();
+
+      // 6. Navigate to Login Screen
       Get.offAllNamed('/login');
     } on FirebaseAuthException catch (e) {
       Get.snackbar(
@@ -247,6 +270,67 @@ class ProfileController extends GetxController {
       );
     }
   }
+// Future<void> logout() async {
+//   try {
+//     // 1. Google Account Session Clear
+//     final GoogleSignIn googleSignIn = GoogleSignIn();
+//     if (await googleSignIn.isSignedIn()) {
+//       await googleSignIn.signOut();
+//     }
+
+//     // 2. Facebook Account Session Clear
+//     await FacebookAuth.instance.logOut();
+
+//     // 3. Firebase Auth Session Clear
+//     await FirebaseAuth.instance.signOut();
+
+//     // 4. Local App Data Clear
+//     clearProfileData();
+
+//     // 5. Navigate to Login
+//     Get.offAllNamed('/login');
+//   } on FirebaseAuthException catch (e) {
+//     Get.snackbar(
+//       'Logout Error',
+//       e.message ?? 'Unable to logout.',
+//       backgroundColor: Colors.white,
+//       colorText: Colors.black,
+//       snackPosition: SnackPosition.TOP,
+//     );
+//   } catch (e) {
+//     Get.snackbar(
+//       'Logout Error',
+//       'Unable to logout. Please try again.',
+//       backgroundColor: Colors.white,
+//       colorText: Colors.black,
+//       snackPosition: SnackPosition.TOP,
+//     );
+//   }
+// }
+  // Future<void> logout() async {
+  //   try {
+  //     await FirebaseAuth.instance.signOut();
+  //     await FacebookAuth.instance.logOut();
+  //     clearProfileData();
+  //     Get.offAllNamed('/login');
+  //   } on FirebaseAuthException catch (e) {
+  //     Get.snackbar(
+  //       'Logout Error',
+  //       e.message ?? 'Unable to logout.',
+  //       backgroundColor: Colors.white,
+  //       colorText: Colors.black,
+  //       snackPosition: SnackPosition.TOP,
+  //     );
+  //   } catch (e) {
+  //     Get.snackbar(
+  //       'Logout Error',
+  //       'Unable to logout. Please try again.',
+  //       backgroundColor: Colors.white,
+  //       colorText: Colors.black,
+  //       snackPosition: SnackPosition.TOP,
+  //     );
+  //   }
+  // }
 
   void clearProfileData() {
     nameController.clear();
