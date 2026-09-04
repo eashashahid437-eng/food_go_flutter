@@ -509,6 +509,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final box = GetStorage();
+    // Default Light Mode (false) rakha gaya hai
+    bool isDarkMode = box.read('isDarkMode') ?? false;
+
     return MediaQuery(
       data: MediaQuery.of(context).copyWith(
         textScaler: const TextScaler.linear(1.0),
@@ -561,7 +565,8 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        themeMode: ThemeMode.system,
+        // Stored value ke mutabiq application-wide ThemeMode initialize hoga
+        themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
         home: const SplashScreen(),
         getPages: [
           GetPage(
