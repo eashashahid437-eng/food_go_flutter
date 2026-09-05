@@ -91,7 +91,7 @@ class _BurgerCustomizationScreenState extends State<BurgerCustomizationScreen> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.asset(
-                          "assets/images/topping.jpg",
+                          "assets/images/topping.111.jpg",
                           height: screenHeight * 0.22,
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
